@@ -9,14 +9,25 @@ export default function Navbar() {
     const { user, signOut } = useAuth();
     const router = useRouter();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSignOut = async () => {
-        await signOut();
-        router.push('/');
+        try {
+            await signOut();
+            router.push('/');
+        } catch (err) {
+            console.error('Error signing out:', err);
+            setError(err instanceof Error ? err.message : 'Failed to sign out');
+        }
     };
 
     return (
         <nav className="bg-white dark:bg-gray-800 shadow">
+            {error && (
+                <div className="bg-red-50 dark:bg-red-900/50 p-2 text-center text-sm text-red-700 dark:text-red-200">
+                    {error}
+                </div>
+            )}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex">
@@ -80,7 +91,7 @@ export default function Navbar() {
                             </div>
                         ) : (
                             <Link
-                                href="/login"
+                                href="/auth/signin"
                                 className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                             >
                                 Sign in
