@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
                 {
                     role: 'system',
                     content:
-                        'You are a helpful assistant. Use the provided context to answer the user’s question. Also, return the context you received!',
+                        'You are a helpful assistant. Use the provided context to answer the user’s question.',
                 },
                 {
                     role: 'user',
