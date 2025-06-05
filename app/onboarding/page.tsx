@@ -11,6 +11,8 @@ export default function Onboarding() {
     const [fullName, setFullName] = useState('');
     const [bio, setBio] = useState('');
     const [skills, setSkills] = useState('');
+    const [location, setLocation] = useState('');
+    const [title, setTitle] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -25,8 +27,8 @@ export default function Onboarding() {
             return;
         }
         try {
-            // Generate embedding from bio and skills
-            const embeddingInput = `${bio} ${skills}`;
+            // Generate embedding from bio, skills, title, and location
+            const embeddingInput = `${bio} ${skills} ${title} ${location}`;
             const embedding = await getEmbedding(embeddingInput);
             const { error } = await supabase.from('profiles').insert([
                 {
@@ -34,6 +36,8 @@ export default function Onboarding() {
                     full_name: fullName,
                     bio,
                     skills: skills.split(',').map((s) => s.trim()),
+                    location,
+                    title,
                     email: user.email,
                     embedding,
                 },
@@ -74,6 +78,32 @@ export default function Onboarding() {
                                 placeholder="Full Name"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="title" className="sr-only">Title</label>
+                            <input
+                                id="title"
+                                name="title"
+                                type="text"
+                                required
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                                placeholder="Title (e.g. Software Engineer)"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="location" className="sr-only">Location</label>
+                            <input
+                                id="location"
+                                name="location"
+                                type="text"
+                                required
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                                placeholder="Location (e.g. San Francisco, CA)"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
                             />
                         </div>
                         <div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getEmbedding } from '@/lib/embeddings';
 
 export default function Profile() {
     const { user, loading } = useAuth();
@@ -11,11 +12,18 @@ export default function Profile() {
     const [profile, setProfile] = useState<{
         full_name: string;
         bio: string;
+        skills?: string[];
+        embedding: number[];
+        location: string;
+        title: string;
     } | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         full_name: '',
         bio: '',
+        skills: '',
+        location: '',
+        title: '',
     });
 
     useEffect(() => {
@@ -30,7 +38,7 @@ export default function Profile() {
 
             const { data, error } = await supabase
                 .from('profiles')
-                .select('full_name, bio')
+                .select('full_name, bio, skills, location, title, embedding')
                 .eq('id', user.id)
                 .single();
 
@@ -41,6 +49,9 @@ export default function Profile() {
                 setFormData({
                     full_name: data?.full_name || '',
                     bio: data?.bio || '',
+                    skills: data?.skills ? data.skills.join(',') : '',
+                    location: data?.location || '',
+                    title: data?.title || '',
                 });
                 console.log(data);
             }
@@ -53,11 +64,19 @@ export default function Profile() {
         e.preventDefault();
         if (!user) return;
 
+        // Generate new embedding from bio, skills, title, and location
+        const embeddingInput = `${formData.bio} ${formData.skills || ''} ${formData.title || ''} ${formData.location || ''}`;
+        const embedding = await getEmbedding(embeddingInput);
+
         const { error } = await supabase
             .from('profiles')
             .update({
                 full_name: formData.full_name,
-                bio: formData.bio
+                bio: formData.bio,
+                skills: formData.skills ? formData.skills.split(',').map((s) => s.trim()) : [],
+                location: formData.location,
+                title: formData.title,
+                embedding,
             })
             .eq('id', user.id);
 
@@ -68,6 +87,10 @@ export default function Profile() {
                 ...profile!,
                 full_name: formData.full_name,
                 bio: formData.bio,
+                skills: formData.skills ? formData.skills.split(',').map((s) => s.trim()) : [],
+                location: formData.location,
+                title: formData.title,
+                embedding,
             });
             setIsEditing(false);
         }
@@ -110,6 +133,32 @@ export default function Profile() {
                                 />
                             </div>
                             <div>
+                                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Title
+                                </label>
+                                <input
+                                    type="text"
+                                    id="title"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                    placeholder="e.g. Software Engineer, Product Manager"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Location
+                                </label>
+                                <input
+                                    type="text"
+                                    id="location"
+                                    value={formData.location}
+                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                    placeholder="e.g. San Francisco, CA"
+                                />
+                            </div>
+                            <div>
                                 <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Bio
                                 </label>
@@ -118,6 +167,18 @@ export default function Profile() {
                                     rows={4}
                                     value={formData.bio}
                                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="skills" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Skills (comma-separated)
+                                </label>
+                                <input
+                                    type="text"
+                                    id="skills"
+                                    value={formData.skills}
+                                    onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
                                 />
                             </div>
@@ -135,8 +196,20 @@ export default function Profile() {
                                 <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.full_name || 'Not set'}</p>
                             </div>
                             <div>
+                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</h3>
+                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.title || 'Not set'}</p>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
+                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.location || 'Not set'}</p>
+                            </div>
+                            <div>
                                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Bio</h3>
                                 <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.bio || 'No bio yet'}</p>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Skills</h3>
+                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.skills ? profile.skills.join(', ') : 'No skills set'}</p>
                             </div>
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</h3>
