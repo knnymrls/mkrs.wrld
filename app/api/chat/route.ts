@@ -10,15 +10,27 @@ const openai = new OpenAI({
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 // In-memory chat history store (in production, you'd want to use a database)
 const chatHistories = new Map<string, ChatCompletionMessageParam[]>();
 
+interface TrackedMention {
+    id: string;
+    name: string;
+    type: 'person' | 'project';
+    start: number;
+    end: number;
+}
+
 export async function POST(req: NextRequest) {
     try {
-        const { message, sessionId } = await req.json();
+        const { message, sessionId, mentions = [] } = await req.json() as { 
+            message: string; 
+            sessionId: string; 
+            mentions?: TrackedMention[] 
+        };
 
         // Get or initialize chat history for this session
         if (!chatHistories.has(sessionId)) {
@@ -28,95 +40,338 @@ export async function POST(req: NextRequest) {
 
         // 1. Embed the input
         const embeddingRes = await openai.embeddings.create({
-            model: 'text-embedding-ada-002',
+            model: 'text-embedding-3-small',
             input: message,
         });
 
         const embedding = embeddingRes.data[0].embedding;
 
-        // 2. Semantic search in both posts and profiles
+        // 2. Semantic search across posts, profiles, and projects
+        // Using -1 threshold due to Supabase vector storage limitations
         const { data: postChunks, error: postSearchError } = await supabase.rpc('match_posts', {
             query_embedding: embedding,
-            match_threshold: 0.5,
+            match_threshold: -1,
             match_count: 20,
         });
 
         const { data: profileChunks, error: profileSearchError } = await supabase.rpc('match_profiles', {
             query_embedding: embedding,
-            match_threshold: 0.5,
+            match_threshold: -1,
             match_count: 20,
         });
 
-        // Add debug logging
-        console.log('Search results:', {
-            postChunks: postChunks || [],
-            profileChunks: profileChunks || [],
-            postSearchError,
-            profileSearchError
+        const { data: projectChunks, error: projectSearchError } = await supabase.rpc('match_projects', {
+            query_embedding: embedding,
+            match_threshold: -1,
+            match_count: 20,
         });
 
-        // --- Graph-aware retrieval ---
+        // Fetch mentioned entities directly if any
+        let mentionedProfiles: any[] = [];
+        let mentionedProjects: any[] = [];
+        
+        if (mentions.length > 0) {
+            // Fetch mentioned profiles
+            const mentionedProfileIds = mentions
+                .filter(m => m.type === 'person')
+                .map(m => m.id);
+            
+            if (mentionedProfileIds.length > 0) {
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, name, bio, email, location, title')
+                    .in('id', mentionedProfileIds);
+                
+                if (profiles) {
+                    // Fetch skills for mentioned profiles
+                    for (const profile of profiles) {
+                        const { data: skills } = await supabase
+                            .from('skills')
+                            .select('skill')
+                            .eq('profile_id', profile.id);
+                        mentionedProfiles.push({
+                            ...profile,
+                            skills: skills?.map(s => s.skill) || []
+                        });
+                    }
+                }
+            }
+            
+            // Fetch mentioned projects
+            const mentionedProjectIds = mentions
+                .filter(m => m.type === 'project')
+                .map(m => m.id);
+            
+            if (mentionedProjectIds.length > 0) {
+                const { data: projects } = await supabase
+                    .from('projects')
+                    .select('id, title, description, status, created_by')
+                    .in('id', mentionedProjectIds);
+                
+                if (projects) {
+                    mentionedProjects.push(...projects);
+                }
+            }
+        }
+
+        // Fetch skills for profileChunks
+        const profilesWithSkills = [];
+        for (const profile of profileChunks || []) {
+            const { data: skills } = await supabase
+                .from('skills')
+                .select('skill')
+                .eq('profile_id', profile.id);
+            profilesWithSkills.push({
+                ...profile,
+                skills: skills?.map(s => s.skill) || []
+            });
+        }
+
+        // --- Enhanced Graph-aware retrieval ---
         // 1. For each profile, fetch all their posts
         let allProfilePosts = [];
-        for (const profile of profileChunks || []) {
+        for (const profile of profilesWithSkills) {
             const { data: posts } = await supabase
                 .from('posts')
-                .select('id, content, created_at, profile_id')
-                .eq('profile_id', profile.id);
+                .select('id, content, created_at, author_id')
+                .eq('author_id', profile.id);
             if (posts) {
-                allProfilePosts.push(...posts.map((p: any) => ({ ...p, author_name: profile.full_name })));
+                allProfilePosts.push(...posts.map((p: any) => ({ ...p, author_name: profile.name })));
             }
         }
 
         // 2. For each post, fetch the author profile if not already included
         let allPostAuthors = [];
         for (const post of postChunks || []) {
-            if (!(profileChunks || []).find((p: any) => p.id === post.profile_id)) {
+            if (!profilesWithSkills.find((p: any) => p.id === post.author_id)) {
                 const { data: author } = await supabase
                     .from('profiles')
-                    .select('id, full_name, bio, skills, email, location, title')
-                    .eq('id', post.profile_id)
+                    .select('id, name, bio, email, location, title')
+                    .eq('id', post.author_id)
                     .single();
-                if (author) allPostAuthors.push(author);
+                if (author) {
+                    // Fetch skills separately
+                    const { data: skills } = await supabase
+                        .from('skills')
+                        .select('skill')
+                        .eq('profile_id', author.id);
+                    allPostAuthors.push({
+                        ...author,
+                        skills: skills?.map(s => s.skill) || []
+                    });
+                }
             }
         }
 
-        // 3. Merge and deduplicate
-        // Merge posts: postChunks + allProfilePosts (dedupe by id)
+        // 3. For each project, fetch contributors and their profiles
+        let projectContributors = new Map<string, any[]>(); // Map project_id to array of contributors
+        let contributorProfiles: any[] = [];
+        for (const project of projectChunks || []) {
+            const { data: contributions } = await supabase
+                .from('contributions')
+                .select('person_id, role, start_date, end_date, description')
+                .eq('project_id', project.id);
+            
+            if (contributions) {
+                projectContributors.set(project.id, contributions);
+                for (const contrib of contributions) {
+                    // Fetch the contributor's profile if not already included
+                    if (!profilesWithSkills.find((p: any) => p.id === contrib.person_id) &&
+                        !allPostAuthors.find((p: any) => p.id === contrib.person_id) &&
+                        !contributorProfiles.find((p: any) => p.id === contrib.person_id)) {
+                        const { data: contributor } = await supabase
+                            .from('profiles')
+                            .select('id, name, bio, email, location, title')
+                            .eq('id', contrib.person_id)
+                            .single();
+                        if (contributor) {
+                            const { data: skills } = await supabase
+                                .from('skills')
+                                .select('skill')
+                                .eq('profile_id', contributor.id);
+                            contributorProfiles.push({
+                                ...contributor,
+                                skills: skills?.map(s => s.skill) || []
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Use junction tables for deeper connections
+        // 4a. For each post, check mentions and project links
+        let postMentionedProfiles: any[] = [];
+        let linkedProjects: any[] = [];
+        for (const post of [...(postChunks || []), ...allProfilePosts]) {
+            // Get mentioned profiles
+            const { data: mentions } = await supabase
+                .from('post_mentions')
+                .select('profile_id')
+                .eq('post_id', post.id);
+            
+            if (mentions) {
+                for (const mention of mentions) {
+                    if (!profilesWithSkills.find((p: any) => p.id === mention.profile_id) &&
+                        !allPostAuthors.find((p: any) => p.id === mention.profile_id) &&
+                        !contributorProfiles.find((p: any) => p.id === mention.profile_id) &&
+                        !postMentionedProfiles.find((p: any) => p.id === mention.profile_id)) {
+                        const { data: mentionedProfile } = await supabase
+                            .from('profiles')
+                            .select('id, name, bio, email, location, title')
+                            .eq('id', mention.profile_id)
+                            .single();
+                        if (mentionedProfile) {
+                            const { data: skills } = await supabase
+                                .from('skills')
+                                .select('skill')
+                                .eq('profile_id', mentionedProfile.id);
+                            postMentionedProfiles.push({
+                                ...mentionedProfile,
+                                skills: skills?.map(s => s.skill) || []
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Get linked projects
+            const { data: projectLinks } = await supabase
+                .from('post_projects')
+                .select('project_id')
+                .eq('post_id', post.id);
+            
+            if (projectLinks) {
+                for (const link of projectLinks) {
+                    if (!projectChunks?.find((p: any) => p.id === link.project_id) &&
+                        !linkedProjects.find((p: any) => p.id === link.project_id)) {
+                        const { data: linkedProject } = await supabase
+                            .from('projects')
+                            .select('id, title, description, status, created_by')
+                            .eq('id', link.project_id)
+                            .single();
+                        if (linkedProject) {
+                            linkedProjects.push(linkedProject);
+                            
+                            // Also fetch contributors for this linked project
+                            const { data: contributions } = await supabase
+                                .from('contributions')
+                                .select('person_id, role, start_date, end_date, description')
+                                .eq('project_id', linkedProject.id);
+                            
+                            if (contributions) {
+                                projectContributors.set(linkedProject.id, contributions);
+                                // Fetch contributor profiles if needed
+                                for (const contrib of contributions) {
+                                    if (!profilesWithSkills.find((p: any) => p.id === contrib.person_id) &&
+                                        !allPostAuthors.find((p: any) => p.id === contrib.person_id) &&
+                                        !contributorProfiles.find((p: any) => p.id === contrib.person_id) &&
+                                        !postMentionedProfiles.find((p: any) => p.id === contrib.person_id)) {
+                                        const { data: contributor } = await supabase
+                                            .from('profiles')
+                                            .select('id, name, bio, email, location, title')
+                                            .eq('id', contrib.person_id)
+                                            .single();
+                                        if (contributor) {
+                                            const { data: skills } = await supabase
+                                                .from('skills')
+                                                .select('skill')
+                                                .eq('profile_id', contributor.id);
+                                            contributorProfiles.push({
+                                                ...contributor,
+                                                skills: skills?.map(s => s.skill) || []
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Multi-hop: For newly discovered profiles, fetch their recent posts
+        let secondHopPosts: any[] = [];
+        const newlyDiscoveredProfiles = [...contributorProfiles, ...postMentionedProfiles];
+        for (const profile of newlyDiscoveredProfiles) {
+            const { data: posts } = await supabase
+                .from('posts')
+                .select('id, content, created_at, author_id')
+                .eq('author_id', profile.id)
+                .order('created_at', { ascending: false })
+                .limit(5); // Limit to 5 most recent posts per profile
+            if (posts) {
+                secondHopPosts.push(...posts.map((p: any) => ({ ...p, author_name: profile.name })));
+            }
+        }
+
+        // 6. Merge and deduplicate all data
+        // Merge posts: postChunks + allProfilePosts + secondHopPosts (dedupe by id)
         const allPostsMap = new Map();
-        for (const p of [...(postChunks || []), ...allProfilePosts]) {
+        for (const p of [...(postChunks || []), ...allProfilePosts, ...secondHopPosts]) {
             allPostsMap.set(p.id, p);
         }
         const allPosts = Array.from(allPostsMap.values());
 
-        // Merge profiles: profileChunks + allPostAuthors (dedupe by id)
+        // Merge profiles: mentionedProfiles first (priority), then profilesWithSkills + allPostAuthors + contributorProfiles + mentionedProfiles (dedupe by id)
         const allProfilesMap = new Map();
-        for (const p of [...(profileChunks || []), ...allPostAuthors]) {
+        // Add mentioned profiles first so they take priority
+        for (const p of mentionedProfiles) {
             allProfilesMap.set(p.id, p);
+        }
+        // Then add other profiles
+        for (const p of [...profilesWithSkills, ...allPostAuthors, ...contributorProfiles, ...postMentionedProfiles]) {
+            if (!allProfilesMap.has(p.id)) {
+                allProfilesMap.set(p.id, p);
+            }
         }
         const allProfiles = Array.from(allProfilesMap.values());
 
-        // 4. Build context with more detailed logging
+        // Merge projects: mentionedProjects first (priority), then projectChunks + linkedProjects (dedupe by id)
+        const allProjectsMap = new Map();
+        // Add mentioned projects first so they take priority
+        for (const p of mentionedProjects) {
+            allProjectsMap.set(p.id, p);
+        }
+        // Then add other projects
+        for (const p of [...(projectChunks || []), ...linkedProjects]) {
+            if (!allProjectsMap.has(p.id)) {
+                allProjectsMap.set(p.id, p);
+            }
+        }
+        const allProjects = Array.from(allProjectsMap.values());
+
+        // 7. Build enhanced context with all entity types
         const postContext = allPosts.map((c: any) => {
-            const author = allProfiles.find((p: any) => p.id === c.profile_id);
-            console.log('Post author lookup:', { postId: c.id, profileId: c.profile_id, author });
-            return `Post by ${c.author_name || author?.full_name || 'Unknown'}: ${c.content.trim()}`;
+            const author = allProfiles.find((p: any) => p.id === c.author_id);
+            return `Post by ${c.author_name || author?.name || 'Unknown'} (${new Date(c.created_at).toLocaleDateString()}): ${c.content.trim()}`;
         }).join('\n\n');
 
         const profileContext = allProfiles.map((c: any) => {
-            console.log('Profile context:', c);
-            return `Profile: ${c.full_name || 'Unnamed'} - ${c.title || 'No title'} - ${c.location || 'No location'} - ${c.bio || 'No bio'} - Skills: ${(c.skills || []).join(', ')} - Email: ${c.email || 'Not provided'}`;
+            return `Profile: ${c.name || 'Unnamed'} - ${c.title || 'No title'} - ${c.location || 'No location'} - ${c.bio || 'No bio'} - Skills: ${(c.skills || []).join(', ')} - Email: ${c.email || 'Not provided'}`;
         }).join('\n\n');
 
-        const context = [postContext, profileContext].filter(Boolean).join('\n\n');
-        console.log('Final context being sent to GPT:', {
-            context,
-            profileCount: allProfiles.length,
-            postCount: allPosts.length,
-            profileNames: allProfiles.map(p => p.full_name)
-        });
+        const projectContext = allProjects.map((p: any) => {
+            // Get contributors for this project
+            const contributions = projectContributors.get(p.id) || [];
+            const contributorNames = contributions.map((contrib: any) => {
+                const profile = allProfiles.find((prof: any) => prof.id === contrib.person_id);
+                return profile ? `${profile.name} (${contrib.role})` : 'Unknown contributor';
+            }).join(', ') || 'No contributors found';
+            return `Project: "${p.title}" - Status: ${p.status} - Description: ${p.description} - Contributors: ${contributorNames}`;
+        }).join('\n\n');
 
-        if (!context) {
+        // Add mention context if any
+        let mentionContext = '';
+        if (mentions.length > 0) {
+            const mentionedNames = mentions.map(m => m.name).join(', ');
+            mentionContext = `The user specifically mentioned: ${mentionedNames}\n\n`;
+        }
+
+        const context = mentionContext + [postContext, profileContext, projectContext].filter(Boolean).join('\n\n');
+
+        if (!context || context === mentionContext) {
             return NextResponse.json({
                 answer: "I couldn't find any information in the database to answer your question.",
             });

@@ -98,8 +98,8 @@ export default function GraphPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, full_name');
-            const { data: posts, error: postsError } = await supabase.from('posts').select('id, profile_id, content');
+            const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, name');
+            const { data: posts, error: postsError } = await supabase.from('posts').select('id, author_id, content');
 
             if (profilesError || postsError) {
                 setLoading(false);
@@ -108,7 +108,7 @@ export default function GraphPage() {
 
             const profileNodes: ProfileNode[] = (profiles || []).map((p: any) => ({
                 id: p.id,
-                label: p.full_name || 'Unnamed',
+                label: p.name || 'Unnamed',
                 type: 'profile',
             }));
             const postNodes: PostNode[] = (posts || []).map((p: any) => ({
@@ -117,12 +117,12 @@ export default function GraphPage() {
                 type: 'post',
             }));
             const links: Link[] = (posts || []).map((p: any) => ({
-                source: p.profile_id,
+                source: p.author_id,
                 target: p.id,
             }));
             const reverseLinks: Link[] = (posts || []).map((p: any) => ({
                 source: p.id,
-                target: p.profile_id,
+                target: p.author_id,
             }));
 
             setGraphData({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -44,12 +44,6 @@ export default function Navbar() {
                                 Home
                             </Link>
                             <Link
-                                href="/posts/new"
-                                className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                            >
-                                New Post
-                            </Link>
-                            <Link
                                 href="/chatbot"
                                 className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                             >
@@ -60,6 +54,12 @@ export default function Navbar() {
                                 className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
                             >
                                 Graph
+                            </Link>
+                            <Link
+                                href="/projects"
+                                className="border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                            >
+                                Projects
                             </Link>
                         </div>
                     </div>

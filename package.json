@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "regenerate-embeddings": "tsx scripts/regenerate-embeddings.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
@@ -26,10 +27,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/dotenv": "^6.1.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.28.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.1",
     "typescript": "^5"
   }
 }

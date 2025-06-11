@@ -19,8 +19,7 @@ interface AuthContextType {
     refreshProfile: () => Promise<void>;
     signUp: (
         email: string,
-        password: string,
-        fullName: string
+        password: string
     ) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signOut: () => Promise<void>;
@@ -41,9 +40,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, name, title, location, bio')
             .eq('id', userId)
-            .maybeSingle<{ id: string }>();
+            .maybeSingle<{ id: string; name: string | null; title: string | null; location: string | null; bio: string | null; }>();
 
         console.log('[AuthContext] checkProfile Supabase call result:', {
             userId,
@@ -62,7 +61,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
         }
 
-        setHasProfile(!!profileData);
+        // Check if profile exists AND is complete (has all required fields)
+        const isProfileComplete = !!(
+            profileData && 
+            profileData.name && 
+            profileData.title && 
+            profileData.location && 
+            profileData.bio
+        );
+        
+        setHasProfile(isProfileComplete);
     }, []);
 
     const refreshProfile = useCallback(async () => {
@@ -103,8 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signUp = async (
         email: string,
-        password: string,
-        fullName: string
+        password: string
     ) => {
         const { data, error } = await supabase.auth.signUp({
             email,
@@ -112,19 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (error) throw error;
-
-        if (data.user) {
-            const { error: profileError } = await supabase.from('profiles').insert({
-                id: data.user.id,
-                full_name: fullName,
-                email,
-            });
-
-            if (profileError) {
-                console.error('[AuthContext] Failed to create profile:', profileError);
-                throw profileError;
-            }
-        }
+        
+        // The trigger creates the profile automatically
+        // User will complete profile during onboarding
     };
 
     const signIn = async (email: string, password: string) => {

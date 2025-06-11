@@ -7,7 +7,6 @@ import Link from 'next/link';
 
 export default function SignUp() {
     const [email, setEmail] = useState('');
-    const [fullName, setFullName] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -20,7 +19,7 @@ export default function SignUp() {
         setLoading(true);
 
         try {
-            await signUp(email, password, fullName);
+            await signUp(email, password);
             router.push('/auth/verify-email');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred during sign up');
@@ -54,21 +53,6 @@ export default function SignUp() {
                     )}
                     <div className="rounded-md shadow-sm -space-y-px">
                         <div>
-                            <label htmlFor="full-name" className="sr-only">
-                                Full Name
-                            </label>
-                            <input
-                                id="full-name"
-                                name="fullName"
-                                type="text"
-                                required
-                                placeholder="Full Name"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                            />
-                        </div>
-                        <div>
                             <label htmlFor="email-address" className="sr-only">
                                 Email address
                             </label>
@@ -81,7 +65,7 @@ export default function SignUp() {
                                 placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                                className="appearance-none rounded-t-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
                             />
                         </div>
                         <div>
