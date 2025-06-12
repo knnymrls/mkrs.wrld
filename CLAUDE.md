@@ -86,6 +86,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 OPENAI_API_KEY=
 ```
 
+Note: The chatbot now uses a dual-agent system with intelligent retrieval and response generation. Make sure OPENAI_API_KEY is set (without NEXT_PUBLIC_ prefix) for API routes.
+
 ### Database Schema
 
 Core tables:
@@ -131,12 +133,16 @@ app/
 │       └── new/         # Create project
 ├── api/                 # API routes
 │   ├── chat/           # AI chat endpoint
+│   │   ├── route.ts    # Main chat endpoint
+│   │   ├── agents/     # Retrieval and Response agents
+│   │   ├── strategies/ # Search strategies (semantic, keyword, graph)
+│   │   └── utils/      # Query parser, entity expander
 │   ├── embeddings/     # Embedding generation
 │   └── search/         # Search endpoints
 ├── components/         # React components
 │   ├── layout/         # Layout components (Navbar)
 │   ├── features/       # Feature-specific components
-│   └── ui/            # Reusable UI components
+│   └── ui/            # Reusable UI components (including SourceCard)
 ├── context/           # React contexts
 ├── models/            # TypeScript interfaces
 ├── hooks/             # Custom React hooks
@@ -160,11 +166,22 @@ app/
 - **Rich Post Display**: Mentions render as clickable links without @ symbol
 
 ### 2. AI-Powered Discovery
-- **Graph-Based RAG**: Searches across posts, profiles, AND projects
-- **Multi-hop Queries**: Discovers indirect connections
-- **Contextual Understanding**: Maintains conversation history
-- **Semantic Search**: Uses OpenAI embeddings for intelligent matching
-- **Mention Support**: Chatbot accepts @mentions for specific context
+- **Dual-Agent System**: 
+  - Retrieval Agent: Analyzes queries, executes multiple search strategies
+  - Response Agent: Evaluates results, synthesizes concise answers with follow-ups
+- **Multi-Strategy Search**:
+  - Semantic search using OpenAI embeddings
+  - Keyword search with term expansion (e.g., "software" → "developer", "programming")
+  - Graph traversal for multi-hop discovery
+- **Intelligent Query Understanding**:
+  - Intent detection (find people/projects/activity/knowledge/relationships)
+  - Entity extraction (skills, roles, timeframes)
+  - Automatic search expansion for better coverage
+- **Conversational Interface**: 
+  - Maintains chat history
+  - Provides concise answers with follow-up questions
+  - Accepts @mentions for specific context
+  - Shows source attribution with clickable cards for transparency
 
 ### 3. Knowledge Graph Visualization
 - **Interactive Graph**: D3-based force-directed graph

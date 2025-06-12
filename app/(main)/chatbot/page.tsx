@@ -6,10 +6,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../context/AuthContext';
 import MentionInput from '../../components/features/MentionInput';
 import { TrackedMention } from '../../types/mention';
+import SourceCard from '../../components/ui/SourceCard';
 
 export default function ChatbotPage() {
     const { user } = useAuth();
-    const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string; mentions?: TrackedMention[] }[]>([]);
+    const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string; mentions?: TrackedMention[]; id?: number; isStatus?: boolean; sources?: any[] }[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string>('');
@@ -93,6 +94,35 @@ export default function ChatbotPage() {
         setInput('');
         setTrackedMentions([]);
 
+        // Add a status message that we'll update
+        const statusMessageId = Date.now();
+        setMessages((msgs) => [...msgs, { 
+            role: 'bot', 
+            text: '🔍 Analyzing your query...', 
+            id: statusMessageId,
+            isStatus: true 
+        }]);
+
+        // Simulate progress updates
+        const progressSteps = [
+            { delay: 500, text: '📊 Searching across profiles, posts, and projects...' },
+            { delay: 1000, text: '🕸️ Exploring connections and relationships...' },
+            { delay: 1500, text: '🎯 Finding the most relevant information...' }
+        ];
+
+        // Start progress updates
+        progressSteps.forEach(({ delay, text }) => {
+            setTimeout(() => {
+                setMessages((msgs) => 
+                    msgs.map(msg => 
+                        msg.id === statusMessageId && msg.isStatus
+                            ? { ...msg, text }
+                            : msg
+                    )
+                );
+            }, delay);
+        });
+
         try {
             const res = await fetch('/api/chat', {
                 method: 'POST',
@@ -105,9 +135,23 @@ export default function ChatbotPage() {
             });
 
             const data = await res.json();
-            setMessages((msgs) => [...msgs, { role: 'bot', text: data.answer }]);
+            
+            // Replace status message with actual response
+            setMessages((msgs) => 
+                msgs.map(msg => 
+                    msg.id === statusMessageId 
+                        ? { ...msg, text: data.answer, isStatus: false, sources: data.sources }
+                        : msg
+                )
+            );
         } catch (err) {
-            setMessages((msgs) => [...msgs, { role: 'bot', text: 'Error: Could not get response.' }]);
+            setMessages((msgs) => 
+                msgs.map(msg => 
+                    msg.id === statusMessageId 
+                        ? { ...msg, text: 'Error: Could not get response.', isStatus: false }
+                        : msg
+                )
+            );
         } finally {
             setLoading(false);
         }
@@ -123,22 +167,27 @@ export default function ChatbotPage() {
                     <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
                         {messages.map((msg, idx) => (
                             <div
-                                key={idx}
+                                key={msg.id || idx}
                                 className={`p-4 rounded-lg ${msg.role === 'user'
                                     ? 'bg-indigo-100 dark:bg-indigo-900 ml-12'
                                     : 'bg-gray-100 dark:bg-gray-700 mr-12'
                                     }`}
                             >
-                                <p className="text-gray-900 dark:text-white">
+                                <p className={`text-gray-900 dark:text-white ${msg.isStatus ? 'italic' : ''}`}>
                                     {msg.role === 'user' && msg.mentions ? renderMessageWithMentions(msg.text, msg.mentions) : msg.text}
                                 </p>
+                                {/* Show sources if available */}
+                                {msg.sources && msg.sources.length > 0 && (
+                                    <div className="mt-3 flex gap-2 items-center">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">Sources:</span>
+                                        {msg.sources.map((source, idx) => (
+                                            <SourceCard key={idx} source={source} />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
-                        {loading && (
-                            <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mr-12">
-                                <p className="text-gray-500 dark:text-gray-400">Thinking...</p>
-                            </div>
-                        )}
+                        {/* Removed the old loading indicator since we now show progress in the message itself */}
                     </div>
 
                     {/* Input */}

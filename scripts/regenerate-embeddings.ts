@@ -73,16 +73,19 @@ async function regenerateProfileEmbeddings() {
                     .select('company, role, description')
                     .eq('profile_id', profile.id);
                 
-                // Create embedding text
-                const embeddingText = [
-                    profile.name,
-                    profile.bio,
-                    profile.title,
-                    profile.location,
-                    ...(skills || []).map(s => s.skill),
-                    ...(education || []).map(e => `${e.school} ${e.degree}`),
-                    ...(experience || []).map(e => `${e.company} ${e.role} ${e.description || ''}`)
-                ].filter(Boolean).join(' ');
+                // Create embedding text with improved experience descriptions
+                const skillsText = skills ? skills.map(s => s.skill).join(', ') : '';
+                const educationText = (education || [])
+                    .map(e => `${e.degree} from ${e.school}`)
+                    .join('. ');
+                const experienceText = (experience || [])
+                    .map(exp => {
+                        const baseText = `${exp.role} at ${exp.company}`;
+                        return exp.description ? `${baseText}: ${exp.description}` : baseText;
+                    })
+                    .join('. ');
+                
+                const embeddingText = `${profile.bio || ''} ${skillsText} ${profile.title || ''} ${profile.location || ''} ${educationText} ${experienceText}`;
                 
                 // Generate embedding
                 const embedding = await getEmbedding(embeddingText);

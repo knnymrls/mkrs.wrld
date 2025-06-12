@@ -53,7 +53,10 @@ export async function updateProfileEmbedding(userId: string) {
             .map((edu: Education) => `${edu.degree} from ${edu.school}`)
             .join('. ');
         const experienceText = (experiences || [])
-            .map((exp: Experience) => `${exp.role} at ${exp.company}`)
+            .map((exp: Experience) => {
+                const baseText = `${exp.role} at ${exp.company}`;
+                return exp.description ? `${baseText}: ${exp.description}` : baseText;
+            })
             .join('. ');
 
         const embeddingInput = `${profile.bio || ''} ${skillsText} ${profile.title || ''} ${profile.location || ''} ${educationText} ${experienceText}`;
