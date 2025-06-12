@@ -116,7 +116,11 @@ export default function Home() {
 
 
   const createPost = async () => {
-    if (!postContent.trim() || !user) return;
+    console.log('createPost called', { postContent, user, hasContent: !!postContent.trim() });
+    if (!postContent.trim() || !user) {
+      console.log('Early return - no content or user');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -186,7 +190,7 @@ export default function Home() {
       await fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post');
+      alert(`Failed to create post: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -276,7 +280,10 @@ export default function Home() {
                 Cancel
               </button>
               <button
-                onClick={createPost}
+                onClick={() => {
+                  console.log('Post button clicked');
+                  createPost();
+                }}
                 disabled={!postContent.trim() || isSubmitting}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
