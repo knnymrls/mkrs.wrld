@@ -63,7 +63,7 @@ export function getCaretCoordinates(
   });
   
   // Firefox hack
-  if (window.getComputedStyle && window.getComputedStyle(element).mozAppearance) {
+  if (window.getComputedStyle && (window.getComputedStyle(element) as any).mozAppearance) {
     mirror.style.overflow = 'hidden';
   }
   

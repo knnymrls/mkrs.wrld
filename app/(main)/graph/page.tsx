@@ -52,7 +52,7 @@ export default function GraphPage() {
     const [nodeConnectionCounts, setNodeConnectionCounts] = useState<{ [id: string]: number }>({});
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
     const animationRef = useRef<number | null>(null);
-    const graphRef = useRef<any>();
+    const graphRef = useRef<any>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Update dimensions on window resize
@@ -501,7 +501,7 @@ export default function GraphPage() {
                             }}
                             onNodeHover={(node: any) => setSelectedNode(node?.id || null)}
                             onBackgroundClick={() => setSelectedNode(null)}
-                            enableZoomPanInteraction={true}
+                            enableZoomInteraction={true}
                             enableNodeDrag={true}
                             nodeCanvasObjectMode={() => 'replace'}
                             nodeCanvasObject={(node, ctx, globalScale) => {
@@ -527,7 +527,7 @@ export default function GraphPage() {
                                 }
                                 
                                 // Calculate size based on connection count
-                                const connectionCount = nodeConnectionCounts[node.id] || 0;
+                                const connectionCount = node.id ? (nodeConnectionCounts[node.id] || 0) : 0;
                                 const size = Math.max(baseSize, Math.min(baseSize + (connectionCount * 1.5), 30));
                                 
                                 // Draw node circle
@@ -618,7 +618,7 @@ export default function GraphPage() {
                                 else if (node.type === 'project') baseSize = 10;
                                 else if (node.type === 'post') baseSize = 5;
                                 
-                                const connectionCount = nodeConnectionCounts[node.id] || 0;
+                                const connectionCount = node.id ? (nodeConnectionCounts[node.id] || 0) : 0;
                                 const size = Math.max(baseSize, Math.min(baseSize + (connectionCount * 1.5), 30));
                                 
                                 ctx.beginPath();
