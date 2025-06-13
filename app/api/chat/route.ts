@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     const chatHistory = chatHistories.get(sessionId)!;
 
-    // Initialize agents without progress callbacks for now
+    // Initialize agents without SSE for now - we'll optimize differently
     const queryParser = new QueryParser();
     const retrievalAgent = new RetrievalAgent();
     const responseAgent = new ResponseAgent();
@@ -107,7 +107,7 @@ async function executeDataRequest(request: any, results: any) {
     case 'recent_activity':
       // Fetch recent posts for found profiles
       const profileIds = results.profiles.map((p: any) => p.id).slice(0, 5);
-      
+
       for (const profileId of profileIds) {
         const { data: recentPosts } = await supabase
           .from('posts')
@@ -115,7 +115,7 @@ async function executeDataRequest(request: any, results: any) {
           .eq('author_id', profileId)
           .order('created_at', { ascending: false })
           .limit(3);
-        
+
         if (recentPosts) {
           results.posts.push(...recentPosts);
         }
@@ -127,13 +127,13 @@ async function executeDataRequest(request: any, results: any) {
       const profilesNeedingExp = results.profiles
         .filter((p: any) => !p.experiences || p.experiences.length === 0)
         .map((p: any) => p.id);
-      
+
       for (const profileId of profilesNeedingExp) {
         const { data: experiences } = await supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profileId);
-        
+
         if (experiences) {
           const profile = results.profiles.find((p: any) => p.id === profileId);
           if (profile) {
@@ -148,7 +148,7 @@ async function executeDataRequest(request: any, results: any) {
       const projectIds = results.projects
         .filter((p: any) => !p.contributions || p.contributions.length === 0)
         .map((p: any) => p.id);
-      
+
       for (const projectId of projectIds) {
         const { data: contributions } = await supabase
           .from('contributions')
@@ -159,7 +159,7 @@ async function executeDataRequest(request: any, results: any) {
             profiles!inner(id, name, title)
           `)
           .eq('project_id', projectId);
-        
+
         if (contributions) {
           const project = results.projects.find((p: any) => p.id === projectId);
           if (project) {

@@ -8,10 +8,16 @@ import {
 } from '../types';
 import { ParsedQuery } from '../utils/query-parser';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
 });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export class ResponseAgent {
   private progressCallback?: (update: ProgressUpdate) => void | Promise<void>;
@@ -52,8 +58,11 @@ export class ResponseAgent {
     const context = this.buildContext(results, query);
     
     if (!context || context.trim() === '') {
+      // Use AI to generate a helpful response even with no results
+      const answer = await this.generateIntelligentNoResultsResponse(query, results);
+      
       return {
-        answer: "I couldn't find any relevant information in the database to answer your question.",
+        answer,
         needsMoreData: false,
       };
     }
@@ -384,6 +393,7 @@ CRITICAL RULES:
 4. ALWAYS end with a relevant follow-up question to help the user
 5. For specific queries (like "best for X"), give a direct answer in 2-3 sentences max
 6. Use a conversational, helpful tone
+7. When answering ANY type of query, extract and present the relevant information
 
 RESPONSE FORMAT for specific queries:
 - Direct answer with name and 1-2 key reasons
@@ -422,8 +432,34 @@ When explaining connections:
 - State the connection clearly
 - Follow-up examples: "Want to explore their shared projects?" or "Interested in finding more connections?"`,
       
+      analytical: `
+When providing analytics:
+- Present numbers and trends clearly
+- Summarize key insights
+- Follow-up examples: "Want to see a breakdown by department?" or "Interested in historical trends?"`,
+      
+      temporal: `
+When answering time-based queries:
+- Clearly state the time period covered
+- Highlight the most important events/changes
+- Follow-up examples: "Want to see earlier activity?" or "Need more detail on any specific event?"`,
+      
+      exploratory: `
+When handling exploratory queries:
+- Provide a comprehensive overview
+- Organize information by relevance
+- Follow-up examples: "What aspect interests you most?" or "Should I dive deeper into any area?"`,
+      
+      specific: `
+When answering about specific entities:
+- Provide complete information about the entity
+- Include relevant connections and context
+- Follow-up examples: "Want to know about their recent work?" or "Interested in similar profiles?"`,
+      
       general: `
-Provide a helpful answer and ask how you can help further.`,
+Provide a helpful answer based on all available information.
+Organize the response by relevance and type.
+Ask how you can help further or what specific aspect they'd like to explore.`,
     };
 
     return basePrompt + '\n' + (intentPrompts[query.intent] || intentPrompts.general);
@@ -485,5 +521,138 @@ Provide a helpful answer and ask how you can help further.`,
       await this.progressCallback(update);
     }
     // Progress is emitted only if callback is provided
+  }
+  
+  private async generateIntelligentNoResultsResponse(
+    query: ParsedQuery,
+    results: SearchResults
+  ): Promise<string> {
+    // Skip expensive AI call and database summary for speed
+    const followUpQuestions = this.generateFollowUpQuestions(query, results);
+    
+    // Generate a simple but helpful response
+    let response = `I searched for ${this.describeSearch(query)} but didn't find exact matches.`;
+    
+    // Add context based on query type
+    if (query.intent === 'temporal') {
+      response += ` The data might exist outside the specified timeframe.`;
+    } else if (query.intent === 'find_people') {
+      response += ` The skills or expertise you're looking for might be available under different terms.`;
+    }
+    
+    // Add follow-up questions
+    if (followUpQuestions.length > 0) {
+      response += '\n\n' + followUpQuestions.join('\n\n');
+    }
+    
+    return response;
+  }
+  
+  // Removed expensive database summary method
+
+  private generateFollowUpQuestions(query: ParsedQuery, results: SearchResults): string[] {
+    const questions: string[] = [];
+    
+    // Generate follow-ups based on query structure, not hardcoded content
+    
+    // If there was a time constraint, suggest removing it
+    if (query.timeConstraints) {
+      questions.push(`Would you like to search without the time constraint?`);
+    }
+    
+    // If searching for specific skills/technologies, suggest related searches
+    const skills = query.entities.filter(e => e.type === 'skill' || e.type === 'technology');
+    if (skills.length > 0) {
+      questions.push(`Should I search for related skills or technologies?`);
+      questions.push(`Would you like to see people with transferable skills?`);
+    }
+    
+    // Based on intent, suggest different search strategies
+    switch (query.intent) {
+      case 'find_people':
+        questions.push(`Would you like to see all available profiles?`);
+        questions.push(`Should I look for people who could potentially develop these skills?`);
+        break;
+      case 'find_projects':
+        questions.push(`Would you like to see all projects regardless of criteria?`);
+        questions.push(`Should I search for projects in related areas?`);
+        break;
+      case 'temporal':
+        questions.push(`Would you like to see the most recent data available?`);
+        questions.push(`Should I expand the time range?`);
+        break;
+      case 'analytical':
+        questions.push(`Would you like to see general statistics instead?`);
+        questions.push(`Should I analyze different metrics?`);
+        break;
+    }
+    
+    // Always offer to broaden or clarify
+    questions.push(`Can you tell me more about what you're looking for?`);
+    questions.push(`Would you like me to search more broadly?`);
+    
+    return [...new Set(questions)].slice(0, 3); // Remove duplicates and limit to 3
+  }
+
+  private generateNoResultsResponse(query: ParsedQuery, followUpQuestions: string[]): string {
+    // Use AI to generate a contextual response
+    let response = `I searched for ${this.describeSearch(query)} but didn't find exact matches.`;
+    
+    // Add follow-up questions
+    if (followUpQuestions.length > 0) {
+      response += "\n\n" + followUpQuestions.join("\n\n");
+    }
+    
+    return response;
+  }
+  
+  private describeSearch(query: ParsedQuery): string {
+    const parts: string[] = [];
+    
+    // Describe what was searched based on entities
+    if (query.entities.length > 0) {
+      const skills = query.entities.filter(e => e.type === 'skill' || e.type === 'technology').map(e => e.value);
+      const people = query.entities.filter(e => e.type === 'person').map(e => e.value);
+      const concepts = query.entities.filter(e => e.type === 'concept').map(e => e.value);
+      
+      if (skills.length > 0) parts.push(`${skills.join(', ')} skills`);
+      if (people.length > 0) parts.push(`people named ${people.join(', ')}`);
+      if (concepts.length > 0) parts.push(`${concepts.join(', ')}`);
+    }
+    
+    // Add time context if present
+    if (query.timeConstraints?.relative) {
+      parts.push(`from ${query.timeConstraints.relative}`);
+    }
+    
+    // Add intent context
+    switch (query.intent) {
+      case 'find_people':
+        if (parts.length === 0) parts.push('people');
+        break;
+      case 'find_projects':
+        parts.push('in projects');
+        break;
+      case 'find_activity':
+        parts.push('in recent activity');
+        break;
+      case 'temporal':
+        if (!query.timeConstraints) parts.push('in the specified timeframe');
+        break;
+    }
+    
+    return parts.join(' ') || 'the requested information';
+  }
+  
+  // Removed hardcoded methods - now handled dynamically in synthesizeResponse
+
+  private hasAnyData(results: SearchResults): boolean {
+    return (
+      results.profiles.length > 0 ||
+      results.posts.length > 0 ||
+      results.projects.length > 0 ||
+      results.experiences.length > 0 ||
+      results.educations.length > 0
+    );
   }
 }

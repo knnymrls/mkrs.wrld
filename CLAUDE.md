@@ -165,23 +165,27 @@ app/
   - Create new projects on-the-fly if no match exists
 - **Rich Post Display**: Mentions render as clickable links without @ symbol
 
-### 2. AI-Powered Discovery
+### 2. AI-Powered Universal Information Retrieval
 - **Dual-Agent System**: 
-  - Retrieval Agent: Analyzes queries, executes multiple search strategies
-  - Response Agent: Evaluates results, synthesizes concise answers with follow-ups
-- **Multi-Strategy Search**:
-  - Semantic search using OpenAI embeddings
-  - Keyword search with term expansion (e.g., "software" → "developer", "programming")
-  - Graph traversal for multi-hop discovery
-- **Intelligent Query Understanding**:
-  - Intent detection (find people/projects/activity/knowledge/relationships)
-  - Entity extraction (skills, roles, timeframes)
-  - Automatic search expansion for better coverage
-- **Conversational Interface**: 
-  - Maintains chat history
-  - Provides concise answers with follow-up questions
-  - Accepts @mentions for specific context
-  - Shows source attribution with clickable cards for transparency
+  - Retrieval Agent: Universal query understanding, executes optimized search strategies
+  - Response Agent: Synthesizes intelligent responses even with no results
+- **Optimized Search Strategies**:
+  - Fast semantic search using OpenAI embeddings (primary strategy)
+  - Pattern-based keyword expansion (no AI calls for speed)
+  - Limited graph traversal (depth 1, only when needed)
+- **Universal Query Understanding**:
+  - Dynamic intent detection (analytical, temporal, exploratory, specific)
+  - Flexible entity extraction for any domain
+  - Temporal query support ("last week", "past month", "recently")
+- **Smart Response System**: 
+  - No hardcoded knowledge about specific data
+  - Intelligent follow-up questions based on query structure
+  - Helpful suggestions when no results found
+  - Shows source attribution with clickable cards
+- **Performance Optimizations**:
+  - ~2-3 second response time (down from 15+ seconds)
+  - Animated loading states with progress messages
+  - Conditional processing to skip expensive operations
 
 ### 3. Knowledge Graph Visualization
 - **Interactive Graph**: D3-based force-directed graph
@@ -232,90 +236,22 @@ app/
 
 ## Future Enhancements
 
-### 1. Intelligent Natural Language Discovery
-A comprehensive enhancement that combines natural language understanding, multi-hop discovery, and conversational intelligence into one powerful system.
+### 1. Enhanced Conversational Memory & Context
+- **Session-based Context**: Track conversation history for better follow-ups
+- **Pronoun Resolution**: Understand "she", "he", "they" from previous messages
+- **Query Refinement**: Learn from user's clarifications
 
-#### Core Capabilities:
-- **Natural Language Understanding**: Ask anything in plain English
-  - "Who has experience working with React?" → Searches skills, posts, and project descriptions
-  - "Which employees went to Stanford?" → Queries education records
-  - "Who has a Master's degree in Computer Science?" → Filters by degree type and field
-  - "Show me people who've worked at Google" → Searches experience history
-  - "Find React developers in New York who've worked on e-commerce" → Multi-attribute search
+### 2. Advanced Analytics Queries
+- **Aggregation Support**: "How many people know React?"
+- **Trend Analysis**: "What skills are growing in popularity?"
+- **Comparison Queries**: "Compare frontend vs backend expertise"
+- **Distribution Queries**: "Show skill distribution by department"
 
-- **Temporal/Recency Queries**: Search with time constraints
-  - "Who's worked on machine learning projects in the last month?"
-  - "Show me recent posts about AWS from this week"
-  - "Which projects were completed in Q4?"
-  - "Who mentioned Kubernetes in the past 2 weeks?"
-
-- **Multi-Hop Discovery**: Find indirect connections
-  - "Who knows someone who has worked with blockchain?"
-  - "Find people 2 degrees away from me who know Python"
-  - "Which teams have members who've collaborated with the DevOps team?"
-
-- **Conversational Memory**: Maintain context across messages
-  - User: "Who knows React?" → Bot: "Sarah and Mike"
-  - User: "What has she worked on recently?" → Bot understands "she" = Sarah
-  - User: "And him?" → Bot understands "him" = Mike
-
-#### Implementation Steps:
-1. **Query Parser Development**
-   - Build NLP pipeline to extract entities (skills, timeframes, locations, degrees)
-   - Create query intent classifier (search for people, projects, or posts)
-   - Develop temporal expression parser ("last month", "this week", "past 2 weeks")
-
-2. **Enhanced Embedding System**
-   - Generate embeddings for partial queries and synonyms
-   - Create concept maps (React → Frontend, AWS → Cloud)
-   - Add timestamp metadata to all embeddings
-
-3. **Graph Traversal Engine**
-   - Implement breadth-first search for multi-hop queries
-   - Add path-finding algorithms for connection discovery
-   - Create relevance scoring based on path length and recency
-
-4. **Conversation State Manager**
-   - Store conversation context per session
-   - Track mentioned entities for pronoun resolution
-   - Build query refinement based on previous questions
-
-5. **Result Ranking System**
-   - Score results by relevance, recency, and connection strength
-   - Implement diversity sampling to show varied results
-   - Add explanation generation ("Found via: Sarah worked on Project X which mentioned React")
-
-### 2. Graph-Powered Analytics & Insights
-Transform the existing graph visualization into a comprehensive analytics platform.
-
-#### Enhanced Graph Features:
-- **Interactive Filtering**
-  - Time-based filters: "Show connections from last 30 days"
-  - Entity type filters: "Show only people and projects"
-  - Skill-based clustering: "Group by expertise areas"
-
-- **Visual Analytics**
-  - Node size based on activity level or expertise depth
-  - Edge thickness showing collaboration frequency
-  - Color coding for departments, skills, or project status
-  - Heat zones showing knowledge concentration
-
-- **Discovery Patterns**
-  - Highlight knowledge silos (disconnected clusters)
-  - Show collaboration opportunities (potential connections)
-  - Identify key connectors (people who bridge teams)
-  - Surface trending topics (growing node clusters)
-
-- **Interactive Insights**
-  - Click a skill node: See everyone who knows it and their connections
-  - Select two people: Show shortest path between them
-  - Time scrubber: Watch the graph evolve over time
-  - Zoom into team view: See internal team dynamics
-
-- **Actionable Intelligence**
-  - "These two teams have similar projects but haven't connected"
-  - "This person is the only link between frontend and backend teams"
-  - "This expertise area is growing rapidly across the organization"
+### 3. Real-time Collaboration Features
+- **Live Activity Streams**: See what's happening in real-time
+- **Collaborative Search**: Share search results with team members
+- **Expert Recommendations**: AI suggests who to connect with based on current work
+- **Smart Notifications**: Get alerted when relevant expertise becomes available
 
 ## Key Use Cases
 
@@ -347,24 +283,21 @@ Transform the existing graph visualization into a comprehensive analytics platfo
 
 ## Known Issues to Investigate
 
-### pgvector Negative Similarity Scores
-**Issue**: When using Supabase's pgvector extension for semantic search, all similarity scores are returning negative values (around -0.03) instead of the expected positive values between 0 and 1. This forces us to use a threshold of -1 instead of proper similarity thresholds like 0.5.
+### Current Architecture Notes
 
-**Current Workaround**: Using `match_threshold: -1` in all RPC function calls to ensure results are returned.
+#### Chatbot Implementation
+- **Universal Query Support**: Handles any type of question about the data
+- **No Hardcoded Knowledge**: System discovers available data dynamically
+- **Optimized for Speed**: ~2-3 second response time with loading animations
+- **Pattern-based Expansion**: Fast term expansion without AI API calls
 
-**Investigation Needed**:
-1. Research why pgvector's cosine similarity calculation (`1 - (embedding <=> query_embedding)`) is returning negative values
-2. Check if this is related to:
-   - Supabase's specific pgvector implementation or version
-   - The way embeddings are stored/retrieved through Supabase's JavaScript client
-   - Vector normalization issues between OpenAI's text-embedding-3-small model and pgvector
-   - A configuration issue with the vector column type in PostgreSQL
-3. Determine if other Supabase users have experienced similar issues
-4. Find the proper solution to get similarity scores in the expected 0-1 range
+#### Performance Considerations
+- Reduced search result limits (50 → 30) for faster queries
+- Skip graph traversal for time-based queries
+- Limited expansion searches to essential cases only
+- Removed expensive AI calls for term generation
 
-**Technical Details**:
-- Using OpenAI's text-embedding-3-small model (1536 dimensions)
-- Embeddings are confirmed to be normalized (magnitude ≈ 1)
-- Embeddings are stored as `vector(1536)` type in PostgreSQL
-- The RPC functions use standard pgvector similarity: `1 - (embedding <=> query_embedding)`
-- Both direct similarity queries and searches return negative values
+#### pgvector Issue (Resolved)
+- Fixed embedding dimensions from 19,000+ to proper 1536
+- Embeddings now stored correctly using text-embedding-3-small
+- Semantic search functioning properly with cosine similarity

@@ -14,7 +14,7 @@ const supabase = createClient(
 export class SemanticSearchStrategy implements SearchStrategy {
   name = 'semantic';
 
-  async execute(query: string, params?: { limit?: number }): Promise<SearchResult[]> {
+  async execute(query: string, params?: { limit?: number; searchAll?: boolean }): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
     
     // Generate embedding for the query
@@ -46,6 +46,11 @@ export class SemanticSearchStrategy implements SearchStrategy {
           .select('*')
           .eq('profile_id', profile.id);
         
+        const { data: educations } = await supabase
+          .from('educations')
+          .select('*')
+          .eq('profile_id', profile.id);
+        
         results.push({
           type: 'profile',
           id: profile.id,
@@ -53,6 +58,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
             ...profile,
             skills: skills?.map(s => s.skill) || [],
             experiences: experiences || [],
+            educations: educations || [],
           },
           relevanceScore: profile.similarity || 0,
           matchReason: 'Semantic similarity to query',

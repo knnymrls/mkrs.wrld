@@ -20,10 +20,10 @@ export class KeywordSearchStrategy implements SearchStrategy {
     // Expand keywords if requested
     if (params?.expandTerms !== false) {
       const expandedKeywords = new Set<string>();
-      keywords.forEach(keyword => {
-        const expanded = this.expander.getAllSearchTerms(keyword);
+      for (const keyword of keywords) {
+        const expanded = await this.expander.getAllSearchTerms(keyword);
         expanded.forEach(term => expandedKeywords.add(term.toLowerCase()));
-      });
+      }
       keywords = Array.from(expandedKeywords);
     }
     

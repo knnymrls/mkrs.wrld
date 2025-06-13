@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import MentionInput from '../../components/features/MentionInput';
 import { TrackedMention } from '../../types/mention';
 import SourceCard from '../../components/ui/SourceCard';
+import styles from './loading.module.css';
 
 export default function ChatbotPage() {
     const { user } = useAuth();
@@ -103,25 +104,43 @@ export default function ChatbotPage() {
             isStatus: true 
         }]);
 
-        // Simulate progress updates
-        const progressSteps = [
-            { delay: 500, text: '📊 Searching across profiles, posts, and projects...' },
-            { delay: 1000, text: '🕸️ Exploring connections and relationships...' },
-            { delay: 1500, text: '🎯 Finding the most relevant information...' }
+        // Animated loading with dots
+        let dotCount = 0;
+        const loadingMessages = [
+            '🔍 Analyzing your query',
+            '📊 Searching across profiles, posts, and projects',
+            '🕸️ Exploring connections and relationships',
+            '🎯 Finding the most relevant information'
         ];
-
-        // Start progress updates
-        progressSteps.forEach(({ delay, text }) => {
-            setTimeout(() => {
-                setMessages((msgs) => 
-                    msgs.map(msg => 
-                        msg.id === statusMessageId && msg.isStatus
-                            ? { ...msg, text }
-                            : msg
-                    )
-                );
-            }, delay);
-        });
+        let currentMessageIndex = 0;
+        let dotInterval: NodeJS.Timeout;
+        
+        // Function to update loading message
+        const updateLoadingMessage = () => {
+            const dots = '.'.repeat(dotCount);
+            const currentMessage = loadingMessages[currentMessageIndex];
+            
+            setMessages((msgs) => 
+                msgs.map(msg => 
+                    msg.id === statusMessageId && msg.isStatus
+                        ? { ...msg, text: `${currentMessage}${dots}` }
+                        : msg
+                )
+            );
+            
+            dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
+        };
+        
+        // Start dot animation
+        dotInterval = setInterval(updateLoadingMessage, 400);
+        
+        // Progress through different messages
+        const messageInterval = setInterval(() => {
+            if (currentMessageIndex < loadingMessages.length - 1) {
+                currentMessageIndex++;
+                dotCount = 0; // Reset dots for new message
+            }
+        }, 2000); // Change message every 2 seconds
 
         try {
             const res = await fetch('/api/chat', {
@@ -136,6 +155,10 @@ export default function ChatbotPage() {
 
             const data = await res.json();
             
+            // Clear intervals
+            clearInterval(dotInterval);
+            clearInterval(messageInterval);
+            
             // Replace status message with actual response
             setMessages((msgs) => 
                 msgs.map(msg => 
@@ -145,6 +168,10 @@ export default function ChatbotPage() {
                 )
             );
         } catch (err) {
+            // Clear intervals on error too
+            clearInterval(dotInterval);
+            clearInterval(messageInterval);
+            
             setMessages((msgs) => 
                 msgs.map(msg => 
                     msg.id === statusMessageId 
@@ -168,12 +195,14 @@ export default function ChatbotPage() {
                         {messages.map((msg, idx) => (
                             <div
                                 key={msg.id || idx}
-                                className={`p-4 rounded-lg ${msg.role === 'user'
+                                className={`p-4 rounded-lg transition-all duration-300 ${msg.role === 'user'
                                     ? 'bg-indigo-100 dark:bg-indigo-900 ml-12'
-                                    : 'bg-gray-100 dark:bg-gray-700 mr-12'
+                                    : msg.isStatus 
+                                        ? 'bg-gray-100 dark:bg-gray-700 mr-12 ' + styles.shimmer
+                                        : 'bg-gray-100 dark:bg-gray-700 mr-12'
                                     }`}
                             >
-                                <p className={`text-gray-900 dark:text-white ${msg.isStatus ? 'italic' : ''}`}>
+                                <p className={`text-gray-900 dark:text-white ${msg.isStatus ? 'italic ' + styles.loadingDots : ''}`}>
                                     {msg.role === 'user' && msg.mentions ? renderMessageWithMentions(msg.text, msg.mentions) : msg.text}
                                 </p>
                                 {/* Show sources if available */}
