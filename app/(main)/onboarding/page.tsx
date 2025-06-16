@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getEmbedding } from '@/lib/embeddings';
+import { uploadAvatar } from '@/lib/storage';
+import ImageUploadWithCrop from '../../components/ui/ImageUploadWithCrop';
 
 export default function Onboarding() {
     const { user, refreshProfile } = useAuth();
@@ -19,6 +21,7 @@ export default function Onboarding() {
     const [skills, setSkills] = useState('');
     const [location, setLocation] = useState('');
     const [title, setTitle] = useState('');
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
     
     // Education data
     const [educations, setEducations] = useState<Array<{
@@ -48,6 +51,13 @@ export default function Onboarding() {
         }
         
         try {
+            let avatarUrl = null;
+            
+            // Upload avatar if selected
+            if (avatarFile) {
+                avatarUrl = await uploadAvatar(user.id, avatarFile);
+            }
+            
             // Generate embedding from bio, skills, title, and location
             const embeddingInput = `${bio} ${skills} ${title} ${location}`;
             const embedding = await getEmbedding(embeddingInput);
@@ -57,6 +67,7 @@ export default function Onboarding() {
                 bio,
                 location,
                 title,
+                avatar_url: avatarUrl,
                 embedding,
             }).eq('id', user.id);
             
@@ -234,6 +245,15 @@ export default function Onboarding() {
                 {currentStep === 1 && (
                     <form className="mt-8 space-y-6" onSubmit={handleProfileSubmit}>
                         <div className="space-y-4">
+                            <div className="flex justify-center mb-6">
+                                <ImageUploadWithCrop
+                                    currentImageUrl={null}
+                                    onImageSelected={setAvatarFile}
+                                    onImageRemoved={() => setAvatarFile(null)}
+                                    label="Upload Avatar"
+                                    shape="circle"
+                                />
+                            </div>
                             <div>
                                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Name *

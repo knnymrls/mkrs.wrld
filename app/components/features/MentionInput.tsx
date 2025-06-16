@@ -49,6 +49,19 @@ export default function MentionInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea || rows !== 1) return;
+
+    const adjustHeight = () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+
+    adjustHeight();
+  }, [value, rows]);
+
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -104,7 +117,7 @@ export default function MentionInput({
     // Check for @ mentions
     const textBeforeCursor = newValue.substring(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    
+
     if (lastAtIndex !== -1) {
       // Check if this @ position was previously invalidated by a space
       if (invalidatedAtPositions.has(lastAtIndex)) {
@@ -113,7 +126,7 @@ export default function MentionInput({
       }
 
       const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-      
+
       // Check if user typed @ followed by a space (or navigated back to it)
       // Also check if there's a space immediately after the @ in the full text
       const hasSpaceAfterAt = lastAtIndex + 1 < newValue.length && newValue[lastAtIndex + 1] === ' ';
@@ -123,7 +136,7 @@ export default function MentionInput({
         setShowMentions(false);
         return;
       }
-      
+
       // Check if we're inside an existing mention
       if (!isInsideExistingMention(lastAtIndex, updatedMentions)) {
         // Calculate dropdown position BEFORE showing the dropdown
@@ -135,19 +148,19 @@ export default function MentionInput({
           );
           setDropdownPosition(position);
         }
-        
+
         // Update search state
         setMentionSearch(textAfterAt);
         setMentionIndex(lastAtIndex);
         setSelectedSuggestionIndex(0);
-        
+
         // Fetch suggestions
         const suggestions = await searchMentions(textAfterAt);
         setMentionSuggestions(suggestions);
-        
+
         // Show dropdown AFTER position is set
         setShowMentions(true);
-        
+
         // Force immediate position update
         requestAnimationFrame(() => {
           if (textareaRef.current) {
@@ -186,16 +199,17 @@ export default function MentionInput({
     const afterCursor = value.substring(cursorPosition);
     const mentionText = mentionToAdd.name; // No @ symbol
     const newContent = `${beforeMention}${mentionText} ${afterCursor}`;
-    
+
     // Track the mention position
     const newMention: TrackedMention = {
       id: mentionToAdd.id,
       name: mentionToAdd.name,
       type: mentionToAdd.type,
       start: mentionIndex,
-      end: mentionIndex + mentionText.length
+      end: mentionIndex + mentionText.length,
+      imageUrl: mentionToAdd.imageUrl
     };
-    
+
     setTrackedMentions([...trackedMentions, newMention]);
     onChange(newContent);
     setShowMentions(false);
@@ -213,14 +227,14 @@ export default function MentionInput({
     if (e.key === 'Backspace' && !showMentions) {
       const cursorPos = textareaRef.current?.selectionStart || 0;
       const mentionAtCursor = getMentionAtCursor(cursorPos, trackedMentions);
-      
+
       if (mentionAtCursor) {
         e.preventDefault();
-        
+
         // Remove the entire mention
-        const newContent = value.substring(0, mentionAtCursor.start) + 
-                          value.substring(mentionAtCursor.end);
-        
+        const newContent = value.substring(0, mentionAtCursor.start) +
+          value.substring(mentionAtCursor.end);
+
         // Update tracked mentions
         const updatedMentions = trackedMentions.filter(m => m !== mentionAtCursor);
         updatedMentions.forEach(m => {
@@ -230,10 +244,10 @@ export default function MentionInput({
             m.end -= lengthDiff;
           }
         });
-        
+
         onChange(newContent);
         setTrackedMentions(updatedMentions);
-        
+
         // Set cursor position
         if (textareaRef.current) {
           textareaRef.current.value = newContent;
@@ -243,18 +257,18 @@ export default function MentionInput({
         return;
       }
     }
-    
+
     if (showMentions && mentionSuggestions.length > 0) {
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedSuggestionIndex(prev => 
+          setSelectedSuggestionIndex(prev =>
             prev < mentionSuggestions.length - 1 ? prev + 1 : 0
           );
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedSuggestionIndex(prev => 
+          setSelectedSuggestionIndex(prev =>
             prev > 0 ? prev - 1 : mentionSuggestions.length - 1
           );
           break;
@@ -279,25 +293,26 @@ export default function MentionInput({
 
   return (
     <div className="relative">
-      <div className="relative bg-gray-50 dark:bg-gray-900 rounded-md">
+      <div className={`relative ${rows === 1 ? '' : 'bg-gray-50 dark:bg-gray-900'} rounded-md`}>
         {/* Mention overlay for visual styling */}
-        <div 
-          className="absolute inset-0 p-3 pointer-events-none overflow-hidden"
+        <div
+          className={`absolute inset-0 ${rows === 1 ? 'p-2' : 'p-3'} pointer-events-none overflow-hidden`}
           style={{
             fontFamily: 'inherit',
             fontSize: '14px',
             lineHeight: '1.5',
             whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            maxHeight: rows === 1 ? '120px' : undefined
           }}
         >
           {(() => {
             let lastIndex = 0;
             const parts: React.ReactElement[] = [];
-            
+
             // Sort mentions by position
             const sortedMentions = [...trackedMentions].sort((a, b) => a.start - b.start);
-            
+
             sortedMentions.forEach((mention, idx) => {
               // Add text before mention
               if (mention.start > lastIndex) {
@@ -307,20 +322,20 @@ export default function MentionInput({
                   </span>
                 );
               }
-              
+
               // Add mention with underline only
               parts.push(
-                <span 
-                  key={`mention-${idx}`} 
+                <span
+                  key={`mention-${idx}`}
                   className="text-transparent underline decoration-gray-400 dark:decoration-gray-500 decoration-2 underline-offset-2"
                 >
                   {value.substring(mention.start, mention.end)}
                 </span>
               );
-              
+
               lastIndex = mention.end;
             });
-            
+
             // Add remaining text
             if (lastIndex < value.length) {
               parts.push(
@@ -329,32 +344,37 @@ export default function MentionInput({
                 </span>
               );
             }
-            
+
             return parts;
           })()}
         </div>
-        
+
         <textarea
           ref={textareaRef}
           value={value}
           onChange={handleTextChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full p-3 border border-gray-300 dark:border-gray-700 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 relative ${className}`}
-          style={{ 
+          className={`w-full ${rows === 1 ? 'p-2' : 'p-2'} border ${rows === 1 ? 'border-transparent' : 'border-gray-300 dark:border-gray-700'} rounded-md resize-none focus:outline-none ${rows === 1 ? 'focus:ring-1 focus:ring-text-primary' : 'focus:ring-2 focus:ring-blue-500'} relative ${rows === 1 ? 'bg-input-bg focus:bg-input-bg-focus' : ''} ${className}`}
+          style={{
             fontFamily: 'inherit',
             fontSize: '14px',
             lineHeight: '1.5',
             backgroundColor: 'transparent',
-            caretColor: 'auto'
+            caretColor: 'auto',
+            minHeight: rows === 1 ? '38px' : undefined,
+            maxHeight: rows === 1 ? '120px' : undefined,
+            overflow: rows === 1 ? 'hidden' : 'auto'
           }}
           rows={rows}
           disabled={disabled}
           autoFocus={autoFocus}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
         />
-        
+
         {/* Visual indicator for tracked mentions */}
-        {trackedMentions.length > 0 && (
+        {trackedMentions.length > 0 && rows > 1 && (
           <div className="absolute bottom-2 right-2 text-xs text-gray-400">
             {trackedMentions.length} mention{trackedMentions.length !== 1 ? 's' : ''}
           </div>

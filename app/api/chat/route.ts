@@ -4,14 +4,7 @@ import { RetrievalAgent } from './agents/retrieval';
 import { ResponseAgent } from './agents/response';
 import { QueryParser } from './utils/query-parser';
 import { createClient } from '@supabase/supabase-js';
-
-// In-memory chat history store
-const chatHistories = new Map<string, ChatCompletionMessageParam[]>();
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { ChatSession, ChatMessage } from '@/app/models/chat';
 
 interface TrackedMention {
   id: string;
@@ -23,18 +16,85 @@ interface TrackedMention {
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, sessionId, mentions = [] } = await req.json() as {
+    const { message, sessionId, mentions = [], userId } = await req.json() as {
       message: string;
-      sessionId: string;
+      sessionId?: string;
       mentions?: TrackedMention[];
+      userId: string;
     };
 
-    // Initialize session data
-    if (!chatHistories.has(sessionId)) {
-      chatHistories.set(sessionId, []);
+    // Get the authorization header to pass to Supabase
+    const authHeader = req.headers.get('authorization');
+    
+    // Create Supabase client with the user's auth token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            authorization: authHeader || '',
+          },
+        },
+      }
+    );
+
+    // Handle session creation or retrieval
+    let currentSessionId = sessionId;
+    
+    // If sessionId is provided, verify it exists
+    if (currentSessionId) {
+      const { data: existingSession, error: checkError } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .eq('id', currentSessionId)
+        .eq('user_id', userId)
+        .single();
+      
+      if (checkError || !existingSession) {
+        console.log('Session not found, creating new one');
+        currentSessionId = undefined; // Force new session creation
+      }
+    }
+    
+    if (!currentSessionId) {
+      // Create new session
+      console.log('Creating new session for user:', userId);
+      const { data: newSession, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          user_id: userId,
+          title: message.substring(0, 50) + (message.length > 50 ? '...' : '')
+        })
+        .select()
+        .single();
+
+      if (sessionError) {
+        console.error('Session creation error:', sessionError);
+        throw sessionError;
+      }
+      
+      console.log('New session created:', newSession);
+      currentSessionId = newSession.id;
     }
 
-    const chatHistory = chatHistories.get(sessionId)!;
+    // Fetch recent messages from this session for context
+    const { data: recentMessages, error: messagesError } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('session_id', currentSessionId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (messagesError) throw messagesError;
+
+    // Convert to chat history format
+    const chatHistory: ChatCompletionMessageParam[] = (recentMessages || [])
+      .reverse()
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
     // Initialize agents without SSE for now - we'll optimize differently
     const queryParser = new QueryParser();
@@ -73,7 +133,7 @@ export async function POST(req: NextRequest) {
       if (response.needsMoreData && response.dataRequests && attempts < maxAttempts - 1) {
         // Execute additional data requests
         for (const request of response.dataRequests) {
-          await executeDataRequest(request, searchResults);
+          await executeDataRequest(request, searchResults, supabase);
         }
         attempts++;
       } else {
@@ -83,18 +143,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update chat history
-    chatHistory.push(
-      { role: 'user', content: message },
-      { role: 'assistant', content: finalAnswer }
-    );
+    // Store user message in database
+    console.log('Storing user message with session_id:', currentSessionId, 'user_id:', userId);
+    const { error: userMsgError } = await supabase
+      .from('chat_messages')
+      .insert({
+        session_id: currentSessionId,
+        user_id: userId,
+        role: 'user',
+        content: message,
+        metadata: mentions.length > 0 ? { mentions } : undefined
+      });
 
-    // Keep only last 10 messages
-    if (chatHistory.length > 10) {
-      chatHistory.splice(0, chatHistory.length - 10);
+    if (userMsgError) {
+      console.error('User message insert error:', userMsgError);
+      throw userMsgError;
     }
 
-    return NextResponse.json({ answer: finalAnswer, sources });
+    // Store assistant response in database
+    const { error: assistantMsgError } = await supabase
+      .from('chat_messages')
+      .insert({
+        session_id: currentSessionId,
+        user_id: userId,
+        role: 'assistant',
+        content: finalAnswer,
+        metadata: sources.length > 0 ? { sources } : undefined
+      });
+
+    if (assistantMsgError) throw assistantMsgError;
+
+    // Update session updated_at
+    const { error: updateError } = await supabase
+      .from('chat_sessions')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', currentSessionId);
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({ 
+      answer: finalAnswer, 
+      sources,
+      sessionId: currentSessionId 
+    });
 
   } catch (err: any) {
     console.error('Chat error:', err.message);
@@ -102,7 +193,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function executeDataRequest(request: any, results: any) {
+async function executeDataRequest(request: any, results: any, supabase: any) {
   switch (request.type) {
     case 'recent_activity':
       // Fetch recent posts for found profiles

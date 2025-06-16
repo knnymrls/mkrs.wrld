@@ -4,9 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { getEmbedding } from '@/lib/embeddings';
-import MentionInput from '../components/features/MentionInput';
 import { TrackedMention } from '../types/mention';
+import CreatePostModal from '../components/features/CreatePostModal';
+import PostModal from '../components/features/PostModal';
+import PostGrid from '../components/features/PostGrid';
 
 interface Post {
   id: string;
@@ -15,10 +16,16 @@ interface Post {
   author: {
     id: string;
     name: string;
+    avatar_url: string | null;
   };
-  mentions: Array<{ id: string; name: string; type: 'person' | 'project' }>;
+  mentions: Array<{ id: string; name: string; type: 'person' | 'project'; imageUrl?: string | null }>;
+  likes_count: number;
+  comments_count: number;
+  user_has_liked: boolean;
+  image_url?: string | null;
+  image_width?: number | null;
+  image_height?: number | null;
 }
-
 
 export default function Home() {
   const { user, hasProfile, loading } = useAuth();
@@ -26,9 +33,21 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
-  const [postContent, setPostContent] = useState('');
-  const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [quickComments, setQuickComments] = useState<{ [postId: string]: string }>({});
+  const [submittingQuickComment, setSubmittingQuickComment] = useState<{ [postId: string]: boolean }>({});
+
+  // Handle ESC key press
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCreatingPost(false);
+        setSelectedPost(null);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   useEffect(() => {
     if (!loading && user && hasProfile === false) {
@@ -38,7 +57,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [user]); // Re-fetch when user changes
 
   const fetchPosts = async () => {
     const { data, error } = await supabase
@@ -47,7 +66,10 @@ export default function Home() {
         id,
         content,
         created_at,
-        author_id
+        author_id,
+        image_url,
+        image_width,
+        image_height
       `)
       .order('created_at', { ascending: false });
 
@@ -60,7 +82,7 @@ export default function Home() {
           // Fetch author
           const { data: author } = await supabase
             .from('profiles')
-            .select('id, name')
+            .select('id, name, avatar_url')
             .eq('id', post.author_id)
             .single();
 
@@ -70,7 +92,8 @@ export default function Home() {
             .select(`
               profiles:profile_id (
                 id,
-                name
+                name,
+                avatar_url
               )
             `)
             .eq('post_id', post.id);
@@ -81,7 +104,8 @@ export default function Home() {
             .select(`
               projects:project_id (
                 id,
-                title
+                title,
+                image_url
               )
             `)
             .eq('post_id', post.id);
@@ -90,21 +114,52 @@ export default function Home() {
             ...(personMentions || []).map((m: any) => ({
               id: m.profiles.id,
               name: m.profiles.name,
-              type: 'person' as const
+              type: 'person' as const,
+              imageUrl: m.profiles.avatar_url
             })),
             ...(projectMentions || []).map((m: any) => ({
               id: m.projects.id,
               name: m.projects.title,
-              type: 'project' as const
+              type: 'project' as const,
+              imageUrl: m.projects.image_url
             }))
           ];
+
+          // Fetch likes count and check if current user has liked
+          const { count: likesCount } = await supabase
+            .from('post_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', post.id);
+
+          let userHasLiked = false;
+          if (user) {
+            const { data: userLike } = await supabase
+              .from('post_likes')
+              .select('id')
+              .eq('post_id', post.id)
+              .eq('user_id', user.id)
+              .single();
+            userHasLiked = !!userLike;
+          }
+
+          // Fetch comments count
+          const { count: commentsCount } = await supabase
+            .from('post_comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', post.id);
 
           return {
             id: post.id,
             content: post.content,
             created_at: post.created_at,
-            author: author || { id: post.author_id, name: 'Unknown' },
-            mentions
+            author: author || { id: post.author_id, name: 'Unknown', avatar_url: null },
+            mentions,
+            likes_count: likesCount || 0,
+            comments_count: commentsCount || 0,
+            user_has_liked: userHasLiked,
+            image_url: post.image_url,
+            image_width: post.image_width,
+            image_height: post.image_height
           };
         })
       );
@@ -114,215 +169,186 @@ export default function Home() {
     setLoadingPosts(false);
   };
 
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+  };
 
-  const createPost = async () => {
-    console.log('createPost called', { postContent, user, hasContent: !!postContent.trim() });
-    if (!postContent.trim() || !user) {
-      console.log('Early return - no content or user');
+  const handlePostUpdate = (updatedPost: Post) => {
+    setPosts(posts.map(post =>
+      post.id === updatedPost.id ? updatedPost : post
+    ));
+    setSelectedPost(updatedPost);
+  };
+
+  const handlePostDelete = async () => {
+    if (!selectedPost) return;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', selectedPost.id);
+      
+      if (error) throw error;
+
+      // Refresh posts and close modal
+      setSelectedPost(null);
+      await fetchPosts();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
+  const toggleLike = async (postId: string, isLiked: boolean) => {
+    if (!user) {
+      alert('Please sign in to like posts');
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      // Generate embedding
-      const embedding = await getEmbedding(postContent);
+      if (isLiked) {
+        // Unlike
+        await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+      } else {
+        // Like
+        await supabase
+          .from('post_likes')
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+      }
 
-      // Create post
-      const { data: post, error } = await supabase
-        .from('posts')
+      // Update local state
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            user_has_liked: !isLiked,
+            likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1
+          };
+        }
+        return post;
+      }));
+
+      // Update selected post if it's the same post
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({
+          ...selectedPost,
+          user_has_liked: !isLiked,
+          likes_count: isLiked ? selectedPost.likes_count - 1 : selectedPost.likes_count + 1
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const createQuickComment = async (postId: string) => {
+    const commentText = quickComments[postId]?.trim();
+    if (!commentText || !user) return;
+
+    setSubmittingQuickComment({ ...submittingQuickComment, [postId]: true });
+    try {
+      const { data, error } = await supabase
+        .from('post_comments')
         .insert({
-          content: postContent,
+          post_id: postId,
           author_id: user.id,
-          embedding
+          content: commentText
         })
-        .select()
+        .select(`
+          id,
+          content,
+          created_at,
+          author_id,
+          post_id
+        `)
         .single();
 
       if (error) throw error;
 
-      // Deduplicate mentions - only save unique mentions
-      const uniquePersonMentions = Array.from(
-        new Map(
-          trackedMentions
-            .filter(m => m.type === 'person')
-            .map(m => [m.id, m])
-        ).values()
-      );
+      // Clear the input
+      setQuickComments({ ...quickComments, [postId]: '' });
 
-      const uniqueProjectMentions = Array.from(
-        new Map(
-          trackedMentions
-            .filter(m => m.type === 'project')
-            .map(m => [m.id, m])
-        ).values()
-      );
+      // Update comment count in posts
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments_count: post.comments_count + 1
+          };
+        }
+        return post;
+      }));
 
-      // Add unique person mentions
-      if (uniquePersonMentions.length > 0) {
-        await supabase
-          .from('post_mentions')
-          .insert(
-            uniquePersonMentions.map(m => ({
-              post_id: post.id,
-              profile_id: m.id
-            }))
-          );
+      // If this post is currently selected, update it too
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({
+          ...selectedPost,
+          comments_count: selectedPost.comments_count + 1
+        });
       }
-
-      // Add unique project mentions
-      if (uniqueProjectMentions.length > 0) {
-        await supabase
-          .from('post_projects')
-          .insert(
-            uniqueProjectMentions.map(m => ({
-              post_id: post.id,
-              project_id: m.id
-            }))
-          );
-      }
-
-      // Reset form
-      setPostContent('');
-      setTrackedMentions([]);
-      setIsCreatingPost(false);
-      
-      // Refresh posts
-      await fetchPosts();
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert(`Failed to create post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error creating quick comment:', error);
+      alert('Failed to post comment');
     } finally {
-      setIsSubmitting(false);
+      setSubmittingQuickComment({ ...submittingQuickComment, [postId]: false });
     }
-  };
-
-  const renderPostContent = (post: Post) => {
-    let content = post.content;
-    const elements: React.ReactElement[] = [];
-    let lastIndex = 0;
-
-    // Sort mentions by their position in the content (without @ symbol)
-    const mentionPositions = post.mentions.map(mention => {
-      const index = content.indexOf(mention.name);
-      return { mention, index };
-    }).filter(m => m.index !== -1).sort((a, b) => a.index - b.index);
-
-    mentionPositions.forEach(({ mention, index }) => {
-      // Add text before mention
-      if (index > lastIndex) {
-        elements.push(
-          <span key={`text-${lastIndex}`}>{content.substring(lastIndex, index)}</span>
-        );
-      }
-
-      // Add mention as link (without @ symbol)
-      elements.push(
-        <a
-          key={`mention-${mention.id}`}
-          href={mention.type === 'person' ? `/profile/${mention.id}` : `/projects/${mention.id}`}
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-          onClick={(e) => {
-            e.preventDefault();
-            router.push(mention.type === 'person' ? `/profile/${mention.id}` : `/projects/${mention.id}`);
-          }}
-        >
-          {mention.name}
-        </a>
-      );
-
-      lastIndex = index + mention.name.length;
-    });
-
-    // Add remaining text
-    if (lastIndex < content.length) {
-      elements.push(
-        <span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>
-      );
-    }
-
-    return elements.length > 0 ? elements : content;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto space-y-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Feed</h2>
+    <div className="min-h-screen bg-background py-4 px-6">
+      <div>
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl font-semibold text-text-primary">Activity Feed</h1>
 
-        {/* New Post Creation */}
-        {!isCreatingPost ? (
+          {/* New Post Button */}
           <button
             onClick={() => setIsCreatingPost(true)}
-            className="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
+            className="px-5 py-2.5 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors flex items-center gap-2 text-sm font-medium"
           >
-            <span className="text-gray-500 dark:text-gray-400">What's on your mind? Click to share...</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create</span>
           </button>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 relative">
-            <MentionInput
-              value={postContent}
-              onChange={setPostContent}
-              onMentionsChange={setTrackedMentions}
-              placeholder="Share your thoughts... Use @ to mention people or projects"
-              userId={user?.id}
-              autoFocus
-            />
+        </div>
 
-
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => {
-                  setIsCreatingPost(false);
-                  setPostContent('');
-                  setTrackedMentions([]);
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  console.log('Post button clicked');
-                  createPost();
-                }}
-                disabled={!postContent.trim() || isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSubmitting ? 'Posting...' : 'Post'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Posts List */}
-        {loadingPosts ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading posts...</p>
-        ) : posts.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">No posts yet. Be the first to share!</p>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <div
-                key={post.id}
-                className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {post.author.name}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(post.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {renderPostContent(post)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Posts Grid */}
+        <PostGrid
+          posts={posts}
+          loading={loadingPosts}
+          onPostClick={handlePostClick}
+          onLikeToggle={toggleLike}
+          onCommentSubmit={createQuickComment}
+          quickComments={quickComments}
+          setQuickComments={setQuickComments}
+          submittingQuickComment={submittingQuickComment}
+        />
       </div>
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={isCreatingPost}
+        onClose={() => setIsCreatingPost(false)}
+        onPostCreated={fetchPosts}
+      />
+
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <PostModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+          onUpdate={handlePostUpdate}
+          onDelete={handlePostDelete}
+        />
+      )}
     </div>
   );
 }

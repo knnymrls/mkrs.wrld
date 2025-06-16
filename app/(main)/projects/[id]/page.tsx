@@ -236,6 +236,46 @@ export default function ProjectPage() {
         }
     };
 
+    const handleDeleteProject = async () => {
+        if (!project) return;
+        
+        if (!confirm(`Are you sure you want to delete "${project.title}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            // Delete all contributions first (due to foreign key constraints)
+            const { error: contributionsError } = await supabase
+                .from('contributions')
+                .delete()
+                .eq('project_id', projectId);
+
+            if (contributionsError) throw contributionsError;
+
+            // Delete all post_projects links
+            const { error: postLinksError } = await supabase
+                .from('post_projects')
+                .delete()
+                .eq('project_id', projectId);
+
+            if (postLinksError) throw postLinksError;
+
+            // Finally delete the project
+            const { error: projectError } = await supabase
+                .from('projects')
+                .delete()
+                .eq('id', projectId);
+
+            if (projectError) throw projectError;
+
+            // Redirect to projects list
+            router.push('/projects');
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            alert('Failed to delete project. Please try again.');
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active':
@@ -331,12 +371,20 @@ export default function ProjectPage() {
                                         {project.status}
                                     </span>
                                     {isCreator && (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                                        >
-                                            Edit
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={handleDeleteProject}
+                                                className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30"
+                                            >
+                                                Delete
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </div>
