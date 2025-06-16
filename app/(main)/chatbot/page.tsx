@@ -10,7 +10,7 @@ import SourceCard from '../../components/ui/SourceCard';
 import styles from './loading.module.css';
 
 export default function ChatbotPage() {
-    const { user, session } = useAuth();
+    const { user } = useAuth();
     const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string; mentions?: TrackedMention[]; id?: number; isStatus?: boolean; sources?: any[] }[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -86,7 +86,7 @@ export default function ChatbotPage() {
     };
 
     const sendMessage = async () => {
-        if (!input.trim() || !sessionId || !user) return;
+        if (!input.trim() || !sessionId) return;
 
         setMessages((msgs) => [...msgs, { role: 'user', text: input, mentions: trackedMentions }]);
         setLoading(true);
@@ -145,15 +145,11 @@ export default function ChatbotPage() {
         try {
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` })
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: currentInput,
                     sessionId,
-                    mentions: currentMentions,
-                    userId: user.id
+                    mentions: currentMentions
                 }),
             });
 

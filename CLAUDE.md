@@ -241,17 +241,29 @@ app/
 - **Pronoun Resolution**: Understand "she", "he", "they" from previous messages
 - **Query Refinement**: Learn from user's clarifications
 
-### 2. Advanced Analytics Queries
+### 2. Streamlined Onboarding & Discovery
+- **Quick Profile Import**: Import profile data from LinkedIn/GitHub
+- **Interactive Tour**: Guided walkthrough of platform features
+- **Starter Prompts**: Pre-written queries to help new users discover value quickly
+- **Profile Templates**: Role-based templates (engineer, designer, PM) for faster setup
+- **AI-Assisted Bio Writing**: Generate professional bio from minimal input
+
+### 3. Smart Notifications System
+- **Mention Alerts**: Real-time notifications when someone mentions you or your projects
+- **Expertise Matching**: "Someone just asked about [your skill]" notifications
+- **Activity Digests**: Weekly summary of relevant activity in your network
+- **Configurable Preferences**: Control notification frequency and types
+
+### 4. Advanced Analytics Queries
 - **Aggregation Support**: "How many people know React?"
 - **Trend Analysis**: "What skills are growing in popularity?"
 - **Comparison Queries**: "Compare frontend vs backend expertise"
 - **Distribution Queries**: "Show skill distribution by department"
 
-### 3. Real-time Collaboration Features
+### 5. Real-time Collaboration Features
 - **Live Activity Streams**: See what's happening in real-time
 - **Collaborative Search**: Share search results with team members
 - **Expert Recommendations**: AI suggests who to connect with based on current work
-- **Smart Notifications**: Get alerted when relevant expertise becomes available
 
 ## Key Use Cases
 

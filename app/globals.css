@@ -1,26 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
+  
+  /* Custom colors for the app */
+  --primary: #8CB332; /* red-500 */
+  --primary-hover: #76972a; /* red-600 */
+  --card-bg: #ffffff;
+  --card-hover-shadow: rgba(0, 0, 0, 0.1);
+  --input-bg: #f9fafb; /* gray-50 */
+  --input-bg-focus: #f3f4f6; /* gray-100 */
+  --text-primary: #1f2937; /* gray-800 */
+  --text-secondary: #4b5563; /* gray-600 */
+  --text-muted: #9ca3af; /* gray-500 */
+  --text-light: #d1d5db; /* gray-400 */
+  --border-light: #f3f4f6; /* gray-100 */
+  --avatar-bg: #f3f4f6; /* gray-100 */
+  --button-bg: #f3f4f6; /* gray-100 */
+  --button-bg-hover: #e5e7eb; /* gray-200 */
+  --border: #dbdbdb; /* gray-200 */
+  --text-primary: #464646; /* gray-800 */
+  --text-secondary: #999999; /* gray-600 */
+
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-card-bg: var(--card-bg);
+  --color-input-bg: var(--input-bg);
+  --color-input-bg-focus: var(--input-bg-focus);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-light: var(--text-light);
+  --color-border-light: var(--border-light);
+  --color-border: var(--border);
+  --color-avatar-bg: var(--avatar-bg);
+  --color-button-bg: var(--button-bg);
+  --color-button-bg-hover: var(--button-bg-hover);
+  --color-text-secondary: var(--text-secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Dark mode disabled for consistent light theme */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
 }

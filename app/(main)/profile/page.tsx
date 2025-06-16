@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getEmbedding } from '@/lib/embeddings';
+import { uploadAvatar } from '@/lib/storage';
+import ImageUploadWithCrop from '../../components/ui/ImageUploadWithCrop';
 import { Education } from '../../models/Education';
 import { Experience } from '../../models/Experience';
 import { Link } from '../../models/Link';
@@ -19,6 +21,7 @@ export default function Profile() {
         embedding: number[];
         location: string;
         title: string;
+        avatar_url: string | null;
     } | null>(null);
     const [educations, setEducations] = useState<Education[]>([]);
     const [experiences, setExperiences] = useState<Experience[]>([]);
@@ -32,6 +35,7 @@ export default function Profile() {
         location: '',
         title: '',
     });
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -46,7 +50,7 @@ export default function Profile() {
             // Fetch profile
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('name, bio, location, title, embedding')
+                .select('name, bio, location, title, embedding, avatar_url')
                 .eq('id', user.id)
                 .single();
 
@@ -126,6 +130,16 @@ export default function Profile() {
         e.preventDefault();
         if (!user) return;
 
+        let avatarUrl = profile?.avatar_url || null;
+        
+        // Upload new avatar if selected
+        if (avatarFile) {
+            const uploadedUrl = await uploadAvatar(user.id, avatarFile);
+            if (uploadedUrl) {
+                avatarUrl = uploadedUrl;
+            }
+        }
+
         // Build comprehensive embedding input including education and experience
         const educationText = educations.map(edu => `${edu.degree} from ${edu.school}`).join('. ');
         const experienceText = experiences.map(exp => `${exp.role} at ${exp.company}`).join('. ');
@@ -140,6 +154,7 @@ export default function Profile() {
                 bio: formData.bio,
                 location: formData.location,
                 title: formData.title,
+                avatar_url: avatarUrl,
                 embedding,
             })
             .eq('id', user.id);
@@ -183,9 +198,11 @@ export default function Profile() {
                 bio: formData.bio,
                 location: formData.location,
                 title: formData.title,
+                avatar_url: avatarUrl,
                 embedding,
             });
             setIsEditing(false);
+            setAvatarFile(null);
         }
     };
 
@@ -213,6 +230,15 @@ export default function Profile() {
 
                     {isEditing ? (
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="flex justify-center">
+                                <ImageUploadWithCrop
+                                    currentImageUrl={profile?.avatar_url}
+                                    onImageSelected={setAvatarFile}
+                                    onImageRemoved={() => setAvatarFile(null)}
+                                    label="Upload Avatar"
+                                    shape="circle"
+                                />
+                            </div>
                             <div>
                                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Username
@@ -284,6 +310,15 @@ export default function Profile() {
                         </form>
                     ) : (
                         <div className="space-y-6">
+                            {profile?.avatar_url && (
+                                <div className="flex justify-center mb-6">
+                                    <img 
+                                        src={profile.avatar_url} 
+                                        alt={profile.name}
+                                        className="w-32 h-32 rounded-full object-cover"
+                                    />
+                                </div>
+                            )}
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h3>
                                 <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.name || 'Not set'}</p>
