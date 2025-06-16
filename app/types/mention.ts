@@ -3,7 +3,6 @@ export interface MentionSuggestion {
   name: string;
   type: 'person' | 'project';
   subtitle?: string;
-  imageUrl?: string | null;
 }
 
 export interface TrackedMention {
@@ -12,7 +11,6 @@ export interface TrackedMention {
   type: 'person' | 'project';
   start: number;
   end: number;
-  imageUrl?: string | null;
 }
 
 export interface DropdownPosition {

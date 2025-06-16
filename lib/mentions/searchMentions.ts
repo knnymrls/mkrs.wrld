@@ -7,7 +7,7 @@ export async function searchMentions(search: string): Promise<MentionSuggestion[
   // Search profiles
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, name, title, avatar_url')
+    .select('id, name, title')
     .or(`name.ilike.%${search}%,email.ilike.%${search}%`)
     .limit(5);
 
@@ -16,15 +16,14 @@ export async function searchMentions(search: string): Promise<MentionSuggestion[
       id: p.id,
       name: p.name || 'Unknown',
       type: 'person' as const,
-      subtitle: p.title,
-      imageUrl: p.avatar_url
+      subtitle: p.title
     })));
   }
 
   // Search projects
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, title, status, image_url')
+    .select('id, title, status')
     .ilike('title', `%${search}%`)
     .limit(5);
 
@@ -33,8 +32,7 @@ export async function searchMentions(search: string): Promise<MentionSuggestion[
       id: p.id,
       name: p.title,
       type: 'project' as const,
-      subtitle: p.status,
-      imageUrl: p.image_url
+      subtitle: p.status
     })));
   }
 

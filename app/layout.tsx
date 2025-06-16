@@ -1,5 +1,8 @@
 import './globals.css';
+import { Inter } from 'next/font/google';
 import { AuthProvider } from './context/AuthContext';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Nural App',
@@ -13,12 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet" />
-      </head>
-      <body>
+      <body className={inter.className}>
         <AuthProvider>
           {children}
         </AuthProvider>
