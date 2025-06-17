@@ -21,6 +21,7 @@ interface ChatInputProps {
   disabled?: boolean;
   userId?: string;
   loading?: boolean;
+  allowProjectCreation?: boolean;
 }
 
 export default function ChatInput({
@@ -31,7 +32,8 @@ export default function ChatInput({
   placeholder = "Ask a question... Use @ to mention specific people or projects",
   disabled = false,
   userId,
-  loading = false
+  loading = false,
+  allowProjectCreation = true
 }: ChatInputProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -151,7 +153,7 @@ export default function ChatInput({
         setSelectedSuggestionIndex(0);
 
         // Fetch suggestions
-        const suggestions = await searchMentions(textAfterAt);
+        const suggestions = await searchMentions(textAfterAt, allowProjectCreation);
         setMentionSuggestions(suggestions);
 
         // Show dropdown AFTER position is set
@@ -179,7 +181,18 @@ export default function ChatInput({
     let mentionToAdd = mention;
 
     // Handle creating new project
-    if (mention.id === 'create-new' && userId) {
+    if (mention.id === 'create-new') {
+      // Check if project creation is allowed
+      if (!allowProjectCreation) {
+        console.warn('Project creation is not allowed in this context');
+        return;
+      }
+      
+      if (!userId) {
+        console.warn('User ID is required to create a project');
+        return;
+      }
+      
       const newProject = await createProjectFromMention(mention.name, userId);
       if (!newProject) return;
 

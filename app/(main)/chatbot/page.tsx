@@ -67,6 +67,7 @@ export default function ChatbotPage() {
                         onSubmit={handleSubmit}
                         placeholder="Ask a question... Use @ to mention specific people or projects"
                         userId={user?.id}
+                        allowProjectCreation={false}
                     />
                     <div className="mt-8">
                         <ChatHistory />

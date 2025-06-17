@@ -387,6 +387,7 @@ export default function ChatSessionPage() {
                         userId={user?.id}
                         disabled={loading}
                         loading={loading}
+                        allowProjectCreation={false}
                     />
                 </div>
             </div>

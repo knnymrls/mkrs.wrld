@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { MentionSuggestion } from '@/app/types/mention';
 
-export async function searchMentions(search: string): Promise<MentionSuggestion[]> {
+export async function searchMentions(search: string, showCreateOption: boolean = true): Promise<MentionSuggestion[]> {
   const suggestions: MentionSuggestion[] = [];
 
   // Search profiles
@@ -39,7 +39,7 @@ export async function searchMentions(search: string): Promise<MentionSuggestion[
   }
 
   // Add "Create new project" option if search has value and no exact match
-  if (search.trim() && !suggestions.find(s => s.name.toLowerCase() === search.toLowerCase() && s.type === 'project')) {
+  if (showCreateOption && search.trim() && !suggestions.find(s => s.name.toLowerCase() === search.toLowerCase() && s.type === 'project')) {
     suggestions.push({
       id: 'create-new',
       name: search,
