@@ -358,8 +358,8 @@ export default function MentionInput({
           className={`w-full ${rows === 1 ? 'p-2' : 'p-2'} border ${rows === 1 ? 'border-transparent' : 'border-gray-300 dark:border-gray-700'} rounded-md resize-none focus:outline-none ${rows === 1 ? 'focus:ring-1 focus:ring-text-primary' : 'focus:ring-2 focus:ring-blue-500'} relative ${rows === 1 ? 'bg-input-bg focus:bg-input-bg-focus' : ''} ${className}`}
           style={{
             fontFamily: 'inherit',
-            fontSize: '14px',
-            lineHeight: '1.5',
+            fontSize: '16px',
+            lineHeight: '1',
             backgroundColor: 'transparent',
             caretColor: 'auto',
             minHeight: rows === 1 ? '38px' : undefined,
@@ -390,6 +390,7 @@ export default function MentionInput({
           position={dropdownPosition}
           onSelect={selectMention}
           onHover={setSelectedSuggestionIndex}
+          usePortal={true}
         />
       )}
     </div>

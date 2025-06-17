@@ -12,7 +12,7 @@ export function updateMentionPositions(
     // Check if the mention text still exists at the expected position
     const mentionText = mention.name; // No @ symbol
     const textAtPosition = newContent.substring(mention.start, mention.end);
-    
+
     if (textAtPosition !== mentionText) {
       // Mention was modified or deleted
       return false;
@@ -53,33 +53,56 @@ export function calculateDropdownPosition(
   atPosition: number,
   content: string
 ): { top: number; left: number } {
-  // Get caret coordinates using more accurate method
+  // Get the exact pixel position of the @ symbol
   const caretPos = getCaretCoordinates(textarea, atPosition);
   const rect = textarea.getBoundingClientRect();
-  
+
   // Constants
-  const offset = -4; // Perfect offset - slightly overlapping
-  const dropdownWidth = 220;
-  const dropdownHeight = 200;
-  
-  // Calculate absolute position
-  let top = rect.top + caretPos.top + caretPos.height + offset;
-  let left = rect.left + caretPos.left;
-  
-  // Check viewport boundaries
-  if (top + dropdownHeight > window.innerHeight - 20) {
-    // Position above cursor instead
-    top = rect.top + caretPos.top - dropdownHeight - offset;
+  const offset = 8;
+  const dropdownWidth = 320;
+  const dropdownHeight = 320;
+
+  // Calculate the exact position of the @ symbol in viewport coordinates
+  const cursorX = rect.left + caretPos.left;
+  const cursorY = rect.top + caretPos.top;
+
+  // Position dropdown below the cursor by default
+  let top = cursorY + 24;
+  let left = cursorX + offset;
+
+  // Get viewport dimensions
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // If positioning below would go off-screen, position above the cursor
+  if (top + dropdownHeight > viewportHeight - 20) {
+    top = cursorY - 200; // Just above the cursor, not by full dropdown height
   }
-  
-  if (left + dropdownWidth > window.innerWidth - 20) {
-    // Align to left of cursor position instead
-    left = Math.max(20, left - dropdownWidth + 50); // 50px to keep some alignment with cursor
+
+  // If positioning to the right would go off-screen, position to the left
+  if (left + dropdownWidth > viewportWidth - 20) {
+    left = cursorX - dropdownWidth - offset;
   }
-  
+
   // Ensure minimum distances from edges
   left = Math.max(20, left);
   top = Math.max(20, top);
-  
+
+  // Removed final safety check to allow flexible positioning
+
+  if (left < 20) {
+    left = 20;
+  }
+
+  // Debug logging
+  console.log('Positioning debug:', {
+    textareaRect: rect,
+    caretPos: caretPos,
+    cursorViewportPosition: { x: cursorX, y: cursorY },
+    calculatedPosition: { top, left },
+    atPosition: atPosition,
+    viewportDimensions: { width: viewportWidth, height: viewportHeight }
+  });
+
   return { top, left };
 }

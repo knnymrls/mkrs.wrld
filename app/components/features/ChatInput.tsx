@@ -419,6 +419,7 @@ export default function ChatInput({
           position={dropdownPosition}
           onSelect={selectMention}
           onHover={setSelectedSuggestionIndex}
+          usePortal={true}
         />
       )}
     </div>
