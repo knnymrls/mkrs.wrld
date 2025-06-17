@@ -18,13 +18,14 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
     return (
       <div
         ref={ref}
-        className="fixed bg-card-bg border border-border rounded-lg shadow-xl z-[100] overflow-hidden transition-none"
+        className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[9999] overflow-hidden transition-none"
         style={{
           top: `${position.top}px`,
           left: `${position.left}px`,
           maxHeight: '240px',
           minWidth: '280px',
-          opacity: position.top < 0 ? 0 : 1
+          opacity: position.top < 0 ? 0 : 1,
+          visibility: position.top < 0 ? 'hidden' : 'visible'
         }}
       >
         <div className="overflow-y-auto max-h-[164px]">

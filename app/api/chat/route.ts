@@ -56,62 +56,20 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    // Handle session creation or retrieval
+    // Use provided sessionId or generate a new one
     let currentSessionId = sessionId;
     
-    // If sessionId is provided, verify it exists
-    if (currentSessionId) {
-      const { data: existingSession, error: checkError } = await supabase
-        .from('chat_sessions')
-        .select('id')
-        .eq('id', currentSessionId)
-        .eq('user_id', userId)
-        .single();
-      
-      if (checkError || !existingSession) {
-        console.log('Session not found, creating new one');
-        currentSessionId = undefined; // Force new session creation
-      }
-    }
-    
+    // For now, we'll use the provided sessionId without database validation
+    // This allows the frontend to manage sessions via localStorage
     if (!currentSessionId) {
-      // Create new session
-      console.log('Creating new session for user:', userId);
-      const { data: newSession, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .insert({
-          user_id: userId,
-          title: message.substring(0, 50) + (message.length > 50 ? '...' : '')
-        })
-        .select()
-        .single();
-
-      if (sessionError) {
-        console.error('Session creation error:', sessionError);
-        throw sessionError;
-      }
-      
-      console.log('New session created:', newSession);
-      currentSessionId = newSession.id;
+      // Only create a new session if none was provided
+      const { v4: uuidv4 } = require('uuid');
+      currentSessionId = uuidv4();
+      console.log('No session ID provided, generated new one:', currentSessionId);
     }
 
-    // Fetch recent messages from this session for context
-    const { data: recentMessages, error: messagesError } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('session_id', currentSessionId)
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (messagesError) throw messagesError;
-
-    // Convert to chat history format
-    const chatHistory: ChatCompletionMessageParam[] = (recentMessages || [])
-      .reverse()
-      .map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+    // Skip fetching chat history from database
+    const chatHistory: ChatCompletionMessageParam[] = [];
 
     // Initialize agents without SSE for now - we'll optimize differently
     const queryParser = new QueryParser();
@@ -164,7 +122,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Store user message in database
+    // Skip storing messages in database since we're using localStorage
+    // TODO: Re-enable when proper session management is implemented
+    /*
     console.log('Storing user message with session_id:', currentSessionId, 'user_id:', userId);
     const { error: userMsgError } = await supabase
       .from('chat_messages')
@@ -180,8 +140,10 @@ export async function POST(req: NextRequest) {
       console.error('User message insert error:', userMsgError);
       throw userMsgError;
     }
+    */
 
-    // Store assistant response in database
+    // Skip storing assistant response in database
+    /*
     const { error: assistantMsgError } = await supabase
       .from('chat_messages')
       .insert({
@@ -193,6 +155,7 @@ export async function POST(req: NextRequest) {
       });
 
     if (assistantMsgError) throw assistantMsgError;
+    */
 
     // Update session updated_at
     const { error: updateError } = await supabase
