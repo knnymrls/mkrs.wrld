@@ -358,7 +358,7 @@ export default function ChatInput({
               fontFamily: 'inherit',
               lineHeight: '1.5',
               minHeight: '56px',
-              maxHeight: '200px',
+              maxHeight: '84px', // 3 rows max
             }}
             rows={2}
             disabled={disabled || loading}
