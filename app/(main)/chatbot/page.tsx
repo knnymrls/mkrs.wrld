@@ -10,7 +10,7 @@ import SourceCard from '../../components/ui/SourceCard';
 import styles from './loading.module.css';
 
 export default function ChatbotPage() {
-    const { user } = useAuth();
+    const { user, session } = useAuth();
     const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string; mentions?: TrackedMention[]; id?: number; isStatus?: boolean; sources?: any[] }[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -143,13 +143,21 @@ export default function ChatbotPage() {
         }, 2000); // Change message every 2 seconds
 
         try {
+            if (!user?.id) {
+                throw new Error('User not authenticated');
+            }
+
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({
                     message: currentInput,
                     sessionId,
-                    mentions: currentMentions
+                    mentions: currentMentions,
+                    userId: user.id
                 }),
             });
 
@@ -158,6 +166,11 @@ export default function ChatbotPage() {
             // Clear intervals
             clearInterval(dotInterval);
             clearInterval(messageInterval);
+            
+            // Check if response is an error
+            if (!res.ok || data.error) {
+                throw new Error(data.error || `Server error: ${res.status}`);
+            }
             
             // Replace status message with actual response
             setMessages((msgs) => 
@@ -172,10 +185,13 @@ export default function ChatbotPage() {
             clearInterval(dotInterval);
             clearInterval(messageInterval);
             
+            console.error('Chat error:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Could not get response.';
+            
             setMessages((msgs) => 
                 msgs.map(msg => 
                     msg.id === statusMessageId 
-                        ? { ...msg, text: 'Error: Could not get response.', isStatus: false }
+                        ? { ...msg, text: `Error: ${errorMessage}`, isStatus: false }
                         : msg
                 )
             );

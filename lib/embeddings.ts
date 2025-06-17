@@ -1,18 +1,21 @@
 // lib/embedding.ts
-import { OpenAI } from 'openai';
 import { supabase } from './supabase';
 
-const openai = new OpenAI({
-    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true,
-});
-
 export async function getEmbedding(text: string): Promise<number[]> {
-    const response = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: text,
+    const response = await fetch('/api/embeddings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
     });
-    return response.data[0].embedding;
+
+    if (!response.ok) {
+        throw new Error('Failed to generate embedding');
+    }
+
+    const data = await response.json();
+    return data.embedding;
 }
 
 export async function updateProjectEmbedding(projectId: string): Promise<void> {

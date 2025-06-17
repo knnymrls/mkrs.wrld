@@ -6,13 +6,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
 });
 
-const supabase = createClient(
+const defaultSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export class SemanticSearchStrategy implements SearchStrategy {
   name = 'semantic';
+  private supabase = defaultSupabase;
+
+  setSupabaseClient(client: any) {
+    this.supabase = client;
+  }
 
   async execute(query: string, params?: { limit?: number; searchAll?: boolean }): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
@@ -27,7 +32,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
     const limit = params?.limit || 20;
     
     // Search profiles
-    const { data: profiles } = await supabase.rpc('match_profiles', {
+    const { data: profiles } = await this.supabase.rpc('match_profiles', {
       query_embedding: embedding,
       match_threshold: -1, // Due to pgvector issue
       match_count: limit,
@@ -36,17 +41,17 @@ export class SemanticSearchStrategy implements SearchStrategy {
     if (profiles) {
       for (const profile of profiles) {
         // Fetch additional data
-        const { data: skills } = await supabase
+        const { data: skills } = await this.supabase
           .from('skills')
           .select('skill')
           .eq('profile_id', profile.id);
         
-        const { data: experiences } = await supabase
+        const { data: experiences } = await this.supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profile.id);
         
-        const { data: educations } = await supabase
+        const { data: educations } = await this.supabase
           .from('educations')
           .select('*')
           .eq('profile_id', profile.id);
@@ -67,7 +72,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
     }
     
     // Search posts
-    const { data: posts } = await supabase.rpc('match_posts', {
+    const { data: posts } = await this.supabase.rpc('match_posts', {
       query_embedding: embedding,
       match_threshold: -1,
       match_count: limit,
@@ -86,7 +91,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
     }
     
     // Search projects
-    const { data: projects } = await supabase.rpc('match_projects', {
+    const { data: projects } = await this.supabase.rpc('match_projects', {
       query_embedding: embedding,
       match_threshold: -1,
       match_count: limit,
@@ -95,7 +100,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
     if (projects) {
       for (const project of projects) {
         // Fetch contributors
-        const { data: contributions } = await supabase
+        const { data: contributions } = await this.supabase
           .from('contributions')
           .select('person_id, role, description')
           .eq('project_id', project.id);

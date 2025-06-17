@@ -2,7 +2,7 @@ import { SearchStrategy, SearchResult } from '../types';
 import { createClient } from '@supabase/supabase-js';
 import { EntityExpander } from '../utils/entity-expander';
 
-const supabase = createClient(
+const defaultSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
@@ -10,6 +10,11 @@ const supabase = createClient(
 export class KeywordSearchStrategy implements SearchStrategy {
   name = 'keyword';
   private expander = new EntityExpander();
+  private supabase = defaultSupabase;
+
+  setSupabaseClient(client: any) {
+    this.supabase = client;
+  }
 
   async execute(query: string, params?: { keywords?: string[]; expandTerms?: boolean }): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
@@ -39,7 +44,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
       `name.ilike.%${k}%`,
     ]).join(',');
     
-    const { data: profiles } = await supabase
+    const { data: profiles } = await this.supabase
       .from('profiles')
       .select('*')
       .or(profileConditions)
@@ -48,12 +53,12 @@ export class KeywordSearchStrategy implements SearchStrategy {
     if (profiles) {
       for (const profile of profiles) {
         // Fetch related data
-        const { data: skills } = await supabase
+        const { data: skills } = await this.supabase
           .from('skills')
           .select('skill')
           .eq('profile_id', profile.id);
         
-        const { data: experiences } = await supabase
+        const { data: experiences } = await this.supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profile.id);
@@ -87,7 +92,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
       `company.ilike.%${k}%`,
     ]).join(',');
     
-    const { data: experiences } = await supabase
+    const { data: experiences } = await this.supabase
       .from('experiences')
       .select(`
         *,
@@ -101,7 +106,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
         const profile = exp.profiles;
         
         // Fetch skills for the profile
-        const { data: skills } = await supabase
+        const { data: skills } = await this.supabase
           .from('skills')
           .select('skill')
           .eq('profile_id', profile.id);
@@ -128,7 +133,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
     // Search skills
     const skillConditions = keywords.map(k => `skill.ilike.%${k}%`).join(',');
     
-    const { data: skills } = await supabase
+    const { data: skills } = await this.supabase
       .from('skills')
       .select(`
         *,
@@ -155,12 +160,12 @@ export class KeywordSearchStrategy implements SearchStrategy {
       // Convert to results
       for (const [profileId, data] of profileMap) {
         // Fetch all skills and experiences for this profile
-        const { data: allSkills } = await supabase
+        const { data: allSkills } = await this.supabase
           .from('skills')
           .select('skill')
           .eq('profile_id', profileId);
         
-        const { data: experiences } = await supabase
+        const { data: experiences } = await this.supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profileId);
@@ -182,7 +187,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
     // Search posts
     const postConditions = keywords.map(k => `content.ilike.%${k}%`).join(',');
     
-    const { data: posts } = await supabase
+    const { data: posts } = await this.supabase
       .from('posts')
       .select('*')
       .or(postConditions)
@@ -211,7 +216,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
       `description.ilike.%${k}%`,
     ]).join(',');
     
-    const { data: projects } = await supabase
+    const { data: projects } = await this.supabase
       .from('projects')
       .select('*')
       .or(projectConditions)

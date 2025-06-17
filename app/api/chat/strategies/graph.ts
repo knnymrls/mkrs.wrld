@@ -1,13 +1,18 @@
 import { SearchStrategy, SearchResult } from '../types';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
+const defaultSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 export class GraphTraversalStrategy implements SearchStrategy {
   name = 'graph';
+  private supabase = defaultSupabase;
+
+  setSupabaseClient(client: any) {
+    this.supabase = client;
+  }
 
   async execute(
     query: string, 
@@ -43,7 +48,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
     
     if (entity.type === 'profile') {
       // Get all posts by this person
-      const { data: posts } = await supabase
+      const { data: posts } = await this.supabase
         .from('posts')
         .select('*')
         .eq('author_id', entity.id)
@@ -61,7 +66,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           });
           
           // Get mentions from this post
-          const { data: mentions } = await supabase
+          const { data: mentions } = await this.supabase
             .from('post_mentions')
             .select('profile_id')
             .eq('post_id', post.id);
@@ -78,7 +83,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           }
           
           // Get projects linked to this post
-          const { data: projectLinks } = await supabase
+          const { data: projectLinks } = await this.supabase
             .from('post_projects')
             .select('project_id')
             .eq('post_id', post.id);
@@ -97,7 +102,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
       }
       
       // Get projects this person contributes to
-      const { data: contributions } = await supabase
+      const { data: contributions } = await this.supabase
         .from('contributions')
         .select('project_id, role, description')
         .eq('person_id', entity.id);
@@ -115,7 +120,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
       
     } else if (entity.type === 'project') {
       // Get project details
-      const { data: project } = await supabase
+      const { data: project } = await this.supabase
         .from('projects')
         .select('*')
         .eq('id', entity.id)
@@ -132,7 +137,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
       }
       
       // Get all contributors
-      const { data: contributors } = await supabase
+      const { data: contributors } = await this.supabase
         .from('contributions')
         .select(`
           person_id,
@@ -146,7 +151,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         for (const contrib of contributors) {
           // Add the contributor profile
           if (!results.find(r => r.type === 'profile' && r.id === contrib.person_id)) {
-            const { data: skills } = await supabase
+            const { data: skills } = await this.supabase
               .from('skills')
               .select('skill')
               .eq('profile_id', contrib.person_id);
@@ -176,7 +181,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
       }
       
       // Get posts mentioning this project
-      const { data: postMentions } = await supabase
+      const { data: postMentions } = await this.supabase
         .from('post_projects')
         .select(`
           post_id,
@@ -211,7 +216,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
       
     } else if (entity.type === 'post') {
       // Get post details
-      const { data: post } = await supabase
+      const { data: post } = await this.supabase
         .from('posts')
         .select('*')
         .eq('id', entity.id)
@@ -227,7 +232,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         );
         
         // Get mentioned profiles
-        const { data: mentions } = await supabase
+        const { data: mentions } = await this.supabase
           .from('post_mentions')
           .select('profile_id')
           .eq('post_id', entity.id);
@@ -244,7 +249,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         }
         
         // Get mentioned projects
-        const { data: projectMentions } = await supabase
+        const { data: projectMentions } = await this.supabase
           .from('post_projects')
           .select('project_id')
           .eq('post_id', entity.id);

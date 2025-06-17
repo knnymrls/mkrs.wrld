@@ -23,6 +23,23 @@ export async function POST(req: NextRequest) {
       userId: string;
     };
 
+    // Debug logging
+    console.log('=== CHAT API DEBUG ===');
+    console.log('Message:', message);
+    console.log('User ID:', userId);
+    console.log('Session ID:', sessionId);
+    console.log('Auth Header:', req.headers.get('authorization'));
+    console.log('Mentions:', mentions);
+
+    // Validate required parameters
+    if (!message?.trim()) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    }
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
     // Get the authorization header to pass to Supabase
     const authHeader = req.headers.get('authorization');
     
@@ -100,6 +117,9 @@ export async function POST(req: NextRequest) {
     const queryParser = new QueryParser();
     const retrievalAgent = new RetrievalAgent();
     const responseAgent = new ResponseAgent();
+    
+    // Pass the authenticated supabase client to the retrieval agent
+    retrievalAgent.setSupabaseClient(supabase);
 
     // Parse the query
     const parsedQuery = queryParser.parse(message);
@@ -116,6 +136,7 @@ export async function POST(req: NextRequest) {
 
     // Phase 1: Initial retrieval
     let searchResults = await retrievalAgent.retrieveInformation(message);
+    console.log('Search results:', JSON.stringify(searchResults, null, 2));
 
     // Phase 2: Response synthesis with potential feedback loop
     let finalAnswer = '';
@@ -188,8 +209,14 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err: any) {
-    console.error('Chat error:', err.message);
-    return NextResponse.json({ error: 'Server error.' }, { status: 500 });
+    console.error('Chat error:', err.message, err.stack);
+    
+    // Return more specific error messages in development
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Server error: ${err.message}` 
+      : 'Server error.';
+      
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 

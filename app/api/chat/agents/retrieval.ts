@@ -18,9 +18,17 @@ export class RetrievalAgent {
   private graphTraversal = new GraphTraversalStrategy();
   
   private progressCallback?: (update: ProgressUpdate) => void | Promise<void>;
+  private supabaseClient?: any;
 
   constructor(progressCallback?: (update: ProgressUpdate) => void | Promise<void>) {
     this.progressCallback = progressCallback;
+  }
+
+  setSupabaseClient(client: any) {
+    this.supabaseClient = client;
+    this.semanticSearch.setSupabaseClient(client);
+    this.keywordSearch.setSupabaseClient(client);
+    this.graphTraversal.setSupabaseClient(client);
   }
 
   async retrieveInformation(query: string): Promise<SearchResults> {
