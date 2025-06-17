@@ -299,7 +299,7 @@ export default function MentionInput({
           className={`absolute inset-0 ${rows === 1 ? 'p-2' : 'p-3'} pointer-events-none overflow-hidden`}
           style={{
             fontFamily: 'inherit',
-            fontSize: '14px',
+            fontSize: '16px',
             lineHeight: '1.5',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
@@ -327,7 +327,7 @@ export default function MentionInput({
               parts.push(
                 <span
                   key={`mention-${idx}`}
-                  className="text-transparent underline decoration-gray-400 dark:decoration-gray-500 decoration-2 underline-offset-2"
+                  className="text-transparent underline decoration-gray-300 dark:decoration-gray-500 decoration-2 underline-offset-3"
                 >
                   {value.substring(mention.start, mention.end)}
                 </span>
@@ -355,11 +355,11 @@ export default function MentionInput({
           onChange={handleTextChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full ${rows === 1 ? 'p-2' : 'p-2'} border ${rows === 1 ? 'border-transparent' : 'border-gray-300 dark:border-gray-700'} rounded-md resize-none focus:outline-none ${rows === 1 ? 'focus:ring-1 focus:ring-text-primary' : 'focus:ring-2 focus:ring-blue-500'} relative ${rows === 1 ? 'bg-input-bg focus:bg-input-bg-focus' : ''} ${className}`}
+          className={`w-full ${rows === 1 ? 'p-2' : 'p-3'} border ${rows === 1 ? 'border-transparent' : 'border-gray-300 dark:border-gray-700'} rounded-md resize-none focus:outline-none ${rows === 1 ? 'focus:ring-1 focus:ring-text-primary' : 'focus:ring-2 focus:ring-blue-500'} relative ${rows === 1 ? 'bg-input-bg focus:bg-input-bg-focus' : ''} ${className}`}
           style={{
             fontFamily: 'inherit',
             fontSize: '16px',
-            lineHeight: '1',
+            lineHeight: '1.5',
             backgroundColor: 'transparent',
             caretColor: 'auto',
             minHeight: rows === 1 ? '38px' : undefined,
