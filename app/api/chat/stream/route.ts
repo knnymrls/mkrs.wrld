@@ -90,20 +90,82 @@ export async function POST(req: NextRequest) {
             .map(m => m.name);
         }
 
-        // Send status update
+        // Send detailed status update about query analysis
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
           type: 'status', 
-          message: '🔍 Analyzing your query...' 
+          message: `🔍 Analyzing: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"` 
         })}\n\n`));
+
+        // Wait a bit to show the analysis
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Send status about what we're searching for
+        const searchTargets = [];
+        
+        // Group entities by type
+        const peopleEntities = parsedQuery.entities?.filter(e => e.type === 'person').map(e => e.value) || [];
+        const skillEntities = parsedQuery.entities?.filter(e => e.type === 'skill' || e.type === 'technology').map(e => e.value) || [];
+        const projectEntities = parsedQuery.entities?.filter(e => e.type === 'project').map(e => e.value) || [];
+        
+        if (peopleEntities.length > 0) {
+          searchTargets.push(`people (${peopleEntities.join(', ')})`);
+        }
+        if (skillEntities.length > 0) {
+          searchTargets.push(`skills (${skillEntities.join(', ')})`);
+        }
+        if (projectEntities.length > 0) {
+          searchTargets.push(`projects (${projectEntities.join(', ')})`);
+        }
+        if (parsedQuery.mentions?.people?.length > 0) {
+          searchTargets.push(`@${parsedQuery.mentions.people.join(', @')}`);
+        }
+        if (parsedQuery.mentions?.projects?.length > 0) {
+          searchTargets.push(`@${parsedQuery.mentions.projects.join(', @')}`);
+        }
+
+        const searchMessage = searchTargets.length > 0 
+          ? `🎯 Looking for: ${searchTargets.join(', ')}`
+          : '📊 Performing semantic search across all content';
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+          type: 'status', 
+          message: searchMessage
+        })}\n\n`));
+
+        // Wait a bit before actual search
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Phase 1: Initial retrieval
-        let searchResults = await retrievalAgent.retrieveInformation(message);
-
-        // Send another status update
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
           type: 'status', 
-          message: '📊 Searching across profiles, posts, and projects...' 
+          message: '🔄 Searching profiles, posts, and projects...' 
         })}\n\n`));
+
+        let searchResults = await retrievalAgent.retrieveInformation(message);
+
+        // Send status about what we found
+        const foundItems = [];
+        if (searchResults.profiles?.length > 0) {
+          foundItems.push(`${searchResults.profiles.length} profiles`);
+        }
+        if (searchResults.posts?.length > 0) {
+          foundItems.push(`${searchResults.posts.length} posts`);
+        }
+        if (searchResults.projects?.length > 0) {
+          foundItems.push(`${searchResults.projects.length} projects`);
+        }
+
+        const foundMessage = foundItems.length > 0
+          ? `✅ Found: ${foundItems.join(', ')}`
+          : '🔍 No exact matches found, generating helpful response...';
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+          type: 'status', 
+          message: foundMessage
+        })}\n\n`));
+
+        // Brief pause before generating response
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         // Create context from search results
         const contextData = {

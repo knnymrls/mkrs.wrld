@@ -55,7 +55,7 @@ export default function ChatSessionPage() {
                                 mentions: msg.metadata?.mentions || [],
                                 sources: msg.metadata?.sources || []
                             }));
-                            
+
                             console.log('Transformed messages:', dbMessages);
                             if (dbMessages.length > 0) {
                                 setMessages(dbMessages);
@@ -123,7 +123,7 @@ export default function ChatSessionPage() {
                 };
 
                 setMessages([userMessage]);
-                
+
                 // Use a timeout to ensure UI updates
                 setTimeout(() => {
                     console.log('Auto-sending message with text:', pendingMessage.text);
@@ -258,7 +258,7 @@ export default function ChatSessionPage() {
                         if (data.trim()) {
                             try {
                                 const parsed = JSON.parse(data);
-                                
+
                                 if (parsed.error) {
                                     throw new Error(parsed.error);
                                 }
@@ -350,9 +350,9 @@ export default function ChatSessionPage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className={msg.isStatus ? styles.shimmer : ''}>
+                                    <div>
                                         {msg.isStatus ? (
-                                            <p className={`italic ${styles.loadingDots}`}>{msg.text}</p>
+                                            <p className={`italic text-gray-600 dark:text-gray-400 ${styles.loadingDots}`}>{msg.text}</p>
                                         ) : (
                                             <div className="prose dark:prose-invert max-w-none">
                                                 <ReactMarkdown>{msg.text}</ReactMarkdown>
