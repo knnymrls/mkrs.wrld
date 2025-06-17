@@ -25,14 +25,14 @@ export default function ChatHistory() {
     const loadChatSessions = () => {
         try {
             const allSessions: ChatSession[] = [];
-            
+
             // Iterate through all localStorage keys
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('chat-')) {
                     const sessionId = key.replace('chat-', '');
                     const messagesStr = localStorage.getItem(key);
-                    
+
                     if (messagesStr) {
                         try {
                             const messages = JSON.parse(messagesStr);
@@ -40,7 +40,7 @@ export default function ChatHistory() {
                                 const userMessages = messages.filter((m: any) => m.role === 'user');
                                 const firstUserMessage = userMessages[0];
                                 const lastUserMessage = userMessages[userMessages.length - 1];
-                                
+
                                 if (firstUserMessage) {
                                     allSessions.push({
                                         sessionId,
@@ -58,7 +58,7 @@ export default function ChatHistory() {
                     }
                 }
             }
-            
+
             // Sort by most recent first
             allSessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
             setSessions(allSessions);
@@ -103,7 +103,7 @@ export default function ChatHistory() {
     return (
         <div className="mt-8">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Chats</h2>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-2 overflow-y-auto">
                 {sessions.map((session) => (
                     <div
                         key={session.sessionId}

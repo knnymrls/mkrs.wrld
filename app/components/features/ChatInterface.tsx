@@ -51,34 +51,34 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
     useEffect(() => {
         const pendingMessageKey = `pending-message-${sessionId}`;
         const pendingMessageStr = localStorage.getItem(pendingMessageKey);
-        
+
         if (pendingMessageStr && messages.length === 0) {
             try {
                 const pendingMessage = JSON.parse(pendingMessageStr);
                 localStorage.removeItem(pendingMessageKey);
-                
+
                 // Directly add the user message and start the API call
-                const userMessage = { 
-                    role: 'user' as const, 
-                    text: pendingMessage.text, 
-                    mentions: pendingMessage.mentions || [] 
+                const userMessage = {
+                    role: 'user' as const,
+                    text: pendingMessage.text,
+                    mentions: pendingMessage.mentions || []
                 };
-                
+
                 // Add user message
                 setMessages([userMessage]);
-                
+
                 // Start loading
                 setLoading(true);
-                
+
                 // Add status message
                 const statusMessageId = Date.now();
-                setMessages([userMessage, { 
-                    role: 'bot', 
-                    text: '🔍 Analyzing your query...', 
+                setMessages([userMessage, {
+                    role: 'bot',
+                    text: '🔍 Analyzing your query...',
                     id: statusMessageId,
-                    isStatus: true 
+                    isStatus: true
                 }]);
-                
+
                 // Make the API call
                 const sendAutoMessage = async () => {
                     // Animated loading with dots
@@ -90,26 +90,26 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
                         '🎯 Finding the most relevant information'
                     ];
                     let currentMessageIndex = 0;
-                    
+
                     // Function to update loading message
                     const updateLoadingMessage = () => {
                         const dots = '.'.repeat(dotCount);
                         const currentMessage = loadingMessages[currentMessageIndex];
-                        
-                        setMessages((msgs) => 
-                            msgs.map(msg => 
+
+                        setMessages((msgs) =>
+                            msgs.map(msg =>
                                 msg.id === statusMessageId && msg.isStatus
                                     ? { ...msg, text: `${currentMessage}${dots}` }
                                     : msg
                             )
                         );
-                        
+
                         dotCount = (dotCount + 1) % 4;
                     };
-                    
+
                     // Start dot animation
                     const dotInterval = setInterval(updateLoadingMessage, 400);
-                    
+
                     // Progress through different messages
                     const messageInterval = setInterval(() => {
                         if (currentMessageIndex < loadingMessages.length - 1) {
@@ -125,7 +125,7 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
 
                         const res = await fetch('/api/chat', {
                             method: 'POST',
-                            headers: { 
+                            headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${session?.access_token || ''}`
                             },
@@ -138,20 +138,20 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
                         });
 
                         const data = await res.json();
-                        
+
                         // Clear intervals
                         clearInterval(dotInterval);
                         clearInterval(messageInterval);
-                        
+
                         // Check if response is an error
                         if (!res.ok || data.error) {
                             throw new Error(data.error || `Server error: ${res.status}`);
                         }
-                        
+
                         // Replace status message with actual response
-                        setMessages((msgs) => 
-                            msgs.map(msg => 
-                                msg.id === statusMessageId 
+                        setMessages((msgs) =>
+                            msgs.map(msg =>
+                                msg.id === statusMessageId
                                     ? { ...msg, text: data.answer, isStatus: false, sources: data.sources }
                                     : msg
                             )
@@ -160,13 +160,13 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
                         // Clear intervals on error too
                         clearInterval(dotInterval);
                         clearInterval(messageInterval);
-                        
+
                         console.error('Chat error:', err);
                         const errorMessage = err instanceof Error ? err.message : 'Could not get response.';
-                        
-                        setMessages((msgs) => 
-                            msgs.map(msg => 
-                                msg.id === statusMessageId 
+
+                        setMessages((msgs) =>
+                            msgs.map(msg =>
+                                msg.id === statusMessageId
                                     ? { ...msg, text: `Error: ${errorMessage}`, isStatus: false }
                                     : msg
                             )
@@ -175,7 +175,7 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
                         setLoading(false);
                     }
                 };
-                
+
                 sendAutoMessage();
             } catch (error) {
                 console.error('Error processing pending message:', error);
@@ -250,7 +250,7 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
                 mentions: trackedMentions
             };
             localStorage.setItem(`pending-message-${sessionId}`, JSON.stringify(pendingMessage));
-            
+
             // Clear input and redirect
             setInput('');
             setTrackedMentions([]);
@@ -268,11 +268,11 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
 
         // Add a status message that we'll update
         const statusMessageId = Date.now();
-        setMessages((msgs) => [...msgs, { 
-            role: 'bot', 
-            text: '🔍 Analyzing your query...', 
+        setMessages((msgs) => [...msgs, {
+            role: 'bot',
+            text: '🔍 Analyzing your query...',
             id: statusMessageId,
-            isStatus: true 
+            isStatus: true
         }]);
 
         // Animated loading with dots
@@ -285,26 +285,26 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
         ];
         let currentMessageIndex = 0;
         let dotInterval: NodeJS.Timeout;
-        
+
         // Function to update loading message
         const updateLoadingMessage = () => {
             const dots = '.'.repeat(dotCount);
             const currentMessage = loadingMessages[currentMessageIndex];
-            
-            setMessages((msgs) => 
-                msgs.map(msg => 
+
+            setMessages((msgs) =>
+                msgs.map(msg =>
                     msg.id === statusMessageId && msg.isStatus
                         ? { ...msg, text: `${currentMessage}${dots}` }
                         : msg
                 )
             );
-            
+
             dotCount = (dotCount + 1) % 4; // Cycle through 0, 1, 2, 3 dots
         };
-        
+
         // Start dot animation
         dotInterval = setInterval(updateLoadingMessage, 400);
-        
+
         // Progress through different messages
         const messageInterval = setInterval(() => {
             if (currentMessageIndex < loadingMessages.length - 1) {
@@ -320,7 +320,7 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
 
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session?.access_token || ''}`
                 },
@@ -333,20 +333,20 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
             });
 
             const data = await res.json();
-            
+
             // Clear intervals
             clearInterval(dotInterval);
             clearInterval(messageInterval);
-            
+
             // Check if response is an error
             if (!res.ok || data.error) {
                 throw new Error(data.error || `Server error: ${res.status}`);
             }
-            
+
             // Replace status message with actual response
-            setMessages((msgs) => 
-                msgs.map(msg => 
-                    msg.id === statusMessageId 
+            setMessages((msgs) =>
+                msgs.map(msg =>
+                    msg.id === statusMessageId
                         ? { ...msg, text: data.answer, isStatus: false, sources: data.sources }
                         : msg
                 )
@@ -355,13 +355,13 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
             // Clear intervals on error too
             clearInterval(dotInterval);
             clearInterval(messageInterval);
-            
+
             console.error('Chat error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Could not get response.';
-            
-            setMessages((msgs) => 
-                msgs.map(msg => 
-                    msg.id === statusMessageId 
+
+            setMessages((msgs) =>
+                msgs.map(msg =>
+                    msg.id === statusMessageId
                         ? { ...msg, text: `Error: ${errorMessage}`, isStatus: false }
                         : msg
                 )
@@ -377,28 +377,28 @@ export default function ChatInterface({ sessionId, initialMessages = [], onFirst
             {messages.length > 0 && (
                 <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
                     {messages.map((msg, idx) => (
-                    <div
-                        key={msg.id || idx}
-                        className={`p-4 rounded-lg transition-all duration-300 ${msg.role === 'user'
-                            ? 'bg-indigo-100 dark:bg-indigo-900 ml-12'
-                            : msg.isStatus 
-                                ? 'bg-gray-100 dark:bg-gray-700 mr-12 ' + styles.shimmer
-                                : 'bg-gray-100 dark:bg-gray-700 mr-12'
-                            }`}
-                    >
-                        <p className={`text-gray-900 dark:text-white ${msg.isStatus ? 'italic ' + styles.loadingDots : ''}`}>
-                            {msg.role === 'user' && msg.mentions ? renderMessageWithMentions(msg.text, msg.mentions) : msg.text}
-                        </p>
-                        {/* Show sources if available */}
-                        {msg.sources && msg.sources.length > 0 && (
-                            <div className="mt-3 flex gap-2 items-center">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Sources:</span>
-                                {msg.sources.map((source, idx) => (
-                                    <SourceCard key={idx} source={source} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                        <div
+                            key={msg.id || idx}
+                            className={`p-4 rounded-lg transition-all duration-300 ${msg.role === 'user'
+                                ? 'bg-indigo-100 dark:bg-indigo-900 ml-12'
+                                : msg.isStatus
+                                    ? 'bg-gray-100 dark:bg-gray-700 mr-12 ' + styles.shimmer
+                                    : 'bg-gray-100 dark:bg-gray-700 mr-12'
+                                }`}
+                        >
+                            <p className={`text-gray-900 dark:text-white ${msg.isStatus ? 'italic ' + styles.loadingDots : ''}`}>
+                                {msg.role === 'user' && msg.mentions ? renderMessageWithMentions(msg.text, msg.mentions) : msg.text}
+                            </p>
+                            {/* Show sources if available */}
+                            {msg.sources && msg.sources.length > 0 && (
+                                <div className="mt-3 flex gap-2 items-center">
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">Sources:</span>
+                                    {msg.sources.map((source, idx) => (
+                                        <SourceCard key={idx} source={source} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </div>
             )}

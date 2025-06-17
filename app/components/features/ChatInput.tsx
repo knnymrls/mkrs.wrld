@@ -389,7 +389,7 @@ export default function ChatInput({
                 }, 0);
               }
             }}
-            className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg p-2 text-text-primary cursor-pointer hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg p-2 text-text-primary cursor-pointer hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
@@ -400,7 +400,7 @@ export default function ChatInput({
           <button
             onClick={onSubmit}
             disabled={disabled || loading || !value.trim()}
-            className="p-2 rounded-lg bg-primary hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg bg-primary hover:bg-primary-hover dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
             aria-label="Send message"
           >
             <svg className="w-5 h-5 text-text-primary dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

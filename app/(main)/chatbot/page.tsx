@@ -5,13 +5,16 @@ import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import ChatInterface from '../../components/features/ChatInterface';
+import ChatInput from '../../components/features/ChatInput';
 import ChatHistory from '../../components/features/ChatHistory';
+import { TrackedMention } from '../../types/mention';
 
 export default function ChatbotPage() {
     const { user } = useAuth();
     const router = useRouter();
     const [sessionId, setSessionId] = useState<string>('');
+    const [input, setInput] = useState('');
+    const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
 
     // Initialize session ID on component mount
     useEffect(() => {
@@ -22,8 +25,17 @@ export default function ChatbotPage() {
         localStorage.removeItem('chatSessionId');
     }, []);
 
-    const handleFirstMessage = () => {
-        // Redirect to the chat session page after the first message
+    const handleSubmit = () => {
+        if (!input.trim() || !sessionId) return;
+
+        // Save the pending message to localStorage so the session page can send it
+        const pendingMessage = {
+            text: input,
+            mentions: trackedMentions
+        };
+        localStorage.setItem(`pending-message-${sessionId}`, JSON.stringify(pendingMessage));
+        
+        // Redirect to the chat session page
         router.push(`/chatbot/${sessionId}`);
     };
 
@@ -42,17 +54,23 @@ export default function ChatbotPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
-            <div className="w-full max-w-2xl">
-                <h1 className="text-4xl font-medium text-gray-800 dark:text-white text-center mb-16">
-                    Who can I help you with?
-                </h1>
-                <ChatInterface
-                    sessionId={sessionId}
-                    onFirstMessage={handleFirstMessage}
-                />
-                <div className="mt-8">
-                    <ChatHistory />
+        <div className="min-h-screen bg-white dark:bg-gray-900 overflow-y-auto">
+            <div className="flex items-center justify-center px-4 py-36">
+                <div className="w-full max-w-2xl">
+                    <h1 className="text-4xl font-medium text-text-primary dark:text-white text-center mb-12">
+                        Who can I help you with?
+                    </h1>
+                    <ChatInput
+                        value={input}
+                        onChange={setInput}
+                        onMentionsChange={setTrackedMentions}
+                        onSubmit={handleSubmit}
+                        placeholder="Ask a question... Use @ to mention specific people or projects"
+                        userId={user?.id}
+                    />
+                    <div className="mt-8">
+                        <ChatHistory />
+                    </div>
                 </div>
             </div>
         </div>
