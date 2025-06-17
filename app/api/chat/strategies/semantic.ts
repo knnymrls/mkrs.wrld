@@ -2,9 +2,13 @@ import { SearchStrategy, SearchResult } from '../types';
 import { OpenAI } from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('NEXT_PUBLIC_OPENAI_API_KEY environment variable is required');
+  }
+  return new OpenAI({ apiKey });
+}
 
 const defaultSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +27,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
     const results: SearchResult[] = [];
     
     // Generate embedding for the query
+    const openai = getOpenAIClient();
     const embeddingRes = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: query,
