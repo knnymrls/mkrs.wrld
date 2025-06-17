@@ -46,12 +46,16 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostContent, setEditPostContent] = useState(post.content);
   const [editTrackedMentions, setEditTrackedMentions] = useState<TrackedMention[]>(
-    post.mentions.map(m => ({
-      id: m.id,
-      name: m.name,
-      type: m.type,
-      position: 0
-    }))
+    post.mentions.map(m => {
+      const index = post.content.indexOf(m.name);
+      return {
+        id: m.id,
+        name: m.name,
+        type: m.type,
+        start: index !== -1 ? index : 0,
+        end: index !== -1 ? index + m.name.length : m.name.length
+      };
+    })
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -135,7 +139,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
         content: comment.content,
         created_at: comment.created_at,
         updated_at: comment.created_at,
-        author: comment.profiles
+        author: Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles
       })) || [];
 
       setComments(formattedComments);
