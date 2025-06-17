@@ -308,6 +308,7 @@ app/
 - Skip graph traversal for time-based queries
 - Limited expansion searches to essential cases only
 - Removed expensive AI calls for term generation
+- idk
 
 #### pgvector Issue (Resolved)
 - Fixed embedding dimensions from 19,000+ to proper 1536
