@@ -221,7 +221,7 @@ Guidelines:
         })}\n\n`));
 
         // Save to database (in background, don't await)
-        saveToDatabase(supabase, currentSessionId, userId, message, fullResponse, mentions, sources);
+        saveToDatabase(supabase, currentSessionId!, userId, message, fullResponse, mentions, sources);
 
         // Send done signal
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
