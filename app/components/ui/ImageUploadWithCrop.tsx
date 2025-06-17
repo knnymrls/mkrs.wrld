@@ -20,12 +20,22 @@ export default function ImageUploadWithCrop({
 }: ImageUploadWithCropProps) {
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
   const [showModal, setShowModal] = useState(false);
+  const [isRemoved, setIsRemoved] = useState(false);
+
+  // Reset isRemoved when currentImageUrl changes
+  React.useEffect(() => {
+    if (currentImageUrl) {
+      setPreview(currentImageUrl);
+      setIsRemoved(false);
+    }
+  }, [currentImageUrl]);
 
   const handleSave = (croppedFile: File) => {
     // Create preview of cropped image
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreview(reader.result as string);
+      setIsRemoved(false);
     };
     reader.readAsDataURL(croppedFile);
     
@@ -34,6 +44,7 @@ export default function ImageUploadWithCrop({
 
   const handleRemove = () => {
     setPreview(null);
+    setIsRemoved(true);
     onImageRemoved?.();
   };
 
@@ -46,7 +57,7 @@ export default function ImageUploadWithCrop({
           className={`relative w-32 h-32 bg-gray-100 dark:bg-gray-800 ${shapeClasses} overflow-hidden cursor-pointer group`}
           onClick={() => setShowModal(true)}
         >
-          {preview ? (
+          {preview && !isRemoved ? (
             <>
               <img 
                 src={preview} 
@@ -71,7 +82,7 @@ export default function ImageUploadWithCrop({
           )}
         </div>
 
-        {preview && (
+        {(preview || currentImageUrl) && !isRemoved && (
           <button
             onClick={(e) => {
               e.stopPropagation();

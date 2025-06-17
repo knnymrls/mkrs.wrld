@@ -36,6 +36,8 @@ export default function Profile() {
         title: '',
     });
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [removeAvatar, setRemoveAvatar] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -132,8 +134,11 @@ export default function Profile() {
 
         let avatarUrl = profile?.avatar_url || null;
         
-        // Upload new avatar if selected
-        if (avatarFile) {
+        // Handle avatar removal
+        if (removeAvatar) {
+            avatarUrl = null;
+        } else if (avatarFile) {
+            // Upload new avatar if selected
             const uploadedUrl = await uploadAvatar(user.id, avatarFile);
             if (uploadedUrl) {
                 avatarUrl = uploadedUrl;
@@ -203,6 +208,7 @@ export default function Profile() {
             });
             setIsEditing(false);
             setAvatarFile(null);
+            setRemoveAvatar(false);
         }
     };
 
@@ -221,7 +227,15 @@ export default function Profile() {
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
                         <button
-                            onClick={() => setIsEditing(!isEditing)}
+                            onClick={() => {
+                                setIsEditing(!isEditing);
+                                if (!isEditing) {
+                                    // Reset states when entering edit mode
+                                    setAvatarFile(null);
+                                    setRemoveAvatar(false);
+                                    setPreviewUrl(null);
+                                }
+                            }}
                             className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -233,9 +247,15 @@ export default function Profile() {
                             <div className="flex justify-center">
                                 <ImageUploadWithCrop
                                     currentImageUrl={profile?.avatar_url}
-                                    onImageSelected={setAvatarFile}
-                                    onImageRemoved={() => setAvatarFile(null)}
-                                    label="Upload Avatar"
+                                    onImageSelected={(file) => {
+                                        setAvatarFile(file);
+                                        setRemoveAvatar(false);
+                                    }}
+                                    onImageRemoved={() => {
+                                        setAvatarFile(null);
+                                        setRemoveAvatar(true);
+                                    }}
+                                    label="Avatar"
                                     shape="circle"
                                 />
                             </div>
