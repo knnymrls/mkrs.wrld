@@ -324,7 +324,7 @@ export default function ChatInput({
                   parts.push(
                     <span
                       key={`mention-${idx}`}
-                      className="text-transparent underline decoration-text-secondary underline-offset-3"
+                      className="text-transparent underline decoration-gray-300 dark:decoration-gray-500 underline-offset-3"
                     >
                       {value.substring(mention.start, mention.end)}
                     </span>
@@ -358,7 +358,7 @@ export default function ChatInput({
               fontFamily: 'inherit',
               lineHeight: '1.5',
               minHeight: '56px',
-              maxHeight: '84px', // 3 rows max
+              maxHeight: '84px',
             }}
             rows={2}
             disabled={disabled || loading}

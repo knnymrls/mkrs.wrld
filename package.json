@@ -13,6 +13,7 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/uuid": "^10.0.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
@@ -25,6 +26,7 @@
     "react-dom": "^19.0.0",
     "react-force-graph": "^1.47.6",
     "react-force-graph-2d": "^1.27.1",
+    "react-markdown": "^10.1.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

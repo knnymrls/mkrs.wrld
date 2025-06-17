@@ -34,7 +34,7 @@ export default function ChatbotPage() {
             mentions: trackedMentions
         };
         localStorage.setItem(`pending-message-${sessionId}`, JSON.stringify(pendingMessage));
-        
+
         // Redirect to the chat session page
         router.push(`/chatbot/${sessionId}`);
     };
@@ -56,7 +56,7 @@ export default function ChatbotPage() {
     return (
         <div className="min-h-screen bg-white dark:bg-gray-900 overflow-y-auto">
             <div className="flex items-center justify-center px-4 py-36">
-                <div className="w-full max-w-2xl">
+                <div className="w-full max-w-3xl">
                     <h1 className="text-4xl font-medium text-text-primary dark:text-white text-center mb-12">
                         Who can I help you with?
                     </h1>
