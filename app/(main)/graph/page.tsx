@@ -59,8 +59,8 @@ export default function GraphPage() {
     useEffect(() => {
         const updateDimensions = () => {
             setDimensions({
-                width: window.innerWidth,
-                height: window.innerHeight - 100 // Leave some space for header
+                width: window.innerWidth - 64, // Account for navbar width
+                height: window.innerHeight - 80 // Account for header height
             });
         };
         
@@ -339,9 +339,9 @@ export default function GraphPage() {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-50 dark:bg-gray-900">
+        <div className="relative w-full h-full bg-gray-50 dark:bg-gray-900">
             {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+            <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center px-6 py-4">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Knowledge Graph</h1>
                     
@@ -424,7 +424,7 @@ export default function GraphPage() {
                 </div>
             </div>
             {/* Main Content */}
-            <div className="absolute inset-0 pt-16">
+            <div className="relative w-full" style={{ height: 'calc(100vh - 5rem)' }}>
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
                         <p className="text-gray-500 dark:text-gray-400">Loading graph...</p>
