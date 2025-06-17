@@ -203,55 +203,21 @@ export default function ChatSessionPage() {
             setTrackedMentions([]);
         }
 
-        // Add status message
-        const statusMessageId = Date.now();
+        // Add bot message that will be updated with streaming content
+        const botMessageId = Date.now();
         setMessages((msgs) => [...msgs, {
             role: 'bot',
-            text: '🔍 Analyzing your query...',
-            id: statusMessageId,
-            isStatus: true
+            text: '',
+            id: botMessageId,
+            isStatus: false
         }]);
-
-        // Animated loading
-        let dotCount = 0;
-        const loadingMessages = [
-            '🔍 Analyzing your query',
-            '📊 Searching across profiles, posts, and projects',
-            '🕸️ Exploring connections and relationships',
-            '🎯 Finding the most relevant information'
-        ];
-        let currentMessageIndex = 0;
-
-        const updateLoadingMessage = () => {
-            const dots = '.'.repeat(dotCount);
-            const currentMessage = loadingMessages[currentMessageIndex];
-
-            setMessages((msgs) =>
-                msgs.map(msg =>
-                    msg.id === statusMessageId && msg.isStatus
-                        ? { ...msg, text: `${currentMessage}${dots}` }
-                        : msg
-                )
-            );
-
-            dotCount = (dotCount + 1) % 4;
-        };
-
-        const dotInterval = setInterval(updateLoadingMessage, 400);
-
-        const messageInterval = setInterval(() => {
-            if (currentMessageIndex < loadingMessages.length - 1) {
-                currentMessageIndex++;
-                dotCount = 0;
-            }
-        }, 2000);
 
         try {
             if (!user?.id) {
                 throw new Error('User not authenticated');
             }
 
-            const res = await fetch('/api/chat', {
+            const response = await fetch('/api/chat/stream', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -265,35 +231,83 @@ export default function ChatSessionPage() {
                 }),
             });
 
-            const data = await res.json();
-
-            clearInterval(dotInterval);
-            clearInterval(messageInterval);
-
-            if (!res.ok || data.error) {
-                throw new Error(data.error || `Server error: ${res.status}`);
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
             }
 
-            // Debug: Log the response to see if it contains markdown
-            console.log('API Response:', data.answer);
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
 
-            setMessages((msgs) =>
-                msgs.map(msg =>
-                    msg.id === statusMessageId
-                        ? { ...msg, text: data.answer, isStatus: false, sources: data.sources }
-                        : msg
-                )
-            );
+            if (!reader) {
+                throw new Error('No response body');
+            }
+
+            let accumulatedText = '';
+            let sources: any[] = [];
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data.trim()) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                
+                                if (parsed.error) {
+                                    throw new Error(parsed.error);
+                                }
+
+                                if (parsed.type === 'status') {
+                                    // Update with status message
+                                    setMessages((msgs) =>
+                                        msgs.map(msg =>
+                                            msg.id === botMessageId
+                                                ? { ...msg, text: parsed.message, isStatus: true }
+                                                : msg
+                                        )
+                                    );
+                                } else if (parsed.type === 'token') {
+                                    // Append token to accumulated text
+                                    accumulatedText += parsed.content;
+                                    setMessages((msgs) =>
+                                        msgs.map(msg =>
+                                            msg.id === botMessageId
+                                                ? { ...msg, text: accumulatedText, isStatus: false }
+                                                : msg
+                                        )
+                                    );
+                                } else if (parsed.type === 'sources') {
+                                    sources = parsed.sources;
+                                } else if (parsed.type === 'done') {
+                                    // Update with final sources
+                                    setMessages((msgs) =>
+                                        msgs.map(msg =>
+                                            msg.id === botMessageId
+                                                ? { ...msg, sources }
+                                                : msg
+                                        )
+                                    );
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    }
+                }
+            }
         } catch (err) {
-            clearInterval(dotInterval);
-            clearInterval(messageInterval);
-
             console.error('Chat error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Could not get response.';
 
             setMessages((msgs) =>
                 msgs.map(msg =>
-                    msg.id === statusMessageId
+                    msg.id === botMessageId
                         ? { ...msg, text: `Error: ${errorMessage}`, isStatus: false }
                         : msg
                 )
