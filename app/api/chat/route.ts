@@ -122,9 +122,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Skip storing messages in database since we're using localStorage
-    // TODO: Re-enable when proper session management is implemented
-    /*
+    // First, ensure the session exists
+    const { data: existingSession } = await supabase
+      .from('chat_sessions')
+      .select('id')
+      .eq('id', currentSessionId)
+      .eq('user_id', userId)
+      .single();
+
+    if (!existingSession) {
+      // Create session if it doesn't exist
+      const { error: createError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          id: currentSessionId,
+          user_id: userId,
+          title: message.substring(0, 100) // Use first 100 chars as title
+        });
+
+      if (createError && createError.code !== '23505') { // Ignore if already exists
+        console.error('Session create error:', createError);
+      }
+    }
+
+    // Store user message in database
     console.log('Storing user message with session_id:', currentSessionId, 'user_id:', userId);
     const { error: userMsgError } = await supabase
       .from('chat_messages')
@@ -138,12 +159,10 @@ export async function POST(req: NextRequest) {
 
     if (userMsgError) {
       console.error('User message insert error:', userMsgError);
-      throw userMsgError;
+      // Continue even if message save fails
     }
-    */
 
-    // Skip storing assistant response in database
-    /*
+    // Store assistant response in database
     const { error: assistantMsgError } = await supabase
       .from('chat_messages')
       .insert({
@@ -154,8 +173,10 @@ export async function POST(req: NextRequest) {
         metadata: sources.length > 0 ? { sources } : undefined
       });
 
-    if (assistantMsgError) throw assistantMsgError;
-    */
+    if (assistantMsgError) {
+      console.error('Assistant message insert error:', assistantMsgError);
+      // Continue even if message save fails
+    }
 
     // Update session updated_at
     const { error: updateError } = await supabase

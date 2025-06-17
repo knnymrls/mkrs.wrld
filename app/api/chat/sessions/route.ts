@@ -67,6 +67,68 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { sessionId, title } = body;
+
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
+    }
+
+    // Get the authorization header to pass to Supabase
+    const authHeader = req.headers.get('authorization');
+    
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Create Supabase client with the user's auth token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            authorization: authHeader,
+          },
+        },
+      }
+    );
+
+    // Get the current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Create the session
+    const { data: session, error } = await supabase
+      .from('chat_sessions')
+      .insert({
+        id: sessionId,
+        user_id: user.id,
+        title: title || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // If session already exists, that's ok
+      if (error.code === '23505') { // Unique violation
+        return NextResponse.json({ session: { id: sessionId } });
+      }
+      throw error;
+    }
+
+    return NextResponse.json({ session });
+  } catch (err: any) {
+    console.error('Session create error:', err.message);
+    return NextResponse.json({ error: 'Server error.' }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '../../context/AuthContext';
 
 interface ChatSession {
     sessionId: string;
@@ -15,14 +16,63 @@ interface ChatSession {
 
 export default function ChatHistory() {
     const router = useRouter();
+    const { user, session } = useAuth();
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadChatSessions();
-    }, []);
+        if (user?.id) {
+            loadChatSessions();
+        }
+    }, [user]);
 
-    const loadChatSessions = () => {
+    const loadChatSessions = async () => {
+        if (!user?.id) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/chat/sessions?userId=${user.id}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                }
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to fetch sessions');
+            }
+
+            const data = await res.json();
+            console.log('Sessions data from API:', data);
+            
+            // The existing API returns { sessions: [...] }
+            const sessionsData = data.sessions || [];
+            
+            // Transform the sessions to match our expected format
+            const transformedSessions = sessionsData.map((session: any) => {
+                return {
+                    sessionId: session.id,
+                    firstMessage: session.title || `Chat Session`,
+                    lastMessage: '',
+                    messageCount: 0,
+                    createdAt: session.created_at,
+                    updatedAt: session.updated_at
+                };
+            });
+            
+            setSessions(transformedSessions);
+        } catch (error) {
+            console.error('Error loading chat sessions:', error);
+            // Fallback to localStorage if database fails
+            loadLocalSessions();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadLocalSessions = () => {
         try {
             const allSessions: ChatSession[] = [];
 
@@ -63,9 +113,7 @@ export default function ChatHistory() {
             allSessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
             setSessions(allSessions);
         } catch (error) {
-            console.error('Error loading chat sessions:', error);
-        } finally {
-            setLoading(false);
+            console.error('Error loading local sessions:', error);
         }
     };
 
@@ -73,8 +121,30 @@ export default function ChatHistory() {
         router.push(`/chatbot/${sessionId}`);
     };
 
-    const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {
+    const handleDeleteSession = async (e: React.MouseEvent, sessionId: string) => {
         e.stopPropagation();
+        
+        try {
+            if (user?.id) {
+                // Try to delete from database first
+                const res = await fetch(`/api/chat/sessions?sessionId=${sessionId}&userId=${user.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.access_token || ''}`
+                    }
+                });
+
+                if (!res.ok) {
+                    const error = await res.text();
+                    console.error('Failed to delete from database:', error);
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting session:', error);
+        }
+
+        // Always remove from localStorage
         localStorage.removeItem(`chat-${sessionId}`);
         loadChatSessions();
     };
@@ -97,13 +167,15 @@ export default function ChatHistory() {
     if (sessions.length === 0) {
         return null;
     }
+    
+    console.log('Rendering sessions:', sessions);
 
     return (
         <div className="mt-12">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {sessions.map((session, index) => (
                     <div
-                        key={session.sessionId}
+                        key={`session-${session.sessionId}-${index}`}
                         className="py-3 group"
                     >
                         <div className="flex justify-between items-start gap-3">
@@ -112,10 +184,13 @@ export default function ChatHistory() {
                                 onClick={() => handleSessionClick(session.sessionId)}
                             >
                                 <p className="text-base font-medium text-gray-900 dark:text-white">
-                                    {session.firstMessage}
+                                    {session.firstMessage || 'Chat Session'}
                                 </p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                                    {session.lastMessage !== session.firstMessage ? session.lastMessage : `${session.messageCount} messages`}
+                                    {session.messageCount > 0 
+                                        ? `${session.messageCount} messages` 
+                                        : formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })
+                                    }
                                 </p>
                             </div>
                             <button

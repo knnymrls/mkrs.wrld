@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import ChatInput from '../../../components/features/ChatInput';
 import { TrackedMention } from '../../../types/mention';
@@ -27,21 +27,67 @@ export default function ChatSessionPage() {
     const [loading, setLoading] = useState(false);
     const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
     const [initialLoad, setInitialLoad] = useState(true);
+    const [sessionCreated, setSessionCreated] = useState(false);
+    const pendingMessageProcessed = useRef(false);
 
-    // Load messages from localStorage on mount
+    // Load messages from database or localStorage on mount
     useEffect(() => {
-        const savedMessages = localStorage.getItem(`chat-${sessionId}`);
-        if (savedMessages) {
-            try {
-                const parsed = JSON.parse(savedMessages);
-                const filteredMessages = parsed.filter((msg: ChatMessage) => !msg.isStatus);
-                setMessages(filteredMessages);
-            } catch (error) {
-                console.error('Error loading saved messages:', error);
+        const loadMessages = async () => {
+            // First try to load from database
+            if (user?.id) {
+                try {
+                    console.log('Loading messages for session:', sessionId);
+                    const res = await fetch(`/api/chat/sessions?userId=${user.id}&sessionId=${sessionId}`, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session?.access_token || ''}`
+                        }
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        console.log('Loaded session data:', data);
+                        if (data.session && data.session.messages) {
+                            // Transform database messages to our format
+                            const dbMessages = data.session.messages.map((msg: any) => ({
+                                role: msg.role === 'assistant' ? 'bot' : msg.role,
+                                text: msg.content,
+                                mentions: msg.metadata?.mentions || [],
+                                sources: msg.metadata?.sources || []
+                            }));
+                            
+                            console.log('Transformed messages:', dbMessages);
+                            if (dbMessages.length > 0) {
+                                setMessages(dbMessages);
+                                setSessionCreated(true); // Mark session as already created
+                                setInitialLoad(false);
+                                return;
+                            }
+                        }
+                    } else {
+                        console.log('Failed to load session, status:', res.status);
+                    }
+                } catch (error) {
+                    console.error('Error loading messages from database:', error);
+                }
             }
-        }
-        setInitialLoad(false);
-    }, [sessionId]);
+
+            // Fallback to localStorage
+            const savedMessages = localStorage.getItem(`chat-${sessionId}`);
+            if (savedMessages) {
+                try {
+                    const parsed = JSON.parse(savedMessages);
+                    const filteredMessages = parsed.filter((msg: ChatMessage) => !msg.isStatus);
+                    setMessages(filteredMessages);
+                } catch (error) {
+                    console.error('Error loading saved messages:', error);
+                }
+            }
+            setInitialLoad(false);
+        };
+
+        loadMessages();
+    }, [sessionId, user?.id, session?.access_token]);
 
     // Save messages to localStorage whenever they change
     useEffect(() => {
@@ -55,15 +101,21 @@ export default function ChatSessionPage() {
 
     // Check for pending message and auto-send on mount
     useEffect(() => {
+        // Only process if we have user and session loaded and haven't processed yet
+        if (!user?.id || !session?.access_token || pendingMessageProcessed.current) return;
+
         const pendingMessageKey = `pending-message-${sessionId}`;
         const pendingMessageStr = localStorage.getItem(pendingMessageKey);
+        console.log('Checking for pending message:', pendingMessageStr);
 
         if (pendingMessageStr && messages.length === 0) {
             try {
                 const pendingMessage = JSON.parse(pendingMessageStr);
                 localStorage.removeItem(pendingMessageKey);
+                pendingMessageProcessed.current = true;
+                console.log('Found pending message:', pendingMessage);
 
-                // Add user message and start API call
+                // Add user message
                 const userMessage: ChatMessage = {
                     role: 'user',
                     text: pendingMessage.text,
@@ -71,12 +123,19 @@ export default function ChatSessionPage() {
                 };
 
                 setMessages([userMessage]);
-                sendMessage(pendingMessage.text, pendingMessage.mentions || []);
+                
+                // Use a timeout to ensure UI updates
+                setTimeout(() => {
+                    console.log('Auto-sending message with text:', pendingMessage.text);
+                    // Pass the message text and mentions directly to sendMessage
+                    sendMessage(pendingMessage.text, pendingMessage.mentions || []);
+                }, 500);
             } catch (error) {
                 console.error('Error processing pending message:', error);
             }
         }
-    }, [sessionId]);
+    }, [sessionId, user?.id, session?.access_token, messages.length]);
+
 
     const renderMessageWithMentions = (text: string, mentions: TrackedMention[]) => {
         if (!mentions || mentions.length === 0) {
