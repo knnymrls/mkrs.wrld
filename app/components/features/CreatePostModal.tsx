@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { getEmbedding } from '@/lib/embeddings/index';
@@ -28,6 +28,17 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<ImageData[]>([]);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus input when modal opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      // Small delay to ensure modal is fully rendered
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
 
   const handleClose = () => {
     setPostContent('');
@@ -107,7 +118,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
 
       // For backward compatibility, use the first image for the legacy fields
       const firstImage = uploadedImages[0];
-      
+
       const { data: post, error } = await supabase
         .from('posts')
         .insert({
@@ -204,6 +215,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
         {/* Content */}
         <div className="flex-1 px-6 py-4">
           <ChatInput
+            ref={inputRef}
             value={postContent}
             onChange={setPostContent}
             onMentionsChange={setTrackedMentions}
@@ -212,6 +224,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
             userId={user?.id}
             disabled={isSubmitting}
             loading={isSubmitting}
+            rows={3}
             allowProjectCreation={true}
             variant="post"
             onImagesChange={handleImagesChange}

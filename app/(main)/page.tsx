@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/client';
 import { TrackedMention } from '../types/mention';
 import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';
-import PostGrid from '../components/features/PostGrid';
+import ActivityGrid, { ActivityItem } from '../components/features/ActivityGrid';
 
 interface PostImage {
   id: string;
@@ -41,23 +41,33 @@ interface Post {
 export default function Home() {
   const { user, hasProfile, loading } = useAuth();
   const router = useRouter();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [quickComments, setQuickComments] = useState<{ [postId: string]: string }>({});
   const [submittingQuickComment, setSubmittingQuickComment] = useState<{ [postId: string]: boolean }>({});
 
-  // Handle ESC key press
+  // Handle keyboard shortcuts
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle ESC key
       if (e.key === 'Escape') {
         setIsCreatingPost(false);
         setSelectedPost(null);
       }
+      
+      // Handle Cmd+Shift+P (Mac) or Ctrl+Shift+P (Windows/Linux)
+      // Check for uppercase 'P' since Shift is pressed
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsCreatingPost(prev => !prev); // Toggle the modal
+      }
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -67,10 +77,103 @@ export default function Home() {
   }, [user, hasProfile, loading, router]);
 
   useEffect(() => {
-    fetchPosts();
+    fetchActivities();
   }, [user]); // Re-fetch when user changes
 
-  const fetchPosts = async () => {
+  const fetchActivities = async () => {
+    try {
+      // Fetch posts with a limit to mix with other activities
+      const postsPromise = fetchPosts(20);
+      
+      // Fetch all profiles
+      const profilesPromise = supabase
+        .from('profiles')
+        .select(`
+          id,
+          name,
+          title,
+          bio,
+          avatar_url,
+          location,
+          created_at,
+          skills!skills_profile_id_fkey (skill)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      // Fetch all projects
+      const projectsPromise = supabase
+        .from('projects')
+        .select(`
+          id,
+          title,
+          description,
+          status,
+          created_at,
+          created_by,
+          contributions!contributions_project_id_fkey (
+            person:person_id (
+              id,
+              name,
+              avatar_url
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const [posts, profilesResult, projectsResult] = await Promise.all([
+        postsPromise,
+        profilesPromise,
+        projectsPromise
+      ]);
+
+      const allActivities: ActivityItem[] = [];
+
+      // Add posts
+      posts.forEach(post => {
+        allActivities.push({
+          ...post,
+          type: 'post' as const
+        });
+      });
+
+      // Add profiles
+      if (profilesResult.data) {
+        profilesResult.data.forEach(profile => {
+          allActivities.push({
+            ...profile,
+            type: 'profile' as const,
+            skills: profile.skills || []
+          });
+        });
+      }
+
+      // Add projects
+      if (projectsResult.data) {
+        projectsResult.data.forEach(project => {
+          allActivities.push({
+            ...project,
+            type: 'project' as const,
+            contributors: project.contributions || []
+          });
+        });
+      }
+
+      // Sort all activities by created_at
+      allActivities.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setActivities(allActivities);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
+  const fetchPosts = async (limit?: number) => {
     const { data, error } = await supabase
       .from('posts')
       .select(`
@@ -82,7 +185,8 @@ export default function Home() {
         image_width,
         image_height
       `)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit || 50);
 
     if (error) {
       console.error('Error fetching posts:', error);
@@ -183,19 +287,23 @@ export default function Home() {
         })
       );
 
-      setPosts(postsWithDetails);
+      return postsWithDetails;
     }
-    setLoadingPosts(false);
+    return [];
   };
 
-  const handlePostClick = (post: Post) => {
+  const handlePostClick = (post: ActivityItem) => {
+    if (post.type !== 'post') return;
     setSelectedPost(post);
   };
 
   const handlePostUpdate = (updatedPost: Post) => {
-    setPosts(posts.map(post =>
-      post.id === updatedPost.id ? updatedPost : post
-    ));
+    setActivities(activities.map(activity => {
+      if (activity.type === 'post' && activity.id === updatedPost.id) {
+        return { ...updatedPost, type: 'post' as const };
+      }
+      return activity;
+    }));
     setSelectedPost(updatedPost);
   };
 
@@ -210,9 +318,9 @@ export default function Home() {
       
       if (error) throw error;
 
-      // Refresh posts and close modal
+      // Refresh activities and close modal
       setSelectedPost(null);
-      await fetchPosts();
+      await fetchActivities();
     } catch (error) {
       console.error('Error deleting post:', error);
       alert('Failed to delete post: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -244,15 +352,15 @@ export default function Home() {
       }
 
       // Update local state
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
+      setActivities(activities.map(activity => {
+        if (activity.type === 'post' && activity.id === postId) {
           return {
-            ...post,
+            ...activity,
             user_has_liked: !isLiked,
-            likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1
+            likes_count: isLiked ? activity.likes_count - 1 : activity.likes_count + 1
           };
         }
-        return post;
+        return activity;
       }));
 
       // Update selected post if it's the same post
@@ -295,15 +403,15 @@ export default function Home() {
       // Clear the input
       setQuickComments({ ...quickComments, [postId]: '' });
 
-      // Update comment count in posts
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
+      // Update comment count in activities
+      setActivities(activities.map(activity => {
+        if (activity.type === 'post' && activity.id === postId) {
           return {
-            ...post,
-            comments_count: post.comments_count + 1
+            ...activity,
+            comments_count: activity.comments_count + 1
           };
         }
-        return post;
+        return activity;
       }));
 
       // If this post is currently selected, update it too
@@ -339,10 +447,10 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Posts Grid */}
-        <PostGrid
-          posts={posts}
-          loading={loadingPosts}
+        {/* Activity Grid */}
+        <ActivityGrid
+          items={activities}
+          loading={loadingActivities}
           onPostClick={handlePostClick}
           onLikeToggle={toggleLike}
           onCommentSubmit={createQuickComment}
@@ -356,7 +464,7 @@ export default function Home() {
       <CreatePostModal
         isOpen={isCreatingPost}
         onClose={() => setIsCreatingPost(false)}
-        onPostCreated={fetchPosts}
+        onPostCreated={fetchActivities}
       />
 
       {/* Post Detail Modal */}

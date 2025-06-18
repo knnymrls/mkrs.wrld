@@ -28,7 +28,7 @@ export default function MentionLinkSimple({ id, name, type, className = '', onCl
   return (
     <a
       href={type === 'person' ? `/profile/${id}` : `/projects/${id}`}
-      className={`text-primary hover:text-primary-hover underline decoration-1 underline-offset-2 ${className}`}
+      className={`text-primary-hover underline decoration-1 underline-offset-3 ${className}`}
       onClick={handleClick}
     >
       {name}

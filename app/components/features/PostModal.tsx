@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { getEmbedding } from '@/lib/embeddings/index';
-import MentionInput from '../ui/MentionInput';
+import ChatInput from './ChatInput';
 import MentionLink from '../ui/MentionLink';
 import AuthorLink from './AuthorLink';
-import PostImageUpload from '../ui/PostImageUpload';
 import { TrackedMention } from '../../types/mention';
 import { Comment } from '../../models/Comment';
 import CommentsList from './CommentsList';
@@ -334,25 +333,12 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
       onClick={onClose}
     >
       <div
-        className="bg-surface-container rounded-2xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-auto"
+        className="bg-surface-container rounded-3xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className="sticky top-0 bg-surface-container border-b border-border p-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-onsurface-primary">Post</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-surface-container-muted rounded-full transition-colors"
-          >
-            <svg className="w-5 h-5 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
         {/* Post Content */}
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-surface-container-muted rounded-full overflow-hidden flex-shrink-0 mr-3">
                 {post.author.avatar_url ? (
@@ -385,19 +371,34 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
               </div>
             </div>
             {post.author.id === user?.id && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {!isEditingPost ? (
                   <>
                     <button
                       onClick={() => {
                         setIsEditingPost(true);
+                        setEditPostContent(post.content);
                         setEditImageUrl(post.image_url || null);
                         setEditImageWidth(post.image_width || null);
                         setEditImageHeight(post.image_height || null);
+                        // Re-initialize tracked mentions when entering edit mode
+                        setEditTrackedMentions(
+                          post.mentions.map(m => {
+                            const index = post.content.indexOf(m.name);
+                            return {
+                              id: m.id,
+                              name: m.name,
+                              type: m.type,
+                              start: index !== -1 ? index : 0,
+                              end: index !== -1 ? index + m.name.length : m.name.length,
+                              imageUrl: m.imageUrl
+                            };
+                          })
+                        );
                       }}
                       className="p-2 hover:bg-surface-container-muted rounded-full transition-colors"
                     >
-                      <svg className="w-4 h-4 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
@@ -411,33 +412,38 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                       className="relative z-10 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors cursor-pointer"
                       title="Delete post"
                     >
-                      <svg className="w-4 h-4 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setIsEditingPost(false);
-                        setEditPostContent(post.content);
-                        setEditImageUrl(post.image_url || null);
-                        setEditImageWidth(post.image_width || null);
-                        setEditImageHeight(post.image_height || null);
-                      }}
-                      className="px-3 py-1 text-sm font-medium text-onsurface-secondary bg-surface-container-muted rounded-full hover:bg-border transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={updatePost}
-                      disabled={isSubmitting}
-                      className="px-3 py-1 text-sm font-medium text-white bg-primary rounded-full hover:bg-primary-hover disabled:opacity-50 transition-colors"
-                    >
-                      {isSubmitting ? 'Saving...' : 'Save'}
-                    </button>
-                  </>
+                  <button
+                    onClick={() => {
+                      setIsEditingPost(false);
+                      setEditPostContent(post.content);
+                      setEditImageUrl(post.image_url || null);
+                      setEditImageWidth(post.image_width || null);
+                      setEditImageHeight(post.image_height || null);
+                      // Reset tracked mentions when canceling
+                      setEditTrackedMentions(
+                        post.mentions.map(m => {
+                          const index = post.content.indexOf(m.name);
+                          return {
+                            id: m.id,
+                            name: m.name,
+                            type: m.type,
+                            start: index !== -1 ? index : 0,
+                            end: index !== -1 ? index + m.name.length : m.name.length,
+                            imageUrl: m.imageUrl
+                          };
+                        })
+                      );
+                    }}
+                    className="px-3 py-1 text-sm font-medium text-onsurface-secondary bg-surface-container-muted rounded-full hover:bg-border transition-colors"
+                  >
+                    Cancel
+                  </button>
                 )}
               </div>
             )}
@@ -446,35 +452,35 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
           {/* Post Content or Edit Form */}
           {isEditingPost ? (
             <div className="mb-4">
-              <MentionInput
+              <ChatInput
                 value={editPostContent}
                 onChange={setEditPostContent}
                 onMentionsChange={setEditTrackedMentions}
+                onSubmit={updatePost}
                 placeholder="Edit your post..."
                 userId={user?.id}
-                autoFocus
-              />
-
-              {/* Image Upload Section */}
-              <div className="mt-4">
-                <PostImageUpload
-                  onImageUpload={(url, width, height) => {
-                    setEditImageUrl(url);
-                    setEditImageWidth(width);
-                    setEditImageHeight(height);
-                  }}
-                  onImageRemove={() => {
+                variant="post"
+                initialMentions={editTrackedMentions}
+                onImagesChange={(images) => {
+                  // For now, we'll just handle the first image since the current post structure only supports one
+                  if (Array.isArray(images) && images.length > 0) {
+                    const firstImage = images[0];
+                    setEditImageUrl(firstImage.url);
+                    setEditImageWidth(firstImage.width);
+                    setEditImageHeight(firstImage.height);
+                  } else {
                     setEditImageUrl(null);
                     setEditImageWidth(null);
                     setEditImageHeight(null);
-                  }}
-                  userId={user?.id || ''}
-                  disabled={isSubmitting}
-                  imageUrl={editImageUrl}
-                  imageWidth={editImageWidth}
-                  imageHeight={editImageHeight}
-                />
-              </div>
+                  }
+                }}
+                images={editImageUrl ? [{
+                  url: editImageUrl,
+                  width: editImageWidth || 0,
+                  height: editImageHeight || 0
+                }] : []}
+                rows={3}
+              />
             </div>
           ) : (
             <div className="text-onsurface-primary text-base leading-relaxed whitespace-pre-wrap mb-4">
@@ -495,68 +501,30 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
             </div>
           )}
 
-          {/* Mentions */}
-          {post.mentions.length > 0 && !isEditingPost && (
-            <div className="mb-6 flex flex-wrap gap-1.5">
-              {post.mentions.map((mention) => (
-                <button
-                  key={`${mention.type}-${mention.id}`}
-                  onClick={() => {
-                    router.push(mention.type === 'person' ? `/profile/${mention.id}` : `/projects/${mention.id}`);
-                    onClose();
-                  }}
-                  className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface-container-muted text-onsurface-secondary hover:bg-border transition-colors cursor-pointer"
-                >
-                  {mention.type === 'person' ? (
-                    <div className="w-3 h-3 rounded-full bg-surface-container-muted flex items-center justify-center text-[8px] font-medium text-onsurface-secondary mr-1">
-                      {mention.name.charAt(0).toUpperCase()}
-                    </div>
-                  ) : (
-                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  {mention.name}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Like and Comment Section */}
-          <div className="border-t border-border pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <LikeButton
-                isLiked={post.user_has_liked}
-                onClick={toggleLike}
-                showCount={false}
-              />
-              <span className="text-sm text-onsurface-secondary">{post.likes_count} {post.likes_count === 1 ? 'fire' : 'fires'}</span>
-            </div>
-
-            {/* Comments Section */}
-            <CommentsList
-              comments={comments}
-              setComments={setComments}
-              loadingComments={loadingComments}
-              newComment={newComment}
-              setNewComment={setNewComment}
-              submittingComment={submittingComment}
-              createComment={createComment}
-              post={post}
-              onUpdate={onUpdate}
+          <div className="flex items-center justify-between mb-4">
+            <LikeButton
+              isLiked={post.user_has_liked}
+              onClick={toggleLike}
+              showCount={false}
             />
+            <span className="text-sm text-onsurface-secondary">{post.likes_count} {post.likes_count === 1 ? 'fire' : 'fires'}</span>
           </div>
+
+          {/* Comments Section */}
+          <CommentsList
+            comments={comments}
+            setComments={setComments}
+            loadingComments={loadingComments}
+            newComment={newComment}
+            setNewComment={setNewComment}
+            submittingComment={submittingComment}
+            createComment={createComment}
+            post={post}
+            onUpdate={onUpdate}
+          />
         </div>
       </div>
-
-      {/* Image Modal */}
-      {post.image_url && (
-        <ImageModal
-          isOpen={isImageModalOpen}
-          imageUrl={post.image_url}
-          onClose={() => setIsImageModalOpen(false)}
-        />
-      )}
     </div>
   );
 }

@@ -36,9 +36,11 @@ interface ChatInputProps {
   variant?: 'default' | 'post';
   onImagesChange?: (images: ImageData[] | ((prev: ImageData[]) => ImageData[])) => void;
   images?: ImageData[];
+  rows?: number;
+  initialMentions?: TrackedMention[];
 }
 
-export default function ChatInput({
+const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({
   value,
   onChange,
   onMentionsChange,
@@ -50,19 +52,22 @@ export default function ChatInput({
   allowProjectCreation = true,
   variant = 'default',
   onImagesChange,
-  images = []
-}: ChatInputProps) {
+  images = [],
+  rows = 2,
+  initialMentions = []
+}, ref) => {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
-  const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
+  const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>(initialMentions);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ top: -1000, left: -1000 });
   const [invalidatedAtPositions, setInvalidatedAtPositions] = useState<Set<number>>(new Set());
   const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = (ref as React.MutableRefObject<HTMLTextAreaElement | null>) || internalRef;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Auto-resize textarea
@@ -97,6 +102,13 @@ export default function ChatInput({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMentions]);
+
+  // Initialize tracked mentions when component mounts or when editing starts
+  useEffect(() => {
+    if (initialMentions.length > 0) {
+      setTrackedMentions(initialMentions);
+    }
+  }, []); // Only run on mount
 
   // Notify parent of mention changes
   useEffect(() => {
@@ -446,13 +458,13 @@ export default function ChatInput({
             style={{
               fontFamily: 'inherit',
               lineHeight: '1.5',
-              minHeight: '56px',
-              maxHeight: '84px',
+              minHeight: `${rows * 28}px`,
+              maxHeight: `${Math.max(rows * 28, 200)}px`,
               zIndex: 2,
               color: 'transparent',
               caretColor: 'var(--onsurface-primary)',
             }}
-            rows={2}
+            rows={rows}
             disabled={disabled || loading}
           />
 
@@ -636,4 +648,8 @@ export default function ChatInput({
       }
     </div >
   );
-}
+});
+
+ChatInput.displayName = 'ChatInput';
+
+export default ChatInput;
