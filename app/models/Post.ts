@@ -1,3 +1,11 @@
+export interface PostImage {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  position: number;
+}
+
 export interface Post {
   id: string;
   content: string;
@@ -16,8 +24,10 @@ export interface Post {
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
-  // Image fields
+  // Legacy single image fields (for backward compatibility)
   image_url?: string | null;
   image_width?: number | null;
   image_height?: number | null;
+  // New multiple images support
+  images?: PostImage[];
 }

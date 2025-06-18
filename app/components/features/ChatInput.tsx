@@ -14,6 +14,14 @@ import {
   calculateDropdownPosition
 } from '@/lib/mentions/trackMentions';
 
+interface ImageData {
+  url: string;
+  width: number;
+  height: number;
+  loading?: boolean;
+  tempId?: string;
+}
+
 interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -25,11 +33,8 @@ interface ChatInputProps {
   loading?: boolean;
   allowProjectCreation?: boolean;
   variant?: 'default' | 'post';
-  onImageUpload?: (url: string, width: number, height: number) => void;
-  onImageRemove?: () => void;
-  imageUrl?: string | null;
-  imageWidth?: number | null;
-  imageHeight?: number | null;
+  onImagesChange?: (images: ImageData[] | ((prev: ImageData[]) => ImageData[])) => void;
+  images?: ImageData[];
 }
 
 export default function ChatInput({
@@ -43,11 +48,8 @@ export default function ChatInput({
   loading = false,
   allowProjectCreation = true,
   variant = 'default',
-  onImageUpload,
-  onImageRemove,
-  imageUrl,
-  imageWidth,
-  imageHeight
+  onImagesChange,
+  images = []
 }: ChatInputProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -318,26 +320,39 @@ export default function ChatInput({
     <div className="relative">
       <div className="bg-surface-container backdrop-blur-md shadow-lg rounded-2xl border border-border flex flex-col overflow-hidden p-3 gap-2">
         {/* Image Preview Section inside the input */}
-        {variant === 'post' && imageUrl && (
-          <div className="flex justify-start">
-            <div className="relative inline-block">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
-                <img
-                  src={imageUrl}
-                  alt="Uploaded image"
-                  className="w-full h-full object-cover"
-                />
+        {variant === 'post' && images.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {images.map((image, index) => (
+              <div key={image.tempId || index} className="relative">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                  {image.loading ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-6 h-6 animate-spin rounded-full border-3 border-gray-400 border-t-primary" />
+                    </div>
+                  ) : (
+                    <img
+                      src={image.url}
+                      alt={`Uploaded image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                {!image.loading && (
+                  <button
+                    onClick={() => {
+                      const newImages = images.filter((_, i) => i !== index);
+                      onImagesChange?.(newImages);
+                    }}
+                    className="absolute top-1 right-1 p-1 bg-onsurface-primary hover:scale-105 rounded-full shadow-sm transition-colors"
+                    disabled={disabled || loading}
+                  >
+                    <svg className="w-3 h-3 text-background" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
-              <button
-                onClick={() => onImageRemove?.()}
-                className="absolute top-1 right-1 p-1 bg-onsurface-primary hover:scale-105 rounded-full shadow-sm transition-colors"
-                disabled={disabled || loading}
-              >
-                <svg className="w-3 h-3 text-background" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            ))}
           </div>
         )}
 
@@ -449,87 +464,125 @@ export default function ChatInput({
               </button>
 
               {/* Image upload button for post variant */}
-              {variant === 'post' && (
+              {variant === 'post' && images.length < 4 && (
                 <button
                   type="button"
                   onClick={() => {
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = 'image/*';
+                    input.multiple = true;
                     input.onchange = async (e) => {
-                      const file = (e.target as HTMLInputElement).files?.[0];
-                      if (file && onImageUpload && userId) {
-                        // Create object URL to get dimensions
-                        const objectUrl = URL.createObjectURL(file);
-                        const img = new Image();
-                        img.onload = async () => {
-                          const width = img.width;
-                          const height = img.height;
-                          URL.revokeObjectURL(objectUrl);
+                      const files = Array.from((e.target as HTMLInputElement).files || []);
+                      if (files.length === 0 || !onImagesChange || !userId) return;
 
-                          try {
-                            // Sanitize filename - remove spaces and special characters
-                            const sanitizedFileName = file.name
-                              .replace(/\s+/g, '-') // Replace spaces with hyphens
-                              .replace(/[^a-zA-Z0-9.-]/g, '') // Remove special characters except dots and hyphens
-                              .toLowerCase();
+                      // Limit to 4 images total
+                      const remainingSlots = 4 - images.length;
+                      const filesToUpload = files.slice(0, remainingSlots);
 
-                            // Upload to Supabase
-                            const fileName = `${userId}/${Date.now()}-${sanitizedFileName}`;
-                            const { data, error: uploadError } = await supabase.storage
-                              .from('post-images')
-                              .upload(fileName, file);
-
-                            if (uploadError) {
-                              console.error('Upload error details:', {
-                                error: uploadError,
-                                message: uploadError.message || 'Unknown error',
-                                fileName,
-                                fileSize: file.size,
-                                fileType: file.type
-                              });
-
-                              // Check if it's a bucket not found error
-                              if (uploadError.message?.includes('not found')) {
-                                alert('Storage bucket "post-images" not found. Please create it in Supabase.');
-                              } else if (uploadError.message?.includes('row level security')) {
-                                alert('Storage permissions error. Please check Supabase storage policies.');
-                              } else {
-                                alert(`Failed to upload image: ${uploadError.message || 'Unknown error'}`);
-                              }
-                              return;
-                            }
-
-                            if (data) {
-                              const { data: { publicUrl } } = supabase.storage
-                                .from('post-images')
-                                .getPublicUrl(fileName);
-
-                              onImageUpload(publicUrl, width, height);
-                            }
-                          } catch (err) {
-                            console.error('Unexpected upload error:', err);
-                            alert('Failed to upload image. Please try again.');
-                          }
-                        };
-                        img.src = objectUrl;
+                      if (files.length > remainingSlots) {
+                        alert(`You can only upload ${remainingSlots} more image${remainingSlots > 1 ? 's' : ''}. Maximum 4 images allowed.`);
                       }
+
+                      // Create placeholder images with loading state
+                      const placeholders: ImageData[] = filesToUpload.map((file, index) => ({
+                        url: '',
+                        width: 0,
+                        height: 0,
+                        loading: true,
+                        tempId: `temp-${Date.now()}-${index}`
+                      }));
+
+                      // Add placeholders immediately
+                      onImagesChange([...images, ...placeholders]);
+
+                      // Upload each file and update the corresponding placeholder
+                      filesToUpload.forEach(async (file, fileIndex) => {
+                        const tempId = placeholders[fileIndex].tempId;
+                        
+                        try {
+                          // Create object URL to get dimensions
+                          const objectUrl = URL.createObjectURL(file);
+                          const img = new Image();
+                          
+                          await new Promise<void>((resolve, reject) => {
+                            img.onload = async () => {
+                              const width = img.width;
+                              const height = img.height;
+                              URL.revokeObjectURL(objectUrl);
+
+                              try {
+                                // Sanitize filename
+                                const sanitizedFileName = file.name
+                                  .replace(/\s+/g, '-')
+                                  .replace(/[^a-zA-Z0-9.-]/g, '')
+                                  .toLowerCase();
+
+                                // Upload to Supabase
+                                const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${sanitizedFileName}`;
+                                const { data, error: uploadError } = await supabase.storage
+                                  .from('post-images')
+                                  .upload(fileName, file);
+
+                                if (uploadError) {
+                                  throw uploadError;
+                                }
+
+                                if (data) {
+                                  const { data: { publicUrl } } = supabase.storage
+                                    .from('post-images')
+                                    .getPublicUrl(fileName);
+
+                                  // Update the specific placeholder using callback to get current state
+                                  setTimeout(() => {
+                                    onImagesChange((currentImages: ImageData[]) => 
+                                      currentImages.map(img => 
+                                        img.tempId === tempId 
+                                          ? { url: publicUrl, width, height, loading: false, tempId }
+                                          : img
+                                      )
+                                    );
+                                  }, 0);
+                                }
+                                resolve();
+                              } catch (err) {
+                                reject(err);
+                              }
+                            };
+                            img.onerror = () => {
+                              URL.revokeObjectURL(objectUrl);
+                              reject(new Error('Failed to load image'));
+                            };
+                            img.src = objectUrl;
+                          });
+                        } catch (err) {
+                          console.error('Upload error:', err);
+                          alert(`Failed to upload ${file.name}`);
+                          // Remove the failed placeholder using callback
+                          setTimeout(() => {
+                            onImagesChange?.((currentImages: ImageData[]) => 
+                              currentImages.filter(img => img.tempId !== tempId)
+                            );
+                          }, 0);
+                        }
+                      });
                     };
                     input.click();
                   }}
+                  disabled={disabled || loading}
                   className="flex items-center gap-1.5 bg-surface-container-muted hover:bg-surface-container-muted/50 cursor-pointer text-onsurface-primary text-sm transition-colors px-3 py-2 rounded-lg"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span>Image</span>
+                  <span>Image{images.length > 0 ? ` (${images.length}/4)` : ''}</span>
                 </button>
               )}
             </div>
 
             <button
               onClick={onSubmit}
-              disabled={disabled || loading || (!value.trim() && !imageUrl)}
+              disabled={disabled || loading || (!value.trim() && images.length === 0)}
               className="p-2 rounded-full bg-primary hover:bg-primary-hover disabled:opacity-50 transition-all hover:scale-105 shadow-sm"
               aria-label="Send message"
             >

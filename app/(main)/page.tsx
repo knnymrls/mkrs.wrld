@@ -9,6 +9,14 @@ import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';
 import PostGrid from '../components/features/PostGrid';
 
+interface PostImage {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  position: number;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -22,9 +30,12 @@ interface Post {
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
+  // Legacy single image fields
   image_url?: string | null;
   image_width?: number | null;
   image_height?: number | null;
+  // New multiple images
+  images?: PostImage[];
 }
 
 export default function Home() {
@@ -148,6 +159,13 @@ export default function Home() {
             .select('*', { count: 'exact', head: true })
             .eq('post_id', post.id);
 
+          // Fetch multiple images
+          const { data: postImages } = await supabase
+            .from('post_images')
+            .select('id, url, width, height, position')
+            .eq('post_id', post.id)
+            .order('position', { ascending: true });
+
           return {
             id: post.id,
             content: post.content,
@@ -159,7 +177,8 @@ export default function Home() {
             user_has_liked: userHasLiked,
             image_url: post.image_url,
             image_width: post.image_width,
-            image_height: post.image_height
+            image_height: post.image_height,
+            images: postImages || []
           };
         })
       );

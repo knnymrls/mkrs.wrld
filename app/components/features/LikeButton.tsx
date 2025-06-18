@@ -16,7 +16,7 @@ export default function LikeButton({ isLiked, onClick, showCount = false, count 
         e.stopPropagation();
         onClick();
       }}
-      className={`flex cursor-pointer items-center gap-1 px-2 py-1.5 rounded transition-all duration-200 ease-in-out ${isLiked ? 'text-primary' : 'text-onsurface-primary hover:text-primary-hover'
+      className={`flex cursor-pointer items-center gap-1 py-1.5 rounded transition-all duration-200 ease-in-out ${isLiked ? 'text-primary' : 'text-onsurface-primary hover:text-primary-hover'
         } hover:scale-110 active:scale-95`}
     >
       <svg

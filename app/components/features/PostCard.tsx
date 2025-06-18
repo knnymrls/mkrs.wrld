@@ -9,6 +9,14 @@ import QuickCommentInput from './QuickCommentInput';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
 
+interface PostImage {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  position: number;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -22,9 +30,12 @@ interface Post {
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
+  // Legacy single image fields
   image_url?: string | null;
   image_width?: number | null;
   image_height?: number | null;
+  // New multiple images
+  images?: PostImage[];
 }
 
 interface PostCardProps {
@@ -49,6 +60,19 @@ export default function PostCard({
   const { user } = useAuth();
   const router = useRouter();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
+  // Get all images (new format or legacy format)
+  const getAllImages = (): Array<{ url: string; width: number; height: number }> => {
+    if (post.images && post.images.length > 0) {
+      return post.images.map(img => ({ url: img.url, width: img.width, height: img.height }));
+    } else if (post.image_url) {
+      return [{ url: post.image_url, width: post.image_width || 0, height: post.image_height || 0 }];
+    }
+    return [];
+  };
+
+  const images = getAllImages();
 
   const renderPostContent = (post: Post) => {
     let content = post.content;
@@ -137,23 +161,41 @@ export default function PostCard({
             </div>
           </div>
 
-          {/* Post Image */}
-          {post.image_url && (
-            <img
-              src={post.image_url}
-              alt="Post image"
-              className="h-auto border-[1px] border-border rounded-lg object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-              style={{ maxHeight: '250px', width: 'auto' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsImageModalOpen(true);
-              }}
-            />
+          {/* Post Images Grid */}
+          {images.length > 0 && (
+            <div className={`grid gap-1 ${images.length === 1 ? 'grid-cols-1' :
+                images.length === 2 ? 'grid-cols-2' :
+                  images.length === 3 ? 'grid-cols-2' :
+                    'grid-cols-2'
+              }`}>
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${images.length === 3 && index === 0 ? 'col-span-2' : ''
+                    }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImageUrl(image.url);
+                    setIsImageModalOpen(true);
+                  }}
+                >
+                  <img
+                    src={image.url}
+                    alt={`Post image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    style={{
+                      maxHeight: images.length === 1 ? '400px' : '200px',
+                      minHeight: images.length === 1 ? 'auto' : '200px'
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           )}
 
           {/* Quick Comment Input and Like Button */}
           <div
-            className=" flex items-end gap-1"
+            className=" flex items-end gap-2"
             onClick={(e) => e.stopPropagation()}
           >
             <QuickCommentInput
@@ -172,11 +214,14 @@ export default function PostCard({
       </div>
 
       {/* Image Modal */}
-      {post.image_url && (
+      {selectedImageUrl && (
         <ImageModal
           isOpen={isImageModalOpen}
-          imageUrl={post.image_url}
-          onClose={() => setIsImageModalOpen(false)}
+          imageUrl={selectedImageUrl}
+          onClose={() => {
+            setIsImageModalOpen(false);
+            setSelectedImageUrl(null);
+          }}
         />
       )}
     </>

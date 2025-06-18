@@ -8,6 +8,14 @@ import ChatInput from './ChatInput';
 import MentionLink from '../ui/MentionLink';
 import { TrackedMention } from '../../types/mention';
 
+interface ImageData {
+  url: string;
+  width: number;
+  height: number;
+  loading?: boolean;
+  tempId?: string;
+}
+
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,29 +27,21 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   const [postContent, setPostContent] = useState('');
   const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageWidth, setImageWidth] = useState<number | null>(null);
-  const [imageHeight, setImageHeight] = useState<number | null>(null);
+  const [images, setImages] = useState<ImageData[]>([]);
 
   const handleClose = () => {
     setPostContent('');
     setTrackedMentions([]);
-    setImageUrl(null);
-    setImageWidth(null);
-    setImageHeight(null);
+    setImages([]);
     onClose();
   };
 
-  const handleImageUpload = (url: string, width: number, height: number) => {
-    setImageUrl(url);
-    setImageWidth(width);
-    setImageHeight(height);
-  };
-
-  const handleImageRemove = () => {
-    setImageUrl(null);
-    setImageWidth(null);
-    setImageHeight(null);
+  const handleImagesChange = (newImages: ImageData[] | ((prev: ImageData[]) => ImageData[])) => {
+    if (typeof newImages === 'function') {
+      setImages(newImages);
+    } else {
+      setImages(newImages);
+    }
   };
 
   const renderPostPreview = () => {
@@ -91,24 +91,54 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   const createPost = async () => {
     if (!postContent.trim() || !user) return;
 
+    // Check if any images are still loading
+    const loadingImages = images.filter(img => img.loading);
+    if (loadingImages.length > 0) {
+      alert('Please wait for all images to finish uploading');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const embedding = await getEmbedding(postContent);
 
+      // Filter out any loading images (just in case)
+      const uploadedImages = images.filter(img => !img.loading && img.url);
+
+      // For backward compatibility, use the first image for the legacy fields
+      const firstImage = uploadedImages[0];
+      
       const { data: post, error } = await supabase
         .from('posts')
         .insert({
           content: postContent,
           author_id: user.id,
           embedding,
-          image_url: imageUrl,
-          image_width: imageWidth,
-          image_height: imageHeight
+          image_url: firstImage?.url || null,
+          image_width: firstImage?.width || null,
+          image_height: firstImage?.height || null
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Insert multiple images into the new post_images table
+      if (uploadedImages.length > 0) {
+        const imageInserts = uploadedImages.map((img, index) => ({
+          post_id: post.id,
+          url: img.url,
+          width: img.width,
+          height: img.height,
+          position: index
+        }));
+
+        const { error: imagesError } = await supabase
+          .from('post_images')
+          .insert(imageInserts);
+
+        if (imagesError) throw imagesError;
+      }
 
       // Deduplicate mentions
       const uniquePersonMentions = Array.from(
@@ -184,11 +214,8 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
             loading={isSubmitting}
             allowProjectCreation={true}
             variant="post"
-            onImageUpload={handleImageUpload}
-            onImageRemove={handleImageRemove}
-            imageUrl={imageUrl}
-            imageWidth={imageWidth}
-            imageHeight={imageHeight}
+            onImagesChange={handleImagesChange}
+            images={images}
           />
 
           {/* Preview Section
