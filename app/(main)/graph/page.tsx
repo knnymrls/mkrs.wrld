@@ -941,7 +941,6 @@ export default function GraphPage() {
                                     ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
                                     ctx.fill();
                                 }}
-                                d3Force="link"
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.3}
                                 warmupTicks={100}
