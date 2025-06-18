@@ -7,6 +7,18 @@ import { Profile } from '../../../models/Profile';
 import Image from 'next/image';
 import { User } from 'lucide-react';
 
+interface ContributionData {
+  role: string;
+  start_date: string | null;
+  end_date: string | null;
+  projects: {
+    id: string;
+    title: string;
+    status: string;
+    description: string | null;
+  } | null;
+}
+
 interface ProfileWithDetails extends Profile {
   skills: string[];
   educations: Array<{
@@ -111,11 +123,13 @@ export default function ProfilePage() {
             description
           )
         `)
-        .eq('person_id', profileId);
+        .eq('person_id', profileId) as { data: ContributionData[] | null };
 
       // For each project, fetch other contributors
       const projectsWithContributors = await Promise.all(
         (contributionsData || []).map(async (contribution) => {
+          if (!contribution.projects) return null;
+          
           const { data: projectContributors } = await supabase
             .from('contributions')
             .select(`
@@ -134,7 +148,7 @@ export default function ProfilePage() {
             role: contribution.role,
             start_date: contribution.start_date,
             end_date: contribution.end_date,
-            contributors: projectContributors?.map(c => c.profiles) || []
+            contributors: projectContributors?.map(c => c.profiles).filter(Boolean) || []
           };
         })
       );
@@ -145,7 +159,7 @@ export default function ProfilePage() {
         educations: educationData || [],
         experiences: experienceData || [],
         posts: postsData || [],
-        projects: projectsWithContributors || []
+        projects: projectsWithContributors.filter(p => p !== null) || []
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -192,7 +206,7 @@ export default function ProfilePage() {
             {profile.avatar_url ? (
               <Image
                 src={profile.avatar_url}
-                alt={profile.name}
+                alt={profile.name || 'Profile'}
                 width={120}
                 height={120}
                 className="rounded-full mx-auto"
@@ -209,11 +223,6 @@ export default function ProfilePage() {
           <p className="text-lg text-gray-600 dark:text-gray-400">
             {profile.title} in {profile.location}
           </p>
-          {profile.company && (
-            <p className="text-gray-600 dark:text-gray-400">
-              {profile.company}
-            </p>
-          )}
         </div>
 
         {/* About Section */}

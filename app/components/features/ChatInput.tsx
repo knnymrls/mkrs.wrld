@@ -461,7 +461,6 @@ export default function ChatInput({
                             console.error('Upload error details:', {
                               error: uploadError,
                               message: uploadError.message || 'Unknown error',
-                              statusCode: uploadError.statusCode,
                               fileName,
                               fileSize: file.size,
                               fileType: file.type

@@ -354,7 +354,8 @@ export default function Profile() {
         });
     };
 
-    const formatDateRange = (startDate: string, endDate: string | null) => {
+    const formatDateRange = (startDate: string | null, endDate: string | null) => {
+        if (!startDate) return '';
         const start = formatDate(startDate);
         const end = endDate ? formatDate(endDate) : 'Present';
         return `${start} - ${end}`;
@@ -667,7 +668,7 @@ export default function Profile() {
                         <input
                             type="text"
                             name="year"
-                            defaultValue={editingEducation?.year}
+                            defaultValue={editingEducation?.year || ''}
                             className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
                             required
                         />
@@ -743,7 +744,7 @@ export default function Profile() {
                             <input
                                 type="date"
                                 name="start_date"
-                                defaultValue={editingExperience?.start_date}
+                                defaultValue={editingExperience?.start_date || ''}
                                 className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
                                 required
                             />
