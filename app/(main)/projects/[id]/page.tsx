@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { Project, Contribution } from '../../../models/Project';
 import { Profile } from '../../../models/Profile';
-import { updateProjectEmbedding } from '@/lib/embeddings';
+import { updateProjectEmbedding } from '@/lib/embeddings/index';
 
 interface ProjectWithDetails extends Project {
     creator?: Profile;

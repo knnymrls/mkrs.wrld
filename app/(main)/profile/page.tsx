@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { getEmbedding } from '@/lib/embeddings';
-import { uploadAvatar } from '@/lib/storage';
+import { supabase } from '@/lib/supabase/client';
+import { getEmbedding } from '@/lib/embeddings/index';
+import { uploadAvatar } from '@/lib/supabase/storage';
 import ImageUploadWithCrop from '../../components/ui/ImageUploadWithCrop';
 import { Education } from '../../models/Education';
 import { Experience } from '../../models/Experience';

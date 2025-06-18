@@ -18,15 +18,20 @@ export default function MentionLink({ id, name, type, imageUrl, className = '', 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (onClick) onClick(e);
-    router.push(type === 'person' ? `/profile/${id}` : `/projects/${id}`);
+    if (onClick) {
+      onClick(e);
+    } else {
+      // Only navigate if no custom onClick is provided
+      router.push(type === 'person' ? `/profile/${id}` : `/projects/${id}`);
+    }
   };
 
   return (
     <a
       href={type === 'person' ? `/profile/${id}` : `/projects/${id}`}
-      className={`inline-flex items-center align-middle gap-0.5 text-text-primary ${className}`}
+      className={`inline-flex items-center gap-0.5 text-text-primary ${className}`}
       onClick={handleClick}
+      style={{ verticalAlign: 'middle' }}
     >
       {/* Icon - shows image if available, otherwise default icon */}
       {type === 'person' ? (

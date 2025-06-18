@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { getEmbedding } from '@/lib/embeddings';
+import { supabase } from '@/lib/supabase/client';
+import { getEmbedding } from '@/lib/embeddings/index';
 import ChatInput from './ChatInput';
 import MentionLink from '../ui/MentionLink';
 import { TrackedMention } from '../../types/mention';

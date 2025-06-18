@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { getEmbedding } from '@/lib/embeddings';
-import MentionInput from './MentionInput';
+import { supabase } from '@/lib/supabase/client';
+import { getEmbedding } from '@/lib/embeddings/index';
+import MentionInput from '../ui/MentionInput';
 import MentionLink from '../ui/MentionLink';
-import AuthorLink from '../ui/AuthorLink';
+import AuthorLink from './AuthorLink';
 import PostImageUpload from '../ui/PostImageUpload';
 import { TrackedMention } from '../../types/mention';
 import { Comment } from '../../models/Comment';

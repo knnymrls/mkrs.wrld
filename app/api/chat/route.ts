@@ -23,13 +23,6 @@ export async function POST(req: NextRequest) {
       userId: string;
     };
 
-    // Debug logging
-    console.log('=== CHAT API DEBUG ===');
-    console.log('Message:', message);
-    console.log('User ID:', userId);
-    console.log('Session ID:', sessionId);
-    console.log('Auth Header:', req.headers.get('authorization'));
-    console.log('Mentions:', mentions);
 
     // Validate required parameters
     if (!message?.trim()) {
@@ -65,7 +58,6 @@ export async function POST(req: NextRequest) {
       // Only create a new session if none was provided
       const { v4: uuidv4 } = require('uuid');
       currentSessionId = uuidv4();
-      console.log('No session ID provided, generated new one:', currentSessionId);
     }
 
     // Skip fetching chat history from database
@@ -94,7 +86,6 @@ export async function POST(req: NextRequest) {
 
     // Phase 1: Initial retrieval
     let searchResults = await retrievalAgent.retrieveInformation(message);
-    console.log('Search results:', JSON.stringify(searchResults, null, 2));
 
     // Phase 2: Response synthesis with potential feedback loop
     let finalAnswer = '';
@@ -146,7 +137,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Store user message in database
-    console.log('Storing user message with session_id:', currentSessionId, 'user_id:', userId);
     const { error: userMsgError } = await supabase
       .from('chat_messages')
       .insert({

@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
-import { getEmbedding } from '@/lib/embeddings';
+import { supabase } from '@/lib/supabase/client';
+import { getEmbedding } from '@/lib/embeddings/index';
 
 export async function createProjectFromMention(
   projectName: string,

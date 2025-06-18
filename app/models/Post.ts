@@ -31,3 +31,15 @@ export interface Post {
   // New multiple images support
   images?: PostImage[];
 }
+
+export interface PostProject {
+  post_id: string;
+  project_id: string;
+  created_at: string;
+}
+
+export interface PostMention {
+  post_id: string;
+  profile_id: string;
+  created_at: string;
+}

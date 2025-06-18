@@ -165,8 +165,6 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
 
     // Simplified positioning - trust the calculation from the parent
     useEffect(() => {
-      console.log('MentionDropdown received position:', position);
-
       if (position.top < 0 || position.left < 0) {
         setIsVisible(false);
         return;
@@ -176,8 +174,6 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
       // the position calculation should already handle all viewport concerns
       setAdjustedPosition(position);
       setIsVisible(true);
-
-      console.log('MentionDropdown final adjusted position:', position);
     }, [position]);
 
     const handleSelect = useCallback((suggestion: MentionSuggestion) => {

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { Comment } from '../../models/Comment';
 import CommentSkeleton from '../ui/CommentSkeleton';
 

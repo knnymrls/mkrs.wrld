@@ -122,6 +122,7 @@ app/
 │   ├── layout.tsx       # Layout with Navbar
 │   ├── page.tsx         # Home/Activity feed
 │   ├── chatbot/         # AI chatbot
+│   │   └── [sessionId]/ # Dynamic session routes
 │   ├── graph/           # Knowledge graph visualization
 │   ├── onboarding/      # Profile setup
 │   ├── profile/         # Profile management
@@ -136,18 +137,33 @@ app/
 │   │   ├── route.ts    # Main chat endpoint
 │   │   ├── agents/     # Retrieval and Response agents
 │   │   ├── strategies/ # Search strategies (semantic, keyword, graph)
+│   │   ├── sessions/   # Session management
+│   │   ├── stream/     # Streaming chat endpoint
 │   │   └── utils/      # Query parser, entity expander
-│   ├── embeddings/     # Embedding generation
-│   └── search/         # Search endpoints
+│   └── embeddings/     # Embedding generation
 ├── components/         # React components
 │   ├── layout/         # Layout components (Navbar)
-│   ├── features/       # Feature-specific components
-│   └── ui/            # Reusable UI components (including SourceCard)
-├── context/           # React contexts
-├── models/            # TypeScript interfaces
-├── hooks/             # Custom React hooks
-├── types/             # Type definitions
-└── utils/             # Utility functions
+│   ├── features/       # Feature-specific components (AuthorLink, etc.)
+│   └── ui/            # Reusable UI components (MentionInput, SourceCard, etc.)
+├── context/           # React contexts (AuthContext)
+├── models/            # TypeScript interfaces for data models
+│   ├── Post.ts        # Post, PostImage, PostProject, PostMention
+│   ├── Search.ts      # SearchResult, SearchResults, Source
+│   └── ...            # Other data models
+├── types/             # Other TypeScript type definitions
+│   ├── mention.ts     # Mention-related types
+│   ├── chat.ts        # Chat strategy and plan types
+│   └── props.ts       # Component prop interfaces
+├── lib/               # Business logic and utilities
+│   ├── embeddings/    # Embedding utilities
+│   │   ├── index.ts   # Main embedding functions
+│   │   └── profile-embeddings.ts # Profile-specific embeddings
+│   ├── mentions/      # Mention utilities
+│   └── supabase/      # Supabase client and storage
+│       ├── client.ts  # Supabase client
+│       └── storage.ts # Storage utilities
+└── public/
+    └── images/        # Static images
 ```
 
 ## Key Features
@@ -292,6 +308,33 @@ app/
 - **User Feedback**: Clear error messages and loading states
 - **Retry Logic**: Automatic retries for failed API calls
 - **Validation**: Input validation before database operations
+
+## Recent Structural Changes (Last Updated: January 2025)
+
+### Code Organization Improvements
+- **Component Reorganization**: 
+  - Moved `MentionInput` from features/ to ui/ (reusable component)
+  - Moved `AuthorLink` from ui/ to features/ (feature-specific)
+- **Type Definition Organization**:
+  - Consolidated duplicate Post models (removed Posts.ts)
+  - Created `app/types/props.ts` for component prop interfaces
+  - Split `api/chat/types.ts` into `models/Search.ts` and `types/chat.ts`
+- **Library Structure**:
+  - Organized lib/ files into subdirectories (embeddings/, supabase/)
+  - Updated all imports to use new paths
+- **Dead Code Removal**:
+  - Removed unused components: ImageCropModal.tsx, ChatInterface.tsx
+  - Removed unused API route: api/chat/messages/
+  - Removed all console.log statements
+  - Cleaned up empty directories
+
+### Import Path Standards
+- All imports now use absolute paths with `@/` prefix
+- Organized imports follow this pattern:
+  - `@/app/models/` for data model interfaces
+  - `@/app/types/` for other type definitions
+  - `@/lib/` for utilities and business logic
+  - `@/app/components/` for React components
 
 ## Known Issues to Investigate
 

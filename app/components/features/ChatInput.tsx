@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import MentionDropdown from '../ui/MentionDropdown';
+import MentionLinkSimple from '../ui/MentionLinkSimple';
 import PostImageUpload from '../ui/PostImageUpload';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { MentionSuggestion, TrackedMention, DropdownPosition } from '@/app/types/mention';
 import { searchMentions } from '@/lib/mentions/searchMentions';
 import { createProjectFromMention } from '@/lib/mentions/createProject';
@@ -60,6 +61,7 @@ export default function ChatInput({
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ top: -1000, left: -1000 });
   const [invalidatedAtPositions, setInvalidatedAtPositions] = useState<Set<number>>(new Set());
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -103,7 +105,7 @@ export default function ChatInput({
 
   const handleTextChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
-    const cursorPos = e.target.selectionStart;
+    const cursorPos = e.target.selectionStart || 0;
     const previousContent = value;
     onChange(newValue);
     setCursorPosition(cursorPos);
@@ -239,12 +241,17 @@ export default function ChatInput({
     onChange(newContent);
     setShowMentions(false);
 
-    // Focus back on textarea
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      const newCursorPos = mentionIndex + mentionText.length + 1;
-      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
-    }
+    // Set cursor position after mention with a space
+    const newCursorPos = mentionIndex + mentionText.length + 1;
+    setCursorPosition(newCursorPos);
+
+    // Focus back on textarea and set cursor position after React has updated
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -358,14 +365,16 @@ export default function ChatInput({
 
         {/* Textarea container */}
         <div className="relative">
-          {/* Mention overlay for visual styling */}
+          {/* Text and mention overlay */}
           <div
-            className="absolute inset-0 pointer-events-none overflow-hidden text-base"
+            className="absolute inset-0 pointer-events-none overflow-hidden text-base text-gray-900 dark:text-white"
             style={{
               fontFamily: 'inherit',
               lineHeight: '1.5',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
+              zIndex: 1,
+              padding: '0',
             }}
           >
             <div className="">
@@ -380,19 +389,31 @@ export default function ChatInput({
                   // Add text before mention
                   if (mention.start > lastIndex) {
                     parts.push(
-                      <span key={`text-${idx}`} className="invisible">
+                      <span key={`text-${idx}`}>
                         {value.substring(lastIndex, mention.start)}
                       </span>
                     );
                   }
 
-                  // Add mention with underline only
+                  // Add mention link
                   parts.push(
-                    <span
-                      key={`mention-${idx}`}
-                      className="text-transparent underline decoration-gray-300 dark:decoration-gray-500 underline-offset-3"
+                    <span 
+                      key={`mention-${idx}`} 
+                      className="pointer-events-auto inline"
                     >
-                      {value.substring(mention.start, mention.end)}
+                      <MentionLinkSimple
+                        id={mention.id}
+                        name={mention.name}
+                        type={mention.type}
+                        className="text-base"
+                        onClick={(e) => {
+                          // Open in new tab to preserve input state
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const url = mention.type === 'person' ? `/profile/${mention.id}` : `/projects/${mention.id}`;
+                          window.open(url, '_blank');
+                        }}
+                      />
                     </span>
                   );
 
@@ -402,7 +423,7 @@ export default function ChatInput({
                 // Add remaining text
                 if (lastIndex < value.length) {
                   parts.push(
-                    <span key="text-end" className="invisible">
+                    <span key="text-end">
                       {value.substring(lastIndex)}
                     </span>
                   );
@@ -418,13 +439,18 @@ export default function ChatInput({
             value={value}
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything..."
-            className="w-full bg-transparent text-base resize-none focus:outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={isFocused ? "" : "Ask anything..."}
+            className="w-full bg-transparent text-base resize-none focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 relative"
             style={{
               fontFamily: 'inherit',
               lineHeight: '1.5',
               minHeight: '56px',
               maxHeight: '84px',
+              zIndex: 2,
+              color: 'transparent',
+              caretColor: 'var(--onsurface-primary)',
             }}
             rows={2}
             disabled={disabled || loading}

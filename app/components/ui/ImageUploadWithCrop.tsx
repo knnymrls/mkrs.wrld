@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Camera } from 'lucide-react';
+import { useFileUpload } from '@/app/hooks/useFileUpload';
+import { FileInput, ImagePreview } from './atoms';
 import ImageUploadCropModal from './ImageUploadCropModal';
 
 interface ImageUploadWithCropProps {
@@ -18,34 +21,57 @@ export default function ImageUploadWithCrop({
   label = "Upload Avatar",
   shape = 'circle'
 }: ImageUploadWithCropProps) {
-  const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
   const [showModal, setShowModal] = useState(false);
+  const [displayPreview, setDisplayPreview] = useState<string | null>(currentImageUrl || null);
   const [isRemoved, setIsRemoved] = useState(false);
+  
+  const { 
+    preview: selectedPreview,
+    selectFile,
+    removeFile 
+  } = useFileUpload({
+    accept: 'image/*',
+    maxSize: 10 * 1024 * 1024 // 10MB for initial selection
+  });
 
-  // Reset isRemoved when currentImageUrl changes
-  React.useEffect(() => {
+  // Update display preview when currentImageUrl changes
+  useEffect(() => {
     if (currentImageUrl) {
-      setPreview(currentImageUrl);
+      setDisplayPreview(currentImageUrl);
       setIsRemoved(false);
     }
   }, [currentImageUrl]);
+
+  // Open modal when file is selected
+  useEffect(() => {
+    if (selectedPreview) {
+      setShowModal(true);
+    }
+  }, [selectedPreview]);
 
   const handleSave = (croppedFile: File) => {
     // Create preview of cropped image
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result as string);
+      setDisplayPreview(reader.result as string);
       setIsRemoved(false);
     };
     reader.readAsDataURL(croppedFile);
     
     onImageSelected(croppedFile);
+    removeFile(); // Clear the file selection
   };
 
   const handleRemove = () => {
-    setPreview(null);
+    setDisplayPreview(null);
     setIsRemoved(true);
+    removeFile();
     onImageRemoved?.();
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    removeFile(); // Clear selection if modal is closed without saving
   };
 
   const shapeClasses = shape === 'circle' ? 'rounded-full' : 'rounded-lg';
@@ -53,41 +79,33 @@ export default function ImageUploadWithCrop({
   return (
     <>
       <div className="flex flex-col items-center gap-4">
-        <div 
-          className={`relative w-32 h-32 bg-gray-100 dark:bg-gray-800 ${shapeClasses} overflow-hidden cursor-pointer group`}
-          onClick={() => setShowModal(true)}
+        <FileInput
+          accept="image/*"
+          onChange={(files) => selectFile(files[0])}
+          className="w-32 h-32"
         >
-          {preview && !isRemoved ? (
-            <>
-              <img 
-                src={preview} 
-                alt="Avatar" 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-            </>
+          {displayPreview && !isRemoved ? (
+            <ImagePreview
+              src={displayPreview}
+              alt="Avatar"
+              shape={shape}
+              size={128}
+              onClick={() => {}}
+              showHoverOverlay
+              overlayContent={<Camera className="w-8 h-8 text-white" />}
+              className="cursor-pointer"
+            />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 group-hover:text-gray-500 transition-colors">
-              <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <div className={`w-32 h-32 bg-gray-100 dark:bg-gray-800 ${shapeClasses} flex flex-col items-center justify-center text-gray-400 hover:text-gray-500 transition-colors cursor-pointer`}>
+              <Camera className="w-12 h-12 mb-2" />
               <span className="text-xs">Click to upload</span>
             </div>
           )}
-        </div>
+        </FileInput>
 
-        {(preview || currentImageUrl) && !isRemoved && (
+        {displayPreview && !isRemoved && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRemove();
-            }}
+            onClick={handleRemove}
             className="text-sm text-red-600 hover:text-red-700 transition-colors"
             type="button"
           >
@@ -99,9 +117,9 @@ export default function ImageUploadWithCrop({
       {/* Upload and Crop Modal */}
       <ImageUploadCropModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={handleModalClose}
         onSave={handleSave}
-        currentImageUrl={preview}
+        currentImageUrl={selectedPreview || displayPreview}
         shape={shape}
       />
     </>

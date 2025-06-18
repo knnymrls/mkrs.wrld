@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { getEmbedding } from './embeddings';
+import { supabase } from '../supabase/client';
+import { getEmbedding } from './index';
 import { Profile } from '@/app/models/Profile';
 import { Education } from '@/app/models/Education';
 import { Experience } from '@/app/models/Experience';

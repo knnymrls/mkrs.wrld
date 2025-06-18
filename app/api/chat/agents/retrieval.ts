@@ -1,9 +1,5 @@
-import { 
-  SearchPlan, 
-  SearchResults, 
-  SearchResult, 
-  ProgressUpdate 
-} from '../types';
+import { SearchPlan, ProgressUpdate } from '@/app/types/chat';
+import { SearchResults, SearchResult } from '@/app/models/Search';
 import { QueryParser, ParsedQuery } from '../utils/query-parser';
 import { EntityExpander } from '../utils/entity-expander';
 import { SemanticSearchStrategy } from '../strategies/semantic';

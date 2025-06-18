@@ -45,7 +45,6 @@ export default function ChatHistory() {
             }
 
             const data = await res.json();
-            console.log('Sessions data from API:', data);
             
             // The existing API returns { sessions: [...] }
             const sessionsData = data.sessions || [];
@@ -64,7 +63,6 @@ export default function ChatHistory() {
             
             setSessions(transformedSessions);
         } catch (error) {
-            console.error('Error loading chat sessions:', error);
             // Fallback to localStorage if database fails
             loadLocalSessions();
         } finally {
@@ -103,7 +101,7 @@ export default function ChatHistory() {
                                 }
                             }
                         } catch (error) {
-                            console.error('Error parsing session:', error);
+                            // Skip invalid sessions
                         }
                     }
                 }
@@ -113,7 +111,7 @@ export default function ChatHistory() {
             allSessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
             setSessions(allSessions);
         } catch (error) {
-            console.error('Error loading local sessions:', error);
+            // Ignore errors
         }
     };
 
@@ -137,11 +135,10 @@ export default function ChatHistory() {
 
                 if (!res.ok) {
                     const error = await res.text();
-                    console.error('Failed to delete from database:', error);
                 }
             }
         } catch (error) {
-            console.error('Error deleting session:', error);
+            // Ignore deletion errors
         }
 
         // Always remove from localStorage
@@ -167,8 +164,6 @@ export default function ChatHistory() {
     if (sessions.length === 0) {
         return null;
     }
-    
-    console.log('Rendering sessions:', sessions);
 
     return (
         <div className="mt-12">

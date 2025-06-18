@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 
 export default function Navbar() {
     const { user, signOut } = useAuth();

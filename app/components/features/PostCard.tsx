@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import MentionLink from '../ui/MentionLink';
-import AuthorLink from '../ui/AuthorLink';
+import AuthorLink from './AuthorLink';
 import QuickCommentInput from './QuickCommentInput';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';

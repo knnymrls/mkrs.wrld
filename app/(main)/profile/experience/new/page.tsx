@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { updateProfileEmbedding } from '@/lib/profile-embeddings';
+import { supabase } from '@/lib/supabase/client';
+import { updateProfileEmbedding } from '@/lib/embeddings/profile-embeddings';
 
 export default function NewExperience() {
     const { user } = useAuth();

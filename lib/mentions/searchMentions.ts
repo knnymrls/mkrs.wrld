@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { MentionSuggestion } from '@/app/types/mention';
 
 export async function searchMentions(search: string, showCreateOption: boolean = true): Promise<MentionSuggestion[]> {

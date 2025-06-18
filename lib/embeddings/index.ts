@@ -1,5 +1,5 @@
 // lib/embedding.ts
-import { supabase } from './supabase';
+import { supabase } from '../supabase/client';
 
 export async function getEmbedding(text: string): Promise<number[]> {
     const response = await fetch('/api/embeddings', {

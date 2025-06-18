@@ -36,7 +36,6 @@ export default function ChatSessionPage() {
             // First try to load from database
             if (user?.id) {
                 try {
-                    console.log('Loading messages for session:', sessionId);
                     const res = await fetch(`/api/chat/sessions?userId=${user.id}&sessionId=${sessionId}`, {
                         headers: {
                             'Content-Type': 'application/json',
@@ -46,7 +45,6 @@ export default function ChatSessionPage() {
 
                     if (res.ok) {
                         const data = await res.json();
-                        console.log('Loaded session data:', data);
                         if (data.session && data.session.messages) {
                             // Transform database messages to our format
                             const dbMessages = data.session.messages.map((msg: any) => ({
@@ -56,7 +54,6 @@ export default function ChatSessionPage() {
                                 sources: msg.metadata?.sources || []
                             }));
 
-                            console.log('Transformed messages:', dbMessages);
                             if (dbMessages.length > 0) {
                                 setMessages(dbMessages);
                                 setSessionCreated(true); // Mark session as already created
@@ -65,7 +62,6 @@ export default function ChatSessionPage() {
                             }
                         }
                     } else {
-                        console.log('Failed to load session, status:', res.status);
                     }
                 } catch (error) {
                     console.error('Error loading messages from database:', error);
@@ -106,14 +102,12 @@ export default function ChatSessionPage() {
 
         const pendingMessageKey = `pending-message-${sessionId}`;
         const pendingMessageStr = localStorage.getItem(pendingMessageKey);
-        console.log('Checking for pending message:', pendingMessageStr);
 
         if (pendingMessageStr && messages.length === 0) {
             try {
                 const pendingMessage = JSON.parse(pendingMessageStr);
                 localStorage.removeItem(pendingMessageKey);
                 pendingMessageProcessed.current = true;
-                console.log('Found pending message:', pendingMessage);
 
                 // Add user message
                 const userMessage: ChatMessage = {
@@ -126,7 +120,6 @@ export default function ChatSessionPage() {
 
                 // Use a timeout to ensure UI updates
                 setTimeout(() => {
-                    console.log('Auto-sending message with text:', pendingMessage.text);
                     // Pass the message text and mentions directly to sendMessage
                     sendMessage(pendingMessage.text, pendingMessage.mentions || []);
                 }, 500);

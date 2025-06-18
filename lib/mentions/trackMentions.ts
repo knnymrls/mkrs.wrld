@@ -89,15 +89,5 @@ export function calculateDropdownPosition(
     left = 20;
   }
 
-  // Debug logging
-  console.log('Positioning debug:', {
-    textareaRect: rect,
-    caretPos: caretPos,
-    cursorViewportPosition: { x: cursorX, y: cursorY },
-    calculatedPosition: { top, left },
-    atPosition: atPosition,
-    viewportDimensions: { width: viewportWidth, height: viewportHeight }
-  });
-
   return { top, left };
 }

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { TrackedMention } from '../types/mention';
 import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';

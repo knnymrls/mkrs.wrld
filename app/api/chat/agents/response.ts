@@ -1,11 +1,6 @@
 import { OpenAI } from 'openai';
-import { 
-  SearchResults, 
-  DataGap, 
-  DataRequest,
-  ProgressUpdate,
-  Source 
-} from '../types';
+import { DataGap, DataRequest, ProgressUpdate } from '@/app/types/chat';
+import { SearchResults, Source } from '@/app/models/Search';
 import { ParsedQuery } from '../utils/query-parser';
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { createClient } from '@supabase/supabase-js';

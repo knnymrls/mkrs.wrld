@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 
 interface AuthContextType {
     user: User | null;
@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     const checkProfile = useCallback(async (userId: string | undefined) => {
-        console.log('[AuthContext] checkProfile called with userId:', userId);
         if (!userId) return setHasProfile(null);
 
         const { data: profileData, error: profileError } = await supabase
@@ -44,11 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('id', userId)
             .maybeSingle<{ id: string; name: string | null; title: string | null; location: string | null; bio: string | null; }>();
 
-        console.log('[AuthContext] checkProfile Supabase call result:', {
-            userId,
-            profileData,
-            profileError,
-        });
 
         if (profileError) {
             console.error('[AuthContext] Error fetching profile:', profileError);
@@ -74,7 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const refreshProfile = useCallback(async () => {
-        console.log('[AuthContext] refreshProfile called');
         await checkProfile(user?.id);
     }, [user, checkProfile]);
 
@@ -102,9 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Redirect to /onboarding if no profile
     useEffect(() => {
         if (!loading && user && hasProfile === false) {
-            console.log(
-                '[AuthContext] No profile found — redirecting to /onboarding'
-            );
             router.push('/onboarding');
         }
     }, [loading, user, hasProfile, router]);

@@ -1,4 +1,5 @@
-import { SearchStrategy, SearchResult } from '../types';
+import { SearchStrategy } from '@/app/types/chat';
+import { SearchResult } from '@/app/models/Search';
 import { OpenAI } from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
