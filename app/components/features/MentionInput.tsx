@@ -293,17 +293,17 @@ export default function MentionInput({
 
   return (
     <div className="relative">
-      <div className={`relative ${rows === 1 ? '' : 'bg-gray-50 dark:bg-gray-900'} rounded-md`}>
+      <div className={`relative ${rows === 2 ? '' : 'bg-gray-50 dark:bg-gray-900'} rounded-md`}>
         {/* Mention overlay for visual styling */}
         <div
-          className={`absolute inset-0 ${rows === 1 ? 'p-2' : 'p-3'} pointer-events-none overflow-hidden`}
+          className={`absolute inset-0 pointer-events-none overflow-hidden`}
           style={{
             fontFamily: 'inherit',
             fontSize: '16px',
             lineHeight: '1.5',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
-            maxHeight: rows === 1 ? '120px' : undefined
+            maxHeight: rows === 3 ? '120px' : undefined
           }}
         >
           {(() => {

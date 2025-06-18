@@ -54,7 +54,7 @@ export default function PostCardSkeleton({ variant = 'medium' }: PostCardSkeleto
         {getContentLines()}
 
         {/* Comment input skeleton */}
-        <div className="mt-3 flex items-center gap-2 pt-3 border-t border-border-light">
+        <div className="mt-3 flex items-center gap-2 pt-3">
           <div className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
           <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
         </div>

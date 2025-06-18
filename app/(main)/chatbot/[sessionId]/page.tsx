@@ -164,7 +164,7 @@ export default function ChatSessionPage() {
                 elements.push(
                     <span
                         key={`mention-${idx}`}
-                        className="text-blue-600 dark:text-blue-400 font-medium"
+                        className="text-primary font-medium"
                     >
                         {mention.name}
                     </span>
@@ -323,16 +323,16 @@ export default function ChatSessionPage() {
 
     if (initialLoad) {
         return (
-            <div className="h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+            <div className="h-screen bg-background flex items-center justify-center">
                 <div className="animate-pulse">
-                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+                    <div className="h-8 bg-surface-container-muted rounded w-48"></div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="h-screen bg-white dark:bg-gray-900 relative">
+        <div className="h-screen bg-background relative">
             {/* Messages area - scrollable with padding at bottom for input */}
             <div className="h-full overflow-y-auto pb-32">
                 <div className="max-w-4xl mx-auto px-4 py-8">
@@ -344,7 +344,7 @@ export default function ChatSessionPage() {
                             <div className={`inline-block max-w-[80%] ${msg.role === 'user' ? 'ml-auto' : ''}`}>
                                 {/* Message content */}
                                 {msg.role === 'user' ? (
-                                    <div className="rounded-lg px-4 py-3 bg-primary/10 dark:bg-blue-900/20 text-gray-900 dark:text-white">
+                                    <div className="rounded-lg px-4 py-3 bg-primary/5 text-onsurface-primary">
                                         <p className="whitespace-pre-wrap">
                                             {msg.mentions ? renderMessageWithMentions(msg.text, msg.mentions) : msg.text}
                                         </p>
@@ -352,7 +352,7 @@ export default function ChatSessionPage() {
                                 ) : (
                                     <div>
                                         {msg.isStatus ? (
-                                            <p className={`italic text-gray-600 dark:text-gray-400 ${styles.loadingDots}`}>{msg.text}</p>
+                                            <p className={`italic text-onsurface-secondary ${styles.loadingDots}`}>{msg.text}</p>
                                         ) : (
                                             <div className="prose dark:prose-invert max-w-none">
                                                 <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -376,8 +376,8 @@ export default function ChatSessionPage() {
             </div>
 
             {/* Fixed floating input at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md  border-gray-200 dark:border-gray-700">
-                <div className="max-w-4xl mx-auto px-4 mb-4">
+            <div className="absolute bottom-0 left-0 right-0 bg-background/40 backdrop-blur-md">
+                <div className="max-w-4xl mx-auto px-4 mb-8">
                     <ChatInput
                         value={input}
                         onChange={setInput}

@@ -6,52 +6,94 @@
   --foreground: #171717;
   
   /* Custom colors for the app */
-  --primary: #8CB332; /* red-500 */
-  --primary-hover: #76972a; /* red-600 */
-  --card-bg: #ffffff;
-  --card-hover-shadow: rgba(0, 0, 0, 0.1);
-  --input-bg: #f9fafb; /* gray-50 */
-  --input-bg-focus: #f3f4f6; /* gray-100 */
-  --text-primary: #1f2937; /* gray-800 */
-  --text-secondary: #4b5563; /* gray-600 */
-  --text-muted: #9ca3af; /* gray-500 */
-  --text-light: #d1d5db; /* gray-400 */
-  --border-light: #f3f4f6; /* gray-100 */
-  --avatar-bg: #f3f4f6; /* gray-100 */
-  --button-bg: #f3f4f6; /* gray-100 */
-  --button-bg-hover: #e5e7eb; /* gray-200 */
-  --border: #dbdbdb; /* gray-200 */
-  --text-primary: #464646; /* gray-800 */
-  --text-secondary: #999999; /* gray-600 */
+  --primary: #8CB332;
+  --primary-hover: #76972a;
+  --surface-container: #ffffff;
+  --surface-container-muted: #f0f0f0;
+  --border: #dbdbdb;
+  --onsurface-primary: #464646;
+  --onsurface-secondary: #999999;
+}
 
+/* Dark mode support - automatically switches based on system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1D1D1D;
+    --foreground: #ededed;
+    
+    /* Custom colors for dark mode */
+    --primary: #8CB332;
+    --primary-hover: #9bc23e;
+    --surface-container: #292929;
+    --surface-container-muted: #191919;
+    --border: #404040;
+    --onsurface-primary: #f3f4f6;
+    --onsurface-secondary: #cfcfcf;
+  }
 }
 
 @theme inline {
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-muted: var(--surface-container-muted);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
-  --color-card-bg: var(--card-bg);
-  --color-input-bg: var(--input-bg);
-  --color-input-bg-focus: var(--input-bg-focus);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-text-light: var(--text-light);
-  --color-border-light: var(--border-light);
+  --color-onsurface-primary: var(--onsurface-primary);
+  --color-onsurface-secondary: var(--onsurface-secondary);
   --color-border: var(--border);
-  --color-avatar-bg: var(--avatar-bg);
-  --color-button-bg: var(--button-bg);
-  --color-button-bg-hover: var(--button-bg-hover);
-  --color-text-secondary: var(--text-secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
-
-/* Dark mode disabled for consistent light theme */
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Geist', system-ui, -apple-system, sans-serif;
+}
+
+@keyframes ping-once {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-once {
+  animation: ping-once 0.6s cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Custom shadow utilities for dark mode */
+@media (prefers-color-scheme: dark) {
+  .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  .shadow {
+    box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.07), 0 1px 2px -1px rgba(255, 255, 255, 0.07);
+  }
+  
+  .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.07), 0 2px 4px -2px rgba(255, 255, 255, 0.07);
+  }
+  
+  .shadow-lg {
+    box-shadow: 0 10px 10px -3px rgba(255, 255, 255, 0.07), 0 4px 6px -4px rgba(255, 255, 255, 0.07);
+  }
+  
+  .shadow-xl {
+        box-shadow: 0 20px 25px -5px rgba(255, 255, 255, 0.07), 0 8px 10px -6px rgba(255, 255, 255, 0.07);
+  }
+  
+  .shadow-2xl {
+    box-shadow: 0 25px 50px -12px rgba(255, 255, 255, 0.25);
+  }
 }

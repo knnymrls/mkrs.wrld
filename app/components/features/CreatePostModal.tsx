@@ -4,9 +4,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { getEmbedding } from '@/lib/embeddings';
-import MentionInput from './MentionInput';
+import ChatInput from './ChatInput';
 import MentionLink from '../ui/MentionLink';
-import PostImageUpload from '../ui/PostImageUpload';
 import { TrackedMention } from '../../types/mention';
 
 interface CreatePostModalProps {
@@ -165,65 +164,44 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4 z-50"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
+      className="fixed inset-0 bg-black/25 flex items-center justify-center p-4 z-50"
       onClick={handleClose}
     >
       <div
-        className="bg-card-bg rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-auto"
+        className="rounded-2xl w-full max-w-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">Create a Post</h3>
-          <MentionInput
+        {/* Content */}
+        <div className="flex-1 px-6 py-4">
+          <ChatInput
             value={postContent}
             onChange={setPostContent}
             onMentionsChange={setTrackedMentions}
-            placeholder="Share your thoughts... Use @ to mention people or projects"
+            onSubmit={createPost}
+            placeholder="What's on your mind? Use @ to mention people or projects..."
             userId={user?.id}
-            autoFocus
+            disabled={isSubmitting}
+            loading={isSubmitting}
+            allowProjectCreation={true}
+            variant="post"
+            onImageUpload={handleImageUpload}
+            onImageRemove={handleImageRemove}
+            imageUrl={imageUrl}
+            imageWidth={imageWidth}
+            imageHeight={imageHeight}
           />
 
-          {/* Image Upload Section */}
-          <div className="mt-4">
-            <PostImageUpload
-              onImageUpload={handleImageUpload}
-              onImageRemove={handleImageRemove}
-              userId={user?.id || ''}
-              disabled={isSubmitting}
-              imageUrl={imageUrl}
-              imageWidth={imageWidth}
-              imageHeight={imageHeight}
-            />
-          </div>
-
+          {/* Preview Section
+          {postContent.trim() && (
+            <div className="mt-4 p-4 bg-surface-container-muted rounded-lg">
+              <p className="text-sm text-onsurface-secondary mb-1">Preview:</p>
+              <div className="text-onsurface-primary">
+                {renderPostPreview()}
+              </div>
+            </div>
+          )} */}
         </div>
 
-        <div className="flex justify-between items-center pt-4 border-t border-border-light">
-          <div className="text-xs text-text-muted">
-            {postContent.length > 0 && `${postContent.length} characters`}
-          </div>
-          <div className="flex space-x-3">
-            <button
-              onClick={handleClose}
-              className="px-5 py-2 text-sm font-medium text-text-secondary bg-button-bg rounded-full hover:bg-button-bg-hover transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={createPost}
-              disabled={(!postContent.trim() && !imageUrl) || isSubmitting}
-              className="px-5 py-2 text-sm font-medium text-white bg-primary rounded-full hover:bg-primary-hover disabled:opacity-50 transition-colors"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Posting...
-                </div>
-              ) : 'Post'}
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

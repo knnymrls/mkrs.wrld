@@ -24,11 +24,11 @@ interface SuggestionItemProps {
   onHover: () => void;
 }
 
-const SuggestionItem = React.memo<SuggestionItemProps>(({ 
-  suggestion, 
-  isSelected, 
-  onSelect, 
-  onHover 
+const SuggestionItem = React.memo<SuggestionItemProps>(({
+  suggestion,
+  isSelected,
+  onSelect,
+  onHover
 }) => {
   const isCreateNew = suggestion.id === 'create-new';
   const isPerson = suggestion.type === 'person';
@@ -40,7 +40,7 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
           <img
             src={suggestion.imageUrl}
             alt={suggestion.name}
-            className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
@@ -51,7 +51,7 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
         );
       }
       return (
-        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300 flex-shrink-0">
+        <div className="w-5 h-5 rounded-full bg-onsurface-primary flex items-center justify-center text-xs font-medium text-surface-container flex-shrink-0">
           {suggestion.name.charAt(0).toUpperCase()}
         </div>
       );
@@ -61,17 +61,15 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
           <img
             src={suggestion.imageUrl}
             alt={suggestion.name}
-            className="w-8 h-8 rounded object-cover flex-shrink-0"
+            className="w-5 h-5 rounded object-cover flex-shrink-0"
             loading="lazy"
           />
         );
       }
       return (
-        <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-          <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
-          </svg>
-        </div>
+        <svg className="w-5 h-5 text-onsurface-primary" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
+        </svg>
       );
     }
   }, [suggestion.imageUrl, suggestion.name, isPerson]);
@@ -80,30 +78,22 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
     <button
       onClick={onSelect}
       onMouseEnter={onHover}
-      className={`w-full px-3 py-3 text-left flex items-center gap-2 transition-colors duration-150 focus:outline-none ${
-        isSelected
-          ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-          : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100'
-      }`}
+      className={`w-full px-3 py-3 text-left flex items-center gap-2 transition-colors duration-150 focus:outline-none ${isSelected
+        ? 'bg-surface-container-muted text-onsurface-primary'
+        : 'hover:bg-surface-container-muted text-onsurface-primary'
+        }`}
       role="option"
       aria-selected={isSelected}
       aria-label={`${suggestion.type === 'person' ? 'Person' : 'Project'}: ${suggestion.name}${suggestion.subtitle ? `, ${suggestion.subtitle}` : ''}`}
     >
       {avatarElement}
-      
+
       <div className="flex-1 min-w-0">
-        <div className="font-medium truncate text-base" style={{ lineHeight: '1.5' }}>
+        <div className="truncate text-base" style={{ lineHeight: '1.5' }}>
           {suggestion.name}
         </div>
-        {suggestion.subtitle && (
-          <div className={`text-sm truncate text-gray-500 dark:text-gray-400 ${
-            isCreateNew ? 'text-green-600 dark:text-green-400' : ''
-          }`} style={{ lineHeight: '1.5' }}>
-            {isCreateNew ? '+ Create new project' : suggestion.subtitle}
-          </div>
-        )}
-      </div>
 
+      </div>
     </button>
   );
 });
@@ -122,7 +112,7 @@ const LoadingState = () => (
 
 const ErrorState = ({ error }: { error: string }) => (
   <div className="px-4 py-6 flex flex-col items-center justify-center text-red-500 dark:text-red-400">
-    <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
     </svg>
     <p className="text-sm font-medium mb-1">Search Error</p>
@@ -132,7 +122,7 @@ const ErrorState = ({ error }: { error: string }) => (
 
 const EmptyState = () => (
   <div className="px-4 py-6 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-    <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
     <p className="text-sm font-medium mb-1">No results found</p>
@@ -141,29 +131,29 @@ const EmptyState = () => (
 );
 
 const KeyboardHints = () => (
-  <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-center gap-4">
+  <div className="px-4 py-2 text-xs text-onsurface-primary border-t border-border bg-surface-container-muted flex items-center justify-center gap-4">
     <span className="flex items-center gap-1">
-      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-sm">↑↓</kbd>
+      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-surface-container border border-border rounded shadow-sm">↑↓</kbd>
       Navigate
     </span>
     <span className="flex items-center gap-1">
-      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-sm">Enter</kbd>
+      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-surface-container border border-border rounded shadow-sm">Enter</kbd>
       Select
     </span>
     <span className="flex items-center gap-1">
-      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-sm">Esc</kbd>
+      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-surface-container border border-border rounded shadow-sm">Esc</kbd>
       Close
     </span>
   </div>
 );
 
 const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
-  ({ 
-    suggestions, 
-    selectedIndex, 
-    position, 
-    onSelect, 
-    onHover, 
+  ({
+    suggestions,
+    selectedIndex,
+    position,
+    onSelect,
+    onHover,
     isLoading = false,
     error = null,
     maxHeight = 320,
@@ -176,7 +166,7 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
     // Simplified positioning - trust the calculation from the parent
     useEffect(() => {
       console.log('MentionDropdown received position:', position);
-      
+
       if (position.top < 0 || position.left < 0) {
         setIsVisible(false);
         return;
@@ -186,7 +176,7 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
       // the position calculation should already handle all viewport concerns
       setAdjustedPosition(position);
       setIsVisible(true);
-      
+
       console.log('MentionDropdown final adjusted position:', position);
     }, [position]);
 
@@ -215,7 +205,7 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
     const dropdownElement = (
       <div
         ref={ref}
-        className={`fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden ${className}`}
+        className={`fixed bg-surface-container border border-border rounded-lg shadow-lg overflow-hidden ${className}`}
         style={{
           top: `${adjustedPosition.top}px`,
           left: `${adjustedPosition.left}px`,
@@ -230,7 +220,7 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
       >
 
         {/* Content */}
-        <div 
+        <div
           className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
           style={{ maxHeight: `${maxHeight - 40}px` }}
         >

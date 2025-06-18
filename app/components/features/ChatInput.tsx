@@ -2,6 +2,8 @@
 
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import MentionDropdown from '../ui/MentionDropdown';
+import PostImageUpload from '../ui/PostImageUpload';
+import { supabase } from '@/lib/supabase';
 import { MentionSuggestion, TrackedMention, DropdownPosition } from '@/app/types/mention';
 import { searchMentions } from '@/lib/mentions/searchMentions';
 import { createProjectFromMention } from '@/lib/mentions/createProject';
@@ -22,6 +24,12 @@ interface ChatInputProps {
   userId?: string;
   loading?: boolean;
   allowProjectCreation?: boolean;
+  variant?: 'default' | 'post';
+  onImageUpload?: (url: string, width: number, height: number) => void;
+  onImageRemove?: () => void;
+  imageUrl?: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
 }
 
 export default function ChatInput({
@@ -33,7 +41,13 @@ export default function ChatInput({
   disabled = false,
   userId,
   loading = false,
-  allowProjectCreation = true
+  allowProjectCreation = true,
+  variant = 'default',
+  onImageUpload,
+  onImageRemove,
+  imageUrl,
+  imageWidth,
+  imageHeight
 }: ChatInputProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
@@ -187,12 +201,12 @@ export default function ChatInput({
         console.warn('Project creation is not allowed in this context');
         return;
       }
-      
+
       if (!userId) {
         console.warn('User ID is required to create a project');
         return;
       }
-      
+
       const newProject = await createProjectFromMention(mention.name, userId);
       if (!newProject) return;
 
@@ -302,7 +316,7 @@ export default function ChatInput({
 
   return (
     <div className="relative">
-      <div className="bg-white shadow-md p-4 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="bg-surface-container backdrop-blur-md shadow-lg p-4 rounded-2xl border border-border">
         {/* Textarea container */}
         <div className="relative">
           {/* Mention overlay for visual styling */}
@@ -380,48 +394,153 @@ export default function ChatInput({
 
         {/* Bottom controls */}
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => {
-              const textarea = textareaRef.current;
-              if (textarea) {
-                const currentValue = textarea.value;
-                const cursorPos = textarea.selectionStart;
-                const newValue = currentValue.slice(0, cursorPos) + '@' + currentValue.slice(cursorPos);
-                onChange(newValue);
-                setTimeout(() => {
-                  textarea.focus();
-                  textarea.setSelectionRange(cursorPos + 1, cursorPos + 1);
-                  // Manually trigger the change handler
-                  handleTextChange({
-                    target: {
-                      value: newValue,
-                      selectionStart: cursorPos + 1
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const textarea = textareaRef.current;
+                if (textarea) {
+                  const currentValue = textarea.value;
+                  const cursorPos = textarea.selectionStart;
+                  const newValue = currentValue.slice(0, cursorPos) + '@' + currentValue.slice(cursorPos);
+                  onChange(newValue);
+                  setTimeout(() => {
+                    textarea.focus();
+                    textarea.setSelectionRange(cursorPos + 1, cursorPos + 1);
+                    // Manually trigger the change handler
+                    handleTextChange({
+                      target: {
+                        value: newValue,
+                        selectionStart: cursorPos + 1
+                      }
+                    } as any);
+                  }, 0);
+                }
+              }}
+              className="flex items-center gap-1.5 bg-surface-container-muted hover:bg-surface-container-muted/50 cursor-pointer text-onsurface-primary text-sm transition-colors px-3 py-2 rounded-lg"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+              </svg>
+              <span>Mention</span>
+            </button>
+
+            {/* Image upload button for post variant */}
+            {variant === 'post' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file && onImageUpload && userId) {
+                      // Create object URL to get dimensions
+                      const objectUrl = URL.createObjectURL(file);
+                      const img = new Image();
+                      img.onload = async () => {
+                        const width = img.width;
+                        const height = img.height;
+                        URL.revokeObjectURL(objectUrl);
+
+                        try {
+                          // Sanitize filename - remove spaces and special characters
+                          const sanitizedFileName = file.name
+                            .replace(/\s+/g, '-') // Replace spaces with hyphens
+                            .replace(/[^a-zA-Z0-9.-]/g, '') // Remove special characters except dots and hyphens
+                            .toLowerCase();
+                          
+                          // Upload to Supabase
+                          const fileName = `${userId}/${Date.now()}-${sanitizedFileName}`;
+                          const { data, error: uploadError } = await supabase.storage
+                            .from('post-images')
+                            .upload(fileName, file);
+
+                          if (uploadError) {
+                            console.error('Upload error details:', {
+                              error: uploadError,
+                              message: uploadError.message || 'Unknown error',
+                              statusCode: uploadError.statusCode,
+                              fileName,
+                              fileSize: file.size,
+                              fileType: file.type
+                            });
+                            
+                            // Check if it's a bucket not found error
+                            if (uploadError.message?.includes('not found')) {
+                              alert('Storage bucket "post-images" not found. Please create it in Supabase.');
+                            } else if (uploadError.message?.includes('row level security')) {
+                              alert('Storage permissions error. Please check Supabase storage policies.');
+                            } else {
+                              alert(`Failed to upload image: ${uploadError.message || 'Unknown error'}`);
+                            }
+                            return;
+                          }
+
+                          if (data) {
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('post-images')
+                              .getPublicUrl(fileName);
+
+                            onImageUpload(publicUrl, width, height);
+                          }
+                        } catch (err) {
+                          console.error('Unexpected upload error:', err);
+                          alert('Failed to upload image. Please try again.');
+                        }
+                      };
+                      img.src = objectUrl;
                     }
-                  } as any);
-                }, 0);
-              }
-            }}
-            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg p-2 text-text-primary cursor-pointer hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-            </svg>
-            <span>Mention</span>
-          </button>
+                  };
+                  input.click();
+                }}
+                className="flex items-center gap-1.5 bg-surface-container-muted hover:bg-surface-container-muted/50 cursor-pointer text-onsurface-primary text-sm transition-colors px-3 py-2 rounded-lg"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Image</span>
+              </button>
+            )}
+          </div>
 
           <button
             onClick={onSubmit}
-            disabled={disabled || loading || !value.trim()}
-            className="p-2 rounded-lg bg-primary hover:bg-primary-hover dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
+            disabled={disabled || loading || (!value.trim() && !imageUrl)}
+            className="p-2 rounded-full bg-primary hover:bg-primary-hover disabled:opacity-50 transition-all hover:scale-105 shadow-sm"
             aria-label="Send message"
           >
-            <svg className="w-5 h-5 text-text-primary dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
         </div>
       </div>
+
+      {/* Image Preview Section for post variant - absolute positioned at top */}
+      {variant === 'post' && imageUrl && (
+        <div className="absolute top-0 left-0 transform -translate-y-full pb-3">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 shadow-sm">
+              <img
+                src={imageUrl}
+                alt="Uploaded image"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <button
+              onClick={() => onImageRemove?.()}
+              className="absolute -top-2 -right-2 p-1 bg-background border-border hover:bg-onsurface-primary hover:text-surface-container rounded-full shadow-md transition-colors"
+              disabled={disabled || loading}
+            >
+              <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mention Dropdown */}
       {showMentions && mentionSuggestions.length > 0 && (

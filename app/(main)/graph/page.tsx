@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { Search, ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Activity, TrendingUp, Network } from 'lucide-react';
+import Image from 'next/image';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -13,6 +15,8 @@ interface ProfileNode {
     type: 'profile';
     title?: string;
     location?: string;
+    avatar_url?: string;
+    skills?: string[];
 }
 
 interface PostNode {
@@ -20,6 +24,7 @@ interface PostNode {
     label: string;
     type: 'post';
     authorName?: string;
+    created_at?: string;
 }
 
 interface ProjectNode {
@@ -38,29 +43,51 @@ interface Link {
     type: 'authored' | 'mentions_profile' | 'mentions_project' | 'contributes';
 }
 
+interface FilterState {
+    showProfiles: boolean;
+    showPosts: boolean;
+    showProjects: boolean;
+    minConnections: number;
+}
+
 export default function GraphPage() {
     const router = useRouter();
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: Link[] }>({ nodes: [], links: [] });
+    const [filteredData, setFilteredData] = useState<{ nodes: GraphNode[]; links: Link[] }>({ nodes: [], links: [] });
     const [loading, setLoading] = useState(true);
-    const [selectedNode, setSelectedNode] = useState<string | null>(null);
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+    const [clickedNode, setClickedNode] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<GraphNode[]>([]);
     const [showSearchDropdown, setShowSearchDropdown] = useState(false);
     const [selectedSearchIndex, setSelectedSearchIndex] = useState(0);
-    const [animatedNodeOpacities, setAnimatedNodeOpacities] = useState<{ [id: string]: number }>({});
-    const [animatedLinkOpacities, setAnimatedLinkOpacities] = useState<{ [key: string]: number }>({});
     const [nodeConnectionCounts, setNodeConnectionCounts] = useState<{ [id: string]: number }>({});
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-    const animationRef = useRef<number | null>(null);
     const graphRef = useRef<any>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState<FilterState>({
+        showProfiles: true,
+        showPosts: true,
+        showProjects: true,
+        minConnections: 0
+    });
+    const [graphStats, setGraphStats] = useState({
+        totalNodes: 0,
+        totalEdges: 0,
+        profileCount: 0,
+        postCount: 0,
+        projectCount: 0,
+        avgConnections: 0,
+        mostConnected: null as GraphNode | null
+    });
 
     // Update dimensions on window resize
     useEffect(() => {
         const updateDimensions = () => {
             setDimensions({
-                width: window.innerWidth - 64, // Account for navbar width
-                height: window.innerHeight - 80 // Account for header height
+                width: window.innerWidth,
+                height: window.innerHeight
             });
         };
         
@@ -69,70 +96,80 @@ export default function GraphPage() {
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
 
-    // Compute related nodes and links for highlighting
-    const related = useMemo(() => {
-        if (!selectedNode || !graphData) return { nodeIds: new Set(), linkPairs: new Set() };
-        const nodeIds = new Set([selectedNode]);
-        const linkPairs = new Set<string>();
-        graphData.links.forEach(link => {
-            const getId = (n: any) => (typeof n === 'object' && n !== null && 'id' in n ? (n as { id: string }).id : n);
-            const sourceId = getId(link.source);
-            const targetId = getId(link.target);
-            if (sourceId === selectedNode) {
-                nodeIds.add(targetId);
-                linkPairs.add(`${sourceId}|${targetId}`);
-            }
-            if (targetId === selectedNode) {
-                nodeIds.add(sourceId);
-                linkPairs.add(`${sourceId}|${targetId}`);
-            }
+    // Compute related nodes for highlighting
+    const relatedNodes = useMemo(() => {
+        if (!hoveredNode || !filteredData) return new Set<string>();
+        const related = new Set([hoveredNode]);
+        
+        filteredData.links.forEach(link => {
+            const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
+            const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+            
+            if (sourceId === hoveredNode) related.add(targetId);
+            if (targetId === hoveredNode) related.add(sourceId);
         });
-        return { nodeIds, linkPairs };
-    }, [selectedNode, graphData]);
+        
+        return related;
+    }, [hoveredNode, filteredData]);
 
-    // Animate opacities when highlight state changes
+    // Apply filters to graph data
     useEffect(() => {
-        if (!graphData) return;
-        const duration = 200;
-        const start = performance.now();
-        const nodeTarget: { [id: string]: number } = {};
-        const linkTarget: { [key: string]: number } = {};
-        graphData.nodes.forEach(node => {
-            nodeTarget[node.id] = !selectedNode || related.nodeIds.has(node.id) ? 1 : 0.2;
+        if (!graphData.nodes.length) return;
+
+        const filteredNodes = graphData.nodes.filter(node => {
+            // Type filter
+            if (node.type === 'profile' && !filters.showProfiles) return false;
+            if (node.type === 'post' && !filters.showPosts) return false;
+            if (node.type === 'project' && !filters.showProjects) return false;
+            
+            // Connection count filter
+            const connections = nodeConnectionCounts[node.id] || 0;
+            if (connections < filters.minConnections) return false;
+            
+            return true;
         });
-        graphData.links.forEach(link => {
-            const getId = (n: any) => (typeof n === 'object' && n !== null && 'id' in n ? (n as { id: string }).id : n);
-            const sourceId = getId(link.source);
-            const targetId = getId(link.target);
-            const key = `${sourceId}|${targetId}`;
-            linkTarget[key] = !selectedNode || (related.nodeIds.has(sourceId) && related.nodeIds.has(targetId)) ? 1 : 0.1;
+
+        const nodeIds = new Set(filteredNodes.map(n => n.id));
+        const filteredLinks = graphData.links.filter(link => {
+            const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
+            const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
+            return nodeIds.has(sourceId) && nodeIds.has(targetId);
         });
-        const initialNode = { ...animatedNodeOpacities };
-        const initialLink = { ...animatedLinkOpacities };
-        const animate = (now: number) => {
-            const t = Math.min(1, (now - start) / duration);
-            const newNode: { [id: string]: number } = {};
-            const newLink: { [key: string]: number } = {};
-            Object.keys(nodeTarget).forEach(id => {
-                const from = initialNode[id] !== undefined ? initialNode[id] : nodeTarget[id];
-                newNode[id] = from + (nodeTarget[id] - from) * t;
-            });
-            Object.keys(linkTarget).forEach(key => {
-                const from = initialLink[key] !== undefined ? initialLink[key] : linkTarget[key];
-                newLink[key] = from + (linkTarget[key] - from) * t;
-            });
-            setAnimatedNodeOpacities(newNode);
-            setAnimatedLinkOpacities(newLink);
-            if (t < 1) {
-                animationRef.current = requestAnimationFrame(animate);
+
+        setFilteredData({ nodes: filteredNodes, links: filteredLinks });
+    }, [graphData, filters, nodeConnectionCounts]);
+
+    // Calculate graph statistics
+    useEffect(() => {
+        if (!filteredData.nodes.length) return;
+
+        const profileCount = filteredData.nodes.filter(n => n.type === 'profile').length;
+        const postCount = filteredData.nodes.filter(n => n.type === 'post').length;
+        const projectCount = filteredData.nodes.filter(n => n.type === 'project').length;
+        
+        const totalConnections = Object.values(nodeConnectionCounts).reduce((sum, count) => sum + count, 0);
+        const avgConnections = totalConnections / filteredData.nodes.length;
+        
+        let mostConnected = null;
+        let maxConnections = 0;
+        filteredData.nodes.forEach(node => {
+            const connections = nodeConnectionCounts[node.id] || 0;
+            if (connections > maxConnections) {
+                maxConnections = connections;
+                mostConnected = node;
             }
-        };
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        animationRef.current = requestAnimationFrame(animate);
-        return () => {
-            if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        };
-    }, [selectedNode, graphData, related]);
+        });
+
+        setGraphStats({
+            totalNodes: filteredData.nodes.length,
+            totalEdges: filteredData.links.length,
+            profileCount,
+            postCount,
+            projectCount,
+            avgConnections: Math.round(avgConnections * 10) / 10,
+            mostConnected
+        });
+    }, [filteredData, nodeConnectionCounts]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -143,14 +180,16 @@ export default function GraphPage() {
                 { data: projects, error: projectsError },
                 { data: postMentions, error: postMentionsError },
                 { data: postProjects, error: postProjectsError },
-                { data: contributions, error: contributionsError }
+                { data: contributions, error: contributionsError },
+                { data: skills, error: skillsError }
             ] = await Promise.all([
-                supabase.from('profiles').select('id, name, title, location'),
-                supabase.from('posts').select('id, author_id, content'),
+                supabase.from('profiles').select('id, name, title, location, avatar_url'),
+                supabase.from('posts').select('id, author_id, content, created_at'),
                 supabase.from('projects').select('id, title, description, status'),
                 supabase.from('post_mentions').select('post_id, profile_id'),
                 supabase.from('post_projects').select('post_id, project_id'),
-                supabase.from('contributions').select('person_id, project_id, role')
+                supabase.from('contributions').select('person_id, project_id, role'),
+                supabase.from('skills').select('profile_id, skill')
             ]);
 
             if (profilesError || postsError || projectsError) {
@@ -162,20 +201,32 @@ export default function GraphPage() {
             // Create profile ID to name map for post labels
             const profileMap = new Map((profiles || []).map(p => [p.id, p.name]));
 
+            // Group skills by profile
+            const profileSkills = new Map<string, string[]>();
+            (skills || []).forEach((s: any) => {
+                if (!profileSkills.has(s.profile_id)) {
+                    profileSkills.set(s.profile_id, []);
+                }
+                profileSkills.get(s.profile_id)!.push(s.skill);
+            });
+
             // Create nodes
             const profileNodes: ProfileNode[] = (profiles || []).map((p: any) => ({
                 id: p.id,
                 label: p.name || 'Unnamed',
                 type: 'profile',
                 title: p.title,
-                location: p.location
+                location: p.location,
+                avatar_url: p.avatar_url,
+                skills: profileSkills.get(p.id) || []
             }));
 
             const postNodes: PostNode[] = (posts || []).map((p: any) => ({
                 id: `post-${p.id}`,
                 label: p.content || 'Post',
                 type: 'post',
-                authorName: profileMap.get(p.author_id) || 'Unknown'
+                authorName: profileMap.get(p.author_id) || 'Unknown',
+                created_at: p.created_at
             }));
 
             const projectNodes: ProjectNode[] = (projects || []).map((p: any) => ({
@@ -239,23 +290,30 @@ export default function GraphPage() {
         fetchData();
     }, []);
 
+    const handleNodeClick = useCallback((node: any) => {
+        // Set the clicked node to show the popup
+        setClickedNode(node.id);
+    }, []);
+
     const handleZoomIn = () => {
         if (graphRef.current) {
-            graphRef.current.zoom(1.2);
+            graphRef.current.zoom(1.5, 400);
         }
     };
 
     const handleZoomOut = () => {
         if (graphRef.current) {
-            graphRef.current.zoom(0.8);
+            graphRef.current.zoom(0.7, 400);
         }
     };
 
     const handleZoomReset = () => {
         if (graphRef.current) {
-            graphRef.current.zoomToFit(400);
+            graphRef.current.zoomToFit(400, 50);
         }
     };
+
+
 
     // Handle click outside search
     useEffect(() => {
@@ -281,11 +339,12 @@ export default function GraphPage() {
         }
         
         const lowerQuery = query.toLowerCase();
-        const results = graphData.nodes.filter(node => {
+        const results = filteredData.nodes.filter(node => {
             if (node.type === 'profile') {
                 return node.label.toLowerCase().includes(lowerQuery) ||
                        (node.title && node.title.toLowerCase().includes(lowerQuery)) ||
-                       (node.location && node.location.toLowerCase().includes(lowerQuery));
+                       (node.location && node.location.toLowerCase().includes(lowerQuery)) ||
+                       ((node as ProfileNode).skills?.some(skill => skill.toLowerCase().includes(lowerQuery)));
             } else if (node.type === 'project') {
                 return node.label.toLowerCase().includes(lowerQuery) ||
                        ((node as ProjectNode).description && (node as ProjectNode).description!.toLowerCase().includes(lowerQuery));
@@ -296,7 +355,7 @@ export default function GraphPage() {
             return false;
         });
         
-        setSearchResults(results.slice(0, 10)); // Limit to 10 results
+        setSearchResults(results.slice(0, 10));
         setShowSearchDropdown(results.length > 0);
     };
 
@@ -328,25 +387,45 @@ export default function GraphPage() {
     };
 
     const selectSearchResult = (node: GraphNode) => {
-        // Navigate directly to the entity page
+        setSearchQuery('');
+        setShowSearchDropdown(false);
+        
+        // Navigate directly for profiles and projects
         if (node.type === 'profile') {
             router.push(`/profile/${node.id}`);
         } else if (node.type === 'project') {
             const projectId = node.id.replace('project-', '');
             router.push(`/projects/${projectId}`);
         }
-        // Posts don't have individual pages yet
+    };
+
+    const navigateToNode = (node: GraphNode) => {
+        if (node.type === 'profile') {
+            router.push(`/profile/${node.id}`);
+        } else if (node.type === 'project') {
+            const projectId = node.id.replace('project-', '');
+            router.push(`/projects/${projectId}`);
+        }
     };
 
     return (
-        <div className="relative w-full h-full bg-gray-50 dark:bg-gray-900">
+        <div className="relative w-full h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
             {/* Header */}
-            <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-center px-6 py-4">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Knowledge Graph</h1>
+            <div className="absolute top-0 left-0 right-0 z-30 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Knowledge Graph</h1>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Network size={16} />
+                            <span>{graphStats.totalNodes} nodes</span>
+                            <span className="text-gray-400">•</span>
+                            <span>{graphStats.totalEdges} connections</span>
+                        </div>
+                    </div>
                     
                     {/* Search Bar */}
                     <div className="relative flex-1 max-w-md mx-6" ref={searchInputRef}>
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
                             value={searchQuery}
@@ -354,11 +433,8 @@ export default function GraphPage() {
                             onKeyDown={handleSearchKeyDown}
                             onFocus={() => searchQuery && setShowSearchDropdown(searchResults.length > 0)}
                             placeholder="Search people, projects, or posts..."
-                            className="w-full px-4 py-2 pl-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
                         />
-                        <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
                         
                         {/* Search Dropdown */}
                         {showSearchDropdown && (
@@ -375,14 +451,13 @@ export default function GraphPage() {
                                         }`}
                                     >
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                            node.type === 'profile' ? 'bg-indigo-100 dark:bg-indigo-900' :
-                                            node.type === 'project' ? 'bg-amber-100 dark:bg-amber-900' :
-                                            'bg-emerald-100 dark:bg-emerald-900'
+                                            node.type === 'profile' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
+                                            node.type === 'project' ? 'bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400' :
+                                            'bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400'
                                         }`}>
-                                            <span className="text-sm">
-                                                {node.type === 'profile' ? '👤' :
-                                                 node.type === 'project' ? '📁' : '💬'}
-                                            </span>
+                                            {node.type === 'profile' ? <Users size={16} /> :
+                                             node.type === 'project' ? <Briefcase size={16} /> : 
+                                             <MessageCircle size={16} />}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium text-gray-900 dark:text-white truncate">
@@ -390,7 +465,7 @@ export default function GraphPage() {
                                             </p>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
                                                 {node.type === 'profile' && (node as ProfileNode).title ? (node as ProfileNode).title :
-                                                 node.type === 'project' ? 'Project' :
+                                                 node.type === 'project' ? `${(node as ProjectNode).status || 'Active'} Project` :
                                                  node.type === 'post' ? `by ${(node as PostNode).authorName}` : node.type}
                                             </p>
                                         </div>
@@ -402,236 +477,480 @@ export default function GraphPage() {
                             </div>
                         )}
                     </div>
-                    
-                    {/* Legend */}
-                    <div className="flex gap-6 text-sm">
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">👤</span>
-                            <span className="w-3 h-3 bg-indigo-500 rounded-full"></span>
-                            <span className="text-gray-600 dark:text-gray-400">People</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">📁</span>
-                            <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
-                            <span className="text-gray-600 dark:text-gray-400">Projects</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-lg">💬</span>
-                            <span className="w-3 h-3 bg-emerald-500 rounded-full"></span>
-                            <span className="text-gray-600 dark:text-gray-400">Posts</span>
-                        </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`p-2 rounded-lg transition-colors ${
+                                showFilters 
+                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' 
+                                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
+                            }`}
+                        >
+                            <Filter size={20} />
+                        </button>
                     </div>
                 </div>
             </div>
+
             {/* Main Content */}
-            <div className="relative w-full" style={{ height: 'calc(100vh - 5rem)' }}>
+            <div className="relative w-full h-full pt-[73px]">
                 {loading ? (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500 dark:text-gray-400">Loading graph...</p>
+                    <div className="flex flex-col items-center justify-center h-full">
+                        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading knowledge graph...</p>
                     </div>
                 ) : (
-                    <div className="relative w-full h-full">
+                    <>
+                        {/* Filters Panel */}
+                        {showFilters && (
+                            <div className="absolute top-4 left-4 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
+                                    <button
+                                        onClick={() => setShowFilters(false)}
+                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                                            Node Types
+                                        </label>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={filters.showProfiles}
+                                                    onChange={(e) => setFilters({ ...filters, showProfiles: e.target.checked })}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700 dark:text-gray-300">People ({graphStats.profileCount})</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={filters.showProjects}
+                                                    onChange={(e) => setFilters({ ...filters, showProjects: e.target.checked })}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700 dark:text-gray-300">Projects ({graphStats.projectCount})</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={filters.showPosts}
+                                                    onChange={(e) => setFilters({ ...filters, showPosts: e.target.checked })}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-700 dark:text-gray-300">Posts ({graphStats.postCount})</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                                            Minimum Connections: {filters.minConnections}
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="10"
+                                            value={filters.minConnections}
+                                            onChange={(e) => setFilters({ ...filters, minConnections: parseInt(e.target.value) })}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Graph Stats */}
+                        <div className="absolute bottom-4 left-4 z-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-xs">
+                            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <Activity size={16} />
+                                Graph Insights
+                            </h3>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Avg. connections</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{graphStats.avgConnections}</span>
+                                </div>
+                                {graphStats.mostConnected && (
+                                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <p className="text-gray-600 dark:text-gray-400 mb-1">Most connected:</p>
+                                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                                            {graphStats.mostConnected.label}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {nodeConnectionCounts[graphStats.mostConnected.id]} connections
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Zoom Controls */}
-                        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                        <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2">
                             <button
                                 onClick={handleZoomIn}
-                                className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-600"
+                                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                 title="Zoom In"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
-                                </svg>
+                                <ZoomIn size={20} />
                             </button>
                             <button
                                 onClick={handleZoomOut}
-                                className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-600"
+                                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                 title="Zoom Out"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
-                                </svg>
+                                <ZoomOut size={20} />
                             </button>
                             <button
                                 onClick={handleZoomReset}
-                                className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-600"
+                                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                 title="Reset View"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                                </svg>
+                                <Maximize2 size={20} />
                             </button>
                         </div>
-                        
-                        {/* Instructions */}
-                        <div className="absolute bottom-4 left-4 z-10 bg-white/90 dark:bg-gray-800/90 p-3 rounded-lg shadow-lg max-w-xs">
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
-                                <strong>Click</strong> on people or projects to view details<br/>
-                                <strong>Hover</strong> to highlight connections<br/>
-                                <strong>Drag</strong> nodes to reorganize<br/>
-                                <strong>Scroll</strong> to zoom, drag background to pan<br/>
-                                <strong>Node size</strong> = number of connections
-                            </p>
-                        </div>
-                        
-                        <div className="w-full h-full bg-white dark:bg-gray-800">
+
+                        {/* Node Details Panel - Show on hover or click */}
+                        {(hoveredNode || clickedNode) && (() => {
+                            const nodeId = clickedNode || hoveredNode;
+                            const nodeData = filteredData.nodes.find(n => n.id === nodeId);
+                            if (!nodeData) return null;
+                            
+                            return (
+                                <div className={`absolute top-20 right-4 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-80 max-h-[calc(100vh-200px)] overflow-y-auto ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            {nodeData.type === 'profile' && (nodeData as ProfileNode).avatar_url ? (
+                                                <Image
+                                                    src={(nodeData as ProfileNode).avatar_url!}
+                                                    alt={nodeData.label}
+                                                    width={48}
+                                                    height={48}
+                                                    className="rounded-full"
+                                                />
+                                            ) : (
+                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                                    nodeData.type === 'profile' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
+                                                    nodeData.type === 'project' ? 'bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400' :
+                                                    'bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400'
+                                                }`}>
+                                                    {nodeData.type === 'profile' ? <Users size={24} /> :
+                                                     nodeData.type === 'project' ? <Briefcase size={24} /> : 
+                                                     <MessageCircle size={24} />}
+                                                </div>
+                                            )}
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-gray-900 dark:text-white">
+                                                    {nodeData.label.length > 30 ? nodeData.label.slice(0, 30) + '...' : nodeData.label}
+                                                </h3>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                                                    {nodeData.type}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {clickedNode && (nodeData.type === 'profile' || nodeData.type === 'project') && (
+                                            <button
+                                                onClick={() => {
+                                                    if (nodeData.type === 'profile') {
+                                                        router.push(`/profile/${nodeData.id}`);
+                                                    } else if (nodeData.type === 'project') {
+                                                        const projectId = nodeData.id.replace('project-', '');
+                                                        router.push(`/projects/${projectId}`);
+                                                    }
+                                                }}
+                                                className="ml-2 p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+                                                title="View full page"
+                                            >
+                                                <ChevronRight size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {nodeData.type === 'profile' && (
+                                            <>
+                                                {(nodeData as ProfileNode).title && (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Title</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white">{(nodeData as ProfileNode).title}</p>
+                                                    </div>
+                                                )}
+                                                {(nodeData as ProfileNode).location && (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white">{(nodeData as ProfileNode).location}</p>
+                                                    </div>
+                                                )}
+                                                {(nodeData as ProfileNode).skills && (nodeData as ProfileNode).skills!.length > 0 && (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skills</p>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(nodeData as ProfileNode).skills!.slice(0, 5).map((skill, i) => (
+                                                                <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                                                                    {skill}
+                                                                </span>
+                                                            ))}
+                                                            {(nodeData as ProfileNode).skills!.length > 5 && (
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                    +{(nodeData as ProfileNode).skills!.length - 5} more
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {nodeData.type === 'project' && (
+                                            <>
+                                                {(nodeData as ProjectNode).status && (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white capitalize">{(nodeData as ProjectNode).status}</p>
+                                                    </div>
+                                                )}
+                                                {(nodeData as ProjectNode).description && (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white">{(nodeData as ProjectNode).description}</p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {nodeData.type === 'post' && (
+                                            <>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Author</p>
+                                                    <p className="text-sm text-gray-900 dark:text-white">{(nodeData as PostNode).authorName}</p>
+                                                </div>
+                                                {(nodeData as PostNode).created_at && (
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Posted</p>
+                                                        <p className="text-sm text-gray-900 dark:text-white">
+                                                            {new Date((nodeData as PostNode).created_at!).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Content</p>
+                                                    <p className="text-sm text-gray-900 dark:text-white">
+                                                        {nodeData.label.length > 200 ? nodeData.label.slice(0, 200) + '...' : nodeData.label}
+                                                    </p>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Connections</p>
+                                            <p className="text-sm text-gray-900 dark:text-white">{nodeConnectionCounts[nodeData.id] || 0}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Graph Canvas */}
+                        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                             <ForceGraph2D
-                                graphData={graphData}
+                                ref={graphRef}
+                                graphData={filteredData}
                                 width={dimensions.width}
-                                height={dimensions.height}
-                            ref={graphRef}
-                            nodeLabel={(node: any) => {
-                                if (node.type === 'profile') {
-                                    return `${node.label}${node.title ? '\n' + node.title : ''}${node.location ? '\n' + node.location : ''}`;
-                                } else if (node.type === 'project') {
-                                    return `${node.label}${node.status ? '\n' + node.status : ''}`;
-                                } else if (node.type === 'post') {
-                                    // Show truncated version for tooltip
-                                    return node.label.length > 50 ? node.label.slice(0, 50) + '...' : node.label;
-                                }
-                                return node.label;
-                            }}
-                            onNodeClick={(node: any) => {
-                                // Navigate directly to entity pages
-                                if (node.type === 'profile') {
-                                    router.push(`/profile/${node.id}`);
-                                } else if (node.type === 'project') {
-                                    const projectId = node.id.replace('project-', '');
-                                    router.push(`/projects/${projectId}`);
-                                }
-                            }}
-                            onNodeHover={(node: any) => setSelectedNode(node?.id || null)}
-                            onBackgroundClick={() => setSelectedNode(null)}
-                            enableZoomInteraction={true}
-                            enableNodeDrag={true}
-                            nodeCanvasObjectMode={() => 'replace'}
-                            nodeCanvasObject={(node, ctx, globalScale) => {
-                                const opacity = node.id && animatedNodeOpacities[node.id] !== undefined ? animatedNodeOpacities[node.id] : 1;
-                                
-                                // Different colors for each node type
-                                let color = '#6366f1'; // default
-                                let baseSize = 8;
-                                let icon = '';
-                                
-                                if (node.type === 'profile') {
-                                    color = '#6366f1'; // indigo for profiles
-                                    baseSize = 8;
-                                    icon = '👤';
-                                } else if (node.type === 'project') {
-                                    color = '#f59e0b'; // amber for projects
-                                    baseSize = 10;
-                                    icon = '📁';
-                                } else if (node.type === 'post') {
-                                    color = '#10b981'; // emerald for posts
-                                    baseSize = 5;
-                                    icon = '💬';
-                                }
-                                
-                                // Calculate size based on connection count
-                                const connectionCount = node.id ? (nodeConnectionCounts[node.id] || 0) : 0;
-                                const size = Math.max(baseSize, Math.min(baseSize + (connectionCount * 1.5), 30));
-                                
-                                // Draw node circle
-                                ctx.globalAlpha = opacity;
-                                ctx.beginPath();
-                                ctx.arc(node.x as number, node.y as number, size, 0, 2 * Math.PI, false);
-                                ctx.fillStyle = color;
-                                ctx.fill();
-                                
-                                // Add border for selected/hovered node
-                                if (node.id === selectedNode) {
-                                    ctx.strokeStyle = color;
-                                    ctx.lineWidth = 3;
-                                    ctx.stroke();
-                                }
-                                
-                                // Draw icon
-                                const iconSize = (size * 1.5) / globalScale;
-                                ctx.font = `${iconSize}px serif`;
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                ctx.fillText(icon, node.x as number, node.y as number);
-                                
-                                // Draw label
-                                let displayLabel = node.label;
-                                if (node.type === 'post' && displayLabel.length > 20) {
-                                    displayLabel = displayLabel.slice(0, 20) + '...';
-                                }
-                                const fontSize = 12 / globalScale;
-                                ctx.font = `${fontSize}px Sans-Serif`;
-                                ctx.textAlign = 'left';
-                                ctx.textBaseline = 'middle';
-                                ctx.fillStyle = opacity > 0.5 ? color : 'transparent';
-                                ctx.fillText(displayLabel, (node.x as number) + size + 4, (node.y as number));
-                                ctx.globalAlpha = 1;
-                            }}
-                            linkCanvasObjectMode={() => 'after'}
-                            linkCanvasObject={(link, ctx) => {
-                                ctx.save();
-                                const getId = (n: any) => (typeof n === 'object' && n !== null && 'id' in n ? (n as { id: string }).id : n);
-                                const sourceId = getId(link.source);
-                                const targetId = getId(link.target);
-                                let opacity = 1;
-                                if (sourceId && targetId) {
-                                    const key = `${sourceId}|${targetId}`;
-                                    opacity = animatedLinkOpacities[key] !== undefined ? animatedLinkOpacities[key] : 1;
-                                }
-                                ctx.globalAlpha = opacity;
-                                
-                                // Different styles for different link types
-                                const linkType = (link as any).type;
-                                if (linkType === 'authored') {
-                                    ctx.strokeStyle = '#6366f1';
-                                    ctx.lineWidth = 2;
-                                } else if (linkType === 'mentions_profile') {
-                                    ctx.strokeStyle = '#8b5cf6';
-                                    ctx.lineWidth = 1.5;
-                                    ctx.setLineDash([5, 5]);
-                                } else if (linkType === 'mentions_project') {
-                                    ctx.strokeStyle = '#f59e0b';
-                                    ctx.lineWidth = 1.5;
-                                    ctx.setLineDash([5, 5]);
-                                } else if (linkType === 'contributes') {
-                                    ctx.strokeStyle = '#ef4444';
-                                    ctx.lineWidth = 2;
-                                } else {
-                                    ctx.strokeStyle = '#888';
-                                    ctx.lineWidth = 1.5;
-                                }
-                                // Type guard for source and target
-                                const source = typeof link.source === 'object' && link.source !== null && 'x' in link.source && 'y' in link.source ? link.source : null;
-                                const target = typeof link.target === 'object' && link.target !== null && 'x' in link.target && 'y' in link.target ? link.target : null;
-                                if (
-                                    source && target &&
-                                    typeof source.x === 'number' && typeof source.y === 'number' &&
-                                    typeof target.x === 'number' && typeof target.y === 'number'
-                                ) {
+                                height={dimensions.height - 73}
+                                backgroundColor="transparent"
+                                nodeLabel={() => ''}
+                                onNodeClick={handleNodeClick}
+                                onNodeHover={(node: any) => setHoveredNode(node?.id || null)}
+                                onBackgroundClick={() => {
+                                    setHoveredNode(null);
+                                    setClickedNode(null);
+                                }}
+                                cooldownTicks={100}
+                                enableZoomInteraction={true}
+                                enableNodeDrag={true}
+                                nodeCanvasObjectMode={() => 'after'}
+                                nodeCanvasObject={(node, ctx, globalScale) => {
+                                    const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
+                                    const isHovered = node.id === hoveredNode;
+                                    
+                                    // Node styling based on type
+                                    let color = '#3B82F6'; // blue
+                                    let baseSize = 5;
+                                    
+                                    if (node.type === 'profile') {
+                                        color = '#3B82F6'; // blue
+                                        baseSize = 8;
+                                    } else if (node.type === 'project') {
+                                        color = '#F59E0B'; // amber
+                                        baseSize = 8;
+                                    } else if (node.type === 'post') {
+                                        color = '#10B981'; // emerald
+                                        baseSize = 4;
+                                    }
+                                    
+                                    // Size based on connections
+                                    const connections = nodeConnectionCounts[node.id as string] || 0;
+                                    const size = baseSize + Math.sqrt(connections) * 2;
+                                    
+                                    // Opacity for non-related nodes
+                                    ctx.globalAlpha = isRelated ? 1 : 0.2;
+                                    
+                                    // Draw profile nodes with images
+                                    if (node.type === 'profile' && (node as ProfileNode).avatar_url) {
+                                        // Create a circular clipping mask
+                                        ctx.save();
+                                        ctx.beginPath();
+                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                        ctx.clip();
+                                        
+                                        // Draw image if already loaded
+                                        const avatarUrl = (node as ProfileNode).avatar_url!;
+                                        let img = (node as any).__img;
+                                        
+                                        if (!img) {
+                                            // Create and cache the image
+                                            img = new (window as any).Image();
+                                            img.crossOrigin = 'anonymous';
+                                            img.src = avatarUrl;
+                                            (node as any).__img = img;
+                                            
+                                            // Draw placeholder while loading
+                                            ctx.fillStyle = color;
+                                            ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
+                                            
+                                            // Force re-render when image loads
+                                            img.onload = () => {
+                                                // No need to refresh, it will update on next frame
+                                            };
+                                        } else if (img.complete && img.naturalWidth > 0) {
+                                            // Draw the loaded image
+                                            ctx.drawImage(img, node.x! - size, node.y! - size, size * 2, size * 2);
+                                        } else {
+                                            // Still loading, draw placeholder
+                                            ctx.fillStyle = color;
+                                            ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
+                                        }
+                                        
+                                        ctx.restore();
+                                        
+                                        // Draw border
+                                        ctx.beginPath();
+                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                        ctx.strokeStyle = isHovered ? color : '#E5E7EB';
+                                        ctx.lineWidth = isHovered ? 3 : 2;
+                                        ctx.stroke();
+                                    } else {
+                                        // Draw regular node
+                                        ctx.beginPath();
+                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                        ctx.fillStyle = color;
+                                        ctx.fill();
+                                        
+                                        // Border for hovered
+                                        if (isHovered) {
+                                            ctx.strokeStyle = color;
+                                            ctx.lineWidth = 3;
+                                            ctx.globalAlpha = 1;
+                                            ctx.stroke();
+                                        }
+                                    }
+                                    
+                                    // Draw label for important nodes or hovered (but not for posts)
+                                    if (node.type !== 'post' && (isHovered || connections > 5 || globalScale > 1.5)) {
+                                        ctx.globalAlpha = isRelated ? 1 : 0.3;
+                                        const label = node.label && node.label.length > 20 ? node.label.slice(0, 20) + '...' : node.label;
+                                        const fontSize = Math.max(12 / globalScale, 10);
+                                        ctx.font = `${fontSize}px Inter, sans-serif`;
+                                        ctx.fillStyle = hoveredNode ? '#1F2937' : '#6B7280';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'top';
+                                        ctx.fillText(label as string, node.x!, node.y! + size + 2);
+                                    }
+                                    
+                                    ctx.globalAlpha = 1;
+                                }}
+                                linkCanvasObjectMode={() => 'after'}
+                                linkCanvasObject={(link, ctx) => {
+                                    const source = link.source as any;
+                                    const target = link.target as any;
+                                    
+                                    if (!source.id || !target.id) return;
+                                    
+                                    const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
+                                    
+                                    ctx.globalAlpha = isRelated ? 0.6 : 0.1;
+                                    
+                                    // Link styling based on type
+                                    switch ((link as any).type) {
+                                        case 'authored':
+                                            ctx.strokeStyle = '#3B82F6';
+                                            ctx.lineWidth = 2;
+                                            break;
+                                        case 'mentions_profile':
+                                            ctx.strokeStyle = '#8B5CF6';
+                                            ctx.lineWidth = 1.5;
+                                            ctx.setLineDash([5, 5]);
+                                            break;
+                                        case 'mentions_project':
+                                            ctx.strokeStyle = '#F59E0B';
+                                            ctx.lineWidth = 1.5;
+                                            ctx.setLineDash([5, 5]);
+                                            break;
+                                        case 'contributes':
+                                            ctx.strokeStyle = '#EF4444';
+                                            ctx.lineWidth = 2.5;
+                                            break;
+                                        default:
+                                            ctx.strokeStyle = '#9CA3AF';
+                                            ctx.lineWidth = 1;
+                                    }
+                                    
                                     ctx.beginPath();
                                     ctx.moveTo(source.x, source.y);
                                     ctx.lineTo(target.x, target.y);
                                     ctx.stroke();
-                                }
-                                ctx.restore();
-                            }}
-                            nodePointerAreaPaint={(node, color, ctx) => {
-                                let baseSize = 8;
-                                if (node.type === 'profile') baseSize = 8;
-                                else if (node.type === 'project') baseSize = 10;
-                                else if (node.type === 'post') baseSize = 5;
-                                
-                                const connectionCount = node.id ? (nodeConnectionCounts[node.id] || 0) : 0;
-                                const size = Math.max(baseSize, Math.min(baseSize + (connectionCount * 1.5), 30));
-                                
-                                ctx.beginPath();
-                                ctx.arc(node.x as number, node.y as number, size, 0, 2 * Math.PI, false);
-                                ctx.fillStyle = color;
-                                ctx.fill();
-                            }}
-                        />
+                                    ctx.setLineDash([]);
+                                    ctx.globalAlpha = 1;
+                                }}
+                                nodePointerAreaPaint={(node, color, ctx) => {
+                                    // Make the entire node clickable
+                                    let baseSize = 5;
+                                    
+                                    if (node.type === 'profile') {
+                                        baseSize = 8;
+                                    } else if (node.type === 'project') {
+                                        baseSize = 8;
+                                    } else if (node.type === 'post') {
+                                        baseSize = 4;
+                                    }
+                                    
+                                    const connections = nodeConnectionCounts[node.id as string] || 0;
+                                    const size = baseSize + Math.sqrt(connections) * 2;
+                                    
+                                    ctx.fillStyle = color;
+                                    ctx.beginPath();
+                                    ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
+                                    ctx.fill();
+                                }}
+                                d3Force="link"
+                                d3AlphaDecay={0.02}
+                                d3VelocityDecay={0.3}
+                                warmupTicks={100}
+                                onEngineStop={() => {}}
+                            />
                         </div>
-                        
-                    </div>
+                    </>
                 )}
             </div>
         </div>
     );
-} 
+}

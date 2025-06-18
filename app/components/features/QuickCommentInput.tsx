@@ -50,7 +50,7 @@ export default function QuickCommentInput({
       onClick={(e) => e.stopPropagation()}
       placeholder="Add a comment..."
       disabled={disabled}
-      className="flex-1 text-sm text-text-primary placeholder-text-secondary bg-input-bg rounded-lg px-3 py-2 border-none outline-none focus:outline-none focus:bg-input-bg-focus focus:ring-1 focus:ring-text-primary transition-all disabled:opacity-50 resize-none"
+      className="flex-1 text-sm text-onsurface-primary placeholder-onsurface-secondary bg-surface-container-muted rounded-lg px-3 py-2 border-none outline-none focus:outline-none focus:ring-1 focus:ring-onsurface-secondary transition-all disabled:opacity-50 resize-none"
       style={{
         minHeight: '38px',
         maxHeight: '120px',

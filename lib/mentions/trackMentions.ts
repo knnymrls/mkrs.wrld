@@ -74,11 +74,6 @@ export function calculateDropdownPosition(
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
 
-  // If positioning below would go off-screen, position above the cursor
-  if (top + dropdownHeight > viewportHeight - 20) {
-    top = cursorY - 200; // Just above the cursor, not by full dropdown height
-  }
-
   // If positioning to the right would go off-screen, position to the left
   if (left + dropdownWidth > viewportWidth - 20) {
     left = cursorX - dropdownWidth - offset;

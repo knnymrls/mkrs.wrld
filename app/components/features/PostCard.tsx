@@ -96,7 +96,7 @@ export default function PostCard({
   return (
     <>
       <div
-        className="bg-card-bg rounded-2xl border-[1px] border-border hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-4"
+        className="bg-surface-container rounded-2xl border-[1px] border-border hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-4"
         onClick={() => onPostClick(post)}
       >
         <div className="p-4 flex flex-col gap-3">
@@ -110,12 +110,12 @@ export default function PostCard({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary font-medium">
+                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium">
                     {post.author.name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              <p className="text-sm text-text-secondary">
+              <p className="text-sm text-onsurface-secondary">
                 {new Date(post.created_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -128,10 +128,10 @@ export default function PostCard({
               <AuthorLink
                 authorId={post.author.id}
                 authorName={post.author.name}
-                className="text-sm font-sans text-text-secondary"
+                className="text-sm font-sans text-onsurface-secondary"
               />
 
-              <div className="text-text-primary leading-relaxed whitespace-pre-wrap">
+              <div className="text-onsurface-primary leading-relaxed whitespace-pre-wrap">
                 {renderPostContent(post)}
               </div>
             </div>

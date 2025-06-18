@@ -11,6 +11,37 @@ import { Education } from '../../models/Education';
 import { Experience } from '../../models/Experience';
 import { Link } from '../../models/Link';
 import { Skill } from '../../models/Skill';
+import Image from 'next/image';
+import { User, Pencil, Trash2, Plus, X } from 'lucide-react';
+
+interface EditModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: any) => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+function EditModal({ isOpen, onClose, onSave, title, children }: EditModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function Profile() {
     const { user, loading } = useAuth();
@@ -38,6 +69,10 @@ export default function Profile() {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [removeAvatar, setRemoveAvatar] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    
+    // Modal states
+    const [editingEducation, setEditingEducation] = useState<Education | null>(null);
+    const [editingExperience, setEditingExperience] = useState<Experience | null>(null);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -212,6 +247,119 @@ export default function Profile() {
         }
     };
 
+    const deleteEducation = async (id: string) => {
+        if (!user) return;
+        
+        const { error } = await supabase
+            .from('educations')
+            .delete()
+            .eq('id', id)
+            .eq('profile_id', user.id);
+
+        if (!error) {
+            setEducations(educations.filter(edu => edu.id !== id));
+            // Update embeddings
+            updateProfileEmbeddings();
+        }
+    };
+
+    const deleteExperience = async (id: string) => {
+        if (!user) return;
+        
+        const { error } = await supabase
+            .from('experiences')
+            .delete()
+            .eq('id', id)
+            .eq('profile_id', user.id);
+
+        if (!error) {
+            setExperiences(experiences.filter(exp => exp.id !== id));
+            // Update embeddings
+            updateProfileEmbeddings();
+        }
+    };
+
+    const updateEducation = async (data: Partial<Education>) => {
+        if (!user || !editingEducation) return;
+
+        const { error } = await supabase
+            .from('educations')
+            .update({
+                school: data.school,
+                degree: data.degree,
+                year: data.year,
+            })
+            .eq('id', editingEducation.id)
+            .eq('profile_id', user.id);
+
+        if (!error) {
+            setEducations(educations.map(edu => 
+                edu.id === editingEducation.id 
+                    ? { ...edu, ...data }
+                    : edu
+            ));
+            setEditingEducation(null);
+            // Update embeddings
+            updateProfileEmbeddings();
+        }
+    };
+
+    const updateExperience = async (data: Partial<Experience>) => {
+        if (!user || !editingExperience) return;
+
+        const { error } = await supabase
+            .from('experiences')
+            .update({
+                company: data.company,
+                role: data.role,
+                start_date: data.start_date,
+                end_date: data.end_date,
+                description: data.description,
+            })
+            .eq('id', editingExperience.id)
+            .eq('profile_id', user.id);
+
+        if (!error) {
+            setExperiences(experiences.map(exp => 
+                exp.id === editingExperience.id 
+                    ? { ...exp, ...data }
+                    : exp
+            ));
+            setEditingExperience(null);
+            // Update embeddings
+            updateProfileEmbeddings();
+        }
+    };
+
+    const updateProfileEmbeddings = async () => {
+        if (!user || !profile) return;
+
+        const educationText = educations.map(edu => `${edu.degree} from ${edu.school}`).join('. ');
+        const experienceText = experiences.map(exp => `${exp.role} at ${exp.company}`).join('. ');
+        const skillsText = skills.map(s => s.skill).join(', ');
+        
+        const embeddingInput = `${profile.bio} ${skillsText} ${profile.title || ''} ${profile.location || ''} ${educationText} ${experienceText}`;
+        const embedding = await getEmbedding(embeddingInput);
+
+        await supabase
+            .from('profiles')
+            .update({ embedding })
+            .eq('id', user.id);
+    };
+
+    const formatDate = (date: string) => {
+        return new Date(date).toLocaleDateString('en-US', { 
+            month: 'short', 
+            year: 'numeric' 
+        });
+    };
+
+    const formatDateRange = (startDate: string, endDate: string | null) => {
+        const start = formatDate(startDate);
+        const end = endDate ? formatDate(endDate) : 'Present';
+        return `${start} - ${end}`;
+    };
+
     if (loading || !user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -221,29 +369,12 @@ export default function Profile() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto">
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
-                        <button
-                            onClick={() => {
-                                setIsEditing(!isEditing);
-                                if (!isEditing) {
-                                    // Reset states when entering edit mode
-                                    setAvatarFile(null);
-                                    setRemoveAvatar(false);
-                                    setPreviewUrl(null);
-                                }
-                            }}
-                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            {isEditing ? 'Cancel' : 'Edit Profile'}
-                        </button>
-                    </div>
-
-                    {isEditing ? (
-                        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="min-h-screen bg-white dark:bg-gray-900">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Profile Header - Centered */}
+                <div className="text-center mb-12">
+                    <div className="mb-6">
+                        {isEditing ? (
                             <div className="flex justify-center">
                                 <ImageUploadWithCrop
                                     currentImageUrl={profile?.avatar_url}
@@ -255,200 +386,408 @@ export default function Profile() {
                                         setAvatarFile(null);
                                         setRemoveAvatar(true);
                                     }}
-                                    label="Avatar"
+                                    label=""
                                     shape="circle"
                                 />
                             </div>
-                            <div>
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Username
-                                </label>
-                                <input
-                                    type="text"
-                                    id="username"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                        ) : (
+                            profile?.avatar_url ? (
+                                <Image
+                                    src={profile.avatar_url}
+                                    alt={profile.name}
+                                    width={120}
+                                    height={120}
+                                    className="rounded-full mx-auto"
                                 />
-                            </div>
-                            <div>
-                                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Title
-                                </label>
+                            ) : (
+                                <div className="w-[120px] h-[120px] rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
+                                    <User size={60} className="text-gray-400 dark:text-gray-500" />
+                                </div>
+                            )
+                        )}
+                    </div>
+                    
+                    {isEditing ? (
+                        <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+                            <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className="text-3xl font-semibold text-center w-full border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
+                                placeholder="Your Name"
+                            />
+                            <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    id="title"
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                    placeholder="e.g. Software Engineer, Product Manager"
+                                    className="text-lg text-center flex-1 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
+                                    placeholder="Title"
                                 />
-                            </div>
-                            <div>
-                                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Location
-                                </label>
+                                <span className="text-lg text-gray-600 dark:text-gray-400">in</span>
                                 <input
                                     type="text"
-                                    id="location"
                                     value={formData.location}
                                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                    placeholder="e.g. San Francisco, CA"
+                                    className="text-lg text-center flex-1 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
+                                    placeholder="Location"
                                 />
                             </div>
-                            <div>
-                                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Bio
-                                </label>
-                                <textarea
-                                    id="bio"
-                                    rows={4}
-                                    value={formData.bio}
-                                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                />
+                            <div className="flex gap-2 justify-center mt-4">
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                                >
+                                    Save Changes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setAvatarFile(null);
+                                        setRemoveAvatar(false);
+                                    }}
+                                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                >
+                                    Cancel
+                                </button>
                             </div>
-                            <div>
-                                <label htmlFor="skills" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Skills (comma-separated)
-                                </label>
-                                <input
-                                    type="text"
-                                    id="skills"
-                                    value={formData.skills}
-                                    onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                                Save Changes
-                            </button>
                         </form>
                     ) : (
-                        <div className="space-y-6">
-                            {profile?.avatar_url && (
-                                <div className="flex justify-center mb-6">
-                                    <img 
-                                        src={profile.avatar_url} 
-                                        alt={profile.name}
-                                        className="w-32 h-32 rounded-full object-cover"
-                                    />
-                                </div>
-                            )}
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Name</h3>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.name || 'Not set'}</p>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</h3>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.title || 'Not set'}</p>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.location || 'Not set'}</p>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Bio</h3>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{profile?.bio || 'No bio yet'}</p>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Skills</h3>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{skills.length > 0 ? skills.map(s => s.skill).join(', ') : 'No skills set'}</p>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</h3>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white">{user.email}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Education Section */}
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mt-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Education</h2>
-                        {!isEditing && (
+                        <>
+                            <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">
+                                {profile?.name || 'Your Name'}
+                            </h1>
+                            <p className="text-lg text-gray-600 dark:text-gray-400">
+                                {profile?.title || 'Your Title'} in {profile?.location || 'Your Location'}
+                            </p>
                             <button
-                                onClick={() => router.push('/profile/education/new')}
-                                className="text-sm text-indigo-600 hover:text-indigo-500"
+                                onClick={() => setIsEditing(true)}
+                                className="mt-4 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                             >
-                                Add Education
+                                Edit Profile
                             </button>
-                        )}
-                    </div>
-                    {educations.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No education added yet</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {educations.map((edu) => (
-                                <div key={edu.id} className="border-l-4 border-indigo-500 pl-4">
-                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{edu.degree}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">{edu.school}</p>
-                                    {edu.year && <p className="text-sm text-gray-500 dark:text-gray-400">{edu.year}</p>}
-                                </div>
-                            ))}
-                        </div>
+                        </>
                     )}
                 </div>
 
-                {/* Experience Section */}
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mt-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Experience</h2>
-                        {!isEditing && (
-                            <button
-                                onClick={() => router.push('/profile/experience/new')}
-                                className="text-sm text-indigo-600 hover:text-indigo-500"
-                            >
-                                Add Experience
-                            </button>
-                        )}
-                    </div>
-                    {experiences.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No experience added yet</p>
+                {/* About Section */}
+                <section className="mb-12">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">About</h2>
+                    {isEditing ? (
+                        <textarea
+                            value={formData.bio}
+                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                            rows={4}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            placeholder="Tell us about yourself..."
+                        />
                     ) : (
-                        <div className="space-y-4">
-                            {experiences.map((exp) => (
-                                <div key={exp.id} className="border-l-4 border-green-500 pl-4">
-                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{exp.role}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">{exp.company}</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        {exp.start_date} - {exp.end_date || 'Present'}
-                                    </p>
-                                    {exp.description && (
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{exp.description}</p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {profile?.bio || 'No bio yet'}
+                        </p>
                     )}
-                </div>
+                </section>
 
-                {/* Links Section */}
-                {links.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mt-6">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Links</h2>
-                        <div className="space-y-2">
-                            {links.map((link) => (
-                                <div key={link.id}>
-                                    <a
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-indigo-600 hover:text-indigo-500"
-                                    >
-                                        {link.platform}: {link.url}
-                                    </a>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                {/* Skills Section */}
+                {(isEditing || skills.length > 0) && (
+                    <section className="mb-12">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Skills</h2>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={formData.skills}
+                                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                                placeholder="React, TypeScript, Node.js (comma-separated)"
+                            />
+                        ) : (
+                            <p className="text-gray-700 dark:text-gray-300">
+                                {skills.map(s => s.skill).join(', ')}
+                            </p>
+                        )}
+                    </section>
                 )}
+
+                {/* Work Experience */}
+                <section className="mb-12">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Work Experience</h2>
+                        <button
+                            onClick={() => router.push('/profile/experience/new')}
+                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-1"
+                        >
+                            <Plus size={16} /> Add Experience
+                        </button>
+                    </div>
+                    <div className="space-y-4">
+                        {experiences.map((exp) => (
+                            <div key={exp.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <h3 className="font-medium text-gray-900 dark:text-white">
+                                            {exp.role} @ {exp.company}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            {exp.company}
+                                        </p>
+                                        {exp.description && (
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                                                {exp.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex items-start gap-4 ml-4">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                            {formatDateRange(exp.start_date, exp.end_date)}
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setEditingExperience(exp)}
+                                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => deleteExperience(exp.id)}
+                                                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {experiences.length === 0 && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">No experience added yet</p>
+                        )}
+                    </div>
+                </section>
+
+                {/* Education */}
+                <section className="mb-12">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Education</h2>
+                        <button
+                            onClick={() => router.push('/profile/education/new')}
+                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-1"
+                        >
+                            <Plus size={16} /> Add Education
+                        </button>
+                    </div>
+                    <div className="space-y-4">
+                        {educations.map((edu) => (
+                            <div key={edu.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <h3 className="font-medium text-gray-900 dark:text-white">
+                                            {edu.degree} @ {edu.school}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            {edu.school}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-start gap-4 ml-4">
+                                        <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                            {formatDateRange(edu.year, edu.year)}
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setEditingEducation(edu)}
+                                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => deleteEducation(edu.id)}
+                                                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {educations.length === 0 && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">No education added yet</p>
+                        )}
+                    </div>
+                </section>
             </div>
+
+            {/* Education Edit Modal */}
+            <EditModal
+                isOpen={!!editingEducation}
+                onClose={() => setEditingEducation(null)}
+                onSave={updateEducation}
+                title="Edit Education"
+            >
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        updateEducation({
+                            school: formData.get('school') as string,
+                            degree: formData.get('degree') as string,
+                            year: formData.get('year') as string,
+                        });
+                    }}
+                    className="space-y-4"
+                >
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            School
+                        </label>
+                        <input
+                            type="text"
+                            name="school"
+                            defaultValue={editingEducation?.school}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Degree
+                        </label>
+                        <input
+                            type="text"
+                            name="degree"
+                            defaultValue={editingEducation?.degree}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Year
+                        </label>
+                        <input
+                            type="text"
+                            name="year"
+                            defaultValue={editingEducation?.year}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            required
+                        />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setEditingEducation(null)}
+                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </EditModal>
+
+            {/* Experience Edit Modal */}
+            <EditModal
+                isOpen={!!editingExperience}
+                onClose={() => setEditingExperience(null)}
+                onSave={updateExperience}
+                title="Edit Experience"
+            >
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        updateExperience({
+                            company: formData.get('company') as string,
+                            role: formData.get('role') as string,
+                            start_date: formData.get('start_date') as string,
+                            end_date: formData.get('end_date') as string || null,
+                            description: formData.get('description') as string || null,
+                        });
+                    }}
+                    className="space-y-4"
+                >
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Company
+                        </label>
+                        <input
+                            type="text"
+                            name="company"
+                            defaultValue={editingExperience?.company}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Role
+                        </label>
+                        <input
+                            type="text"
+                            name="role"
+                            defaultValue={editingExperience?.role}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            required
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Start Date
+                            </label>
+                            <input
+                                type="date"
+                                name="start_date"
+                                defaultValue={editingExperience?.start_date}
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                End Date
+                            </label>
+                            <input
+                                type="date"
+                                name="end_date"
+                                defaultValue={editingExperience?.end_date || ''}
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Description
+                        </label>
+                        <textarea
+                            name="description"
+                            defaultValue={editingExperience?.description || ''}
+                            rows={3}
+                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                        />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setEditingExperience(null)}
+                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </EditModal>
         </div>
     );
-} 
+}

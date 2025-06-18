@@ -313,7 +313,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
       setComments([...comments, newCommentObj]);
       setNewComment('');
-      
+
       const updatedPost = {
         ...post,
         comments_count: post.comments_count + 1
@@ -330,21 +330,21 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
   return (
     <div
       className="fixed inset-0 flex items-center justify-center p-4 z-50"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
       onClick={onClose}
     >
       <div
-        className="bg-card-bg rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto"
+        className="bg-surface-container rounded-2xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="sticky top-0 bg-card-bg border-b border-border-light p-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text-primary">Post</h2>
+        <div className="sticky top-0 bg-surface-container border-b border-border p-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-onsurface-primary">Post</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-button-bg rounded-full transition-colors"
+            className="p-2 hover:bg-surface-container-muted rounded-full transition-colors"
           >
-            <svg className="w-5 h-5 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -354,15 +354,15 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0 mr-3">
+              <div className="w-12 h-12 bg-surface-container-muted rounded-full overflow-hidden flex-shrink-0 mr-3">
                 {post.author.avatar_url ? (
-                  <img 
-                    src={post.author.avatar_url} 
+                  <img
+                    src={post.author.avatar_url}
                     alt={post.author.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary font-medium">
+                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium">
                     {post.author.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -371,9 +371,9 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 <AuthorLink
                   authorId={post.author.id}
                   authorName={post.author.name}
-                  className="font-semibold text-text-primary"
+                  className="font-semibold text-onsurface-primary"
                 />
-                <p className="text-sm text-text-muted">
+                <p className="text-sm text-onsurface-secondary">
                   {new Date(post.created_at).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -395,9 +395,9 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                         setEditImageWidth(post.image_width || null);
                         setEditImageHeight(post.image_height || null);
                       }}
-                      className="p-2 hover:bg-button-bg rounded-full transition-colors"
+                      className="p-2 hover:bg-surface-container-muted rounded-full transition-colors"
                     >
-                      <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
@@ -408,7 +408,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                         e.stopPropagation();
                         onDelete();
                       }}
-                      className="relative z-10 p-2 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+                      className="relative z-10 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors cursor-pointer"
                       title="Delete post"
                     >
                       <svg className="w-4 h-4 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,7 +426,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                         setEditImageWidth(post.image_width || null);
                         setEditImageHeight(post.image_height || null);
                       }}
-                      className="px-3 py-1 text-sm font-medium text-text-secondary bg-button-bg rounded-full hover:bg-button-bg-hover transition-colors"
+                      className="px-3 py-1 text-sm font-medium text-onsurface-secondary bg-surface-container-muted rounded-full hover:bg-border transition-colors"
                     >
                       Cancel
                     </button>
@@ -454,7 +454,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 userId={user?.id}
                 autoFocus
               />
-              
+
               {/* Image Upload Section */}
               <div className="mt-4">
                 <PostImageUpload
@@ -477,7 +477,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
               </div>
             </div>
           ) : (
-            <div className="text-text-primary text-base leading-relaxed whitespace-pre-wrap mb-4">
+            <div className="text-onsurface-primary text-base leading-relaxed whitespace-pre-wrap mb-4">
               {renderPostContent(post)}
             </div>
           )}
@@ -485,8 +485,8 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
           {/* Post Image */}
           {post.image_url && !isEditingPost && (
             <div className="mb-4">
-              <img 
-                src={post.image_url} 
+              <img
+                src={post.image_url}
                 alt="Post image"
                 className="h-auto rounded-lg object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
                 style={{ maxHeight: '100px', width: 'auto' }}
@@ -505,10 +505,10 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                     router.push(mention.type === 'person' ? `/profile/${mention.id}` : `/projects/${mention.id}`);
                     onClose();
                   }}
-                  className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-button-bg text-text-secondary hover:bg-button-bg-hover transition-colors cursor-pointer"
+                  className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface-container-muted text-onsurface-secondary hover:bg-border transition-colors cursor-pointer"
                 >
                   {mention.type === 'person' ? (
-                    <div className="w-3 h-3 rounded-full bg-gray-300 flex items-center justify-center text-[8px] font-medium text-gray-600 mr-1">
+                    <div className="w-3 h-3 rounded-full bg-surface-container-muted flex items-center justify-center text-[8px] font-medium text-onsurface-secondary mr-1">
                       {mention.name.charAt(0).toUpperCase()}
                     </div>
                   ) : (
@@ -523,14 +523,14 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
           )}
 
           {/* Like and Comment Section */}
-          <div className="border-t border-border-light pt-4">
+          <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between mb-4">
               <LikeButton
                 isLiked={post.user_has_liked}
                 onClick={toggleLike}
                 showCount={false}
               />
-              <span className="text-sm text-text-muted">{post.likes_count} {post.likes_count === 1 ? 'fire' : 'fires'}</span>
+              <span className="text-sm text-onsurface-secondary">{post.likes_count} {post.likes_count === 1 ? 'fire' : 'fires'}</span>
             </div>
 
             {/* Comments Section */}

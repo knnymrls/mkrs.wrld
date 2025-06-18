@@ -102,7 +102,7 @@ export default function Navbar() {
     };
 
     return (
-        <div className="fixed left-0 top-0 h-full w-16 bg-white border-r border-gray-200 flex flex-col justify-between items-center py-4">
+        <div className="fixed left-0 top-0 h-full w-16 bg-background border-r border-border flex flex-col justify-between items-center py-4">
             {/* Logo */}
             <Link href="/">
                 <img
@@ -121,7 +121,7 @@ export default function Navbar() {
                         title={item.name}
                         className={`p-3 rounded-lg transition-colors ${isActive(item.href)
                             ? 'bg-primary/10 text-primary'
-                            : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                            : 'text-onsurface-secondary hover:bg-surface-container-muted hover:text-onsurface-primary'
                             }`}
                     >
                         {item.icon}
@@ -136,7 +136,7 @@ export default function Navbar() {
                         <button
                             onClick={() => setShowDropdown(!showDropdown)}
                             title="Profile"
-                            className="p-3 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
+                            className="p-3 rounded-lg text-onsurface-secondary hover:bg-surface-container-muted hover:text-onsurface-primary transition-colors"
                         >
                             {userAvatar ? (
                                 <img
@@ -145,7 +145,7 @@ export default function Navbar() {
                                     className="w-8 h-8 rounded-full object-cover"
                                 />
                             ) : (
-                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-semibold text-gray-600">
+                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-semibold text-white">
                                     {user.email?.[0].toUpperCase()}
                                 </div>
                             )}
@@ -153,11 +153,11 @@ export default function Navbar() {
 
                         {/* Dropdown Menu */}
                         {showDropdown && (
-                            <div className="absolute bottom-0 left-full ml-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                            <div className="absolute overflow-clip bottom-0 left-full ml-2 w-48 bg-surface-container rounded-lg shadow-sm border border-border">
                                 <Link
                                     href="/profile"
                                     onClick={() => setShowDropdown(false)}
-                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                    className="block px-4 py-2 text-sm text-onsurface-primary hover:bg-surface-container-muted hover:text-onsurface-primary"
                                 >
                                     <div className="flex items-center gap-2">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@ export default function Navbar() {
                                 </Link>
                                 <button
                                     onClick={handleSignOut}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                    className="block w-full text-left px-4 py-2 text-sm text-onsurface-primary hover:bg-surface-container-muted hover:text-onsurface-primary"
                                 >
                                     <div className="flex items-center gap-2">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

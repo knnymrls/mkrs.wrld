@@ -41,11 +41,11 @@ export default function ChatbotPage() {
 
     if (!sessionId) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-3xl mx-auto">
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div className="bg-surface-container shadow-sm rounded-lg p-6 border border-border">
                         <div className="animate-pulse">
-                            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-6"></div>
+                            <div className="h-8 bg-surface-container-muted rounded w-1/4 mb-6"></div>
                         </div>
                     </div>
                 </div>
@@ -54,10 +54,10 @@ export default function ChatbotPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-gray-900 overflow-y-auto">
+        <div className="min-h-screen bg-background overflow-y-auto">
             <div className="flex items-center justify-center px-4 py-36">
                 <div className="w-full max-w-3xl">
-                    <h1 className="text-4xl font-medium text-text-primary dark:text-white text-center mb-12">
+                    <h1 className="text-4xl font-medium text-onsurface-primary text-center mb-12">
                         Who can I help you with?
                     </h1>
                     <ChatInput
