@@ -1,0 +1,39 @@
+graph LR
+    subgraph "Chat API Flow"
+        Q[User Query] --> QP[Query Parser]
+        QP --> RA[Retrieval Agent]
+        
+        subgraph "Search Strategies"
+            SS[Semantic Search<br/>OpenAI Embeddings]
+            KS[Keyword Search<br/>Pattern Matching]
+            GS[Graph Traversal<br/>Relationship Mining]
+        end
+        
+        RA --> SS
+        RA --> KS
+        RA --> GS
+        
+        SS --> RES[Search Results]
+        KS --> RES
+        GS --> RES
+        
+        RES --> RESP[Response Agent]
+        RESP --> GPT[GPT-4o-mini]
+        GPT --> FR[Final Response]
+    end
+    
+    subgraph "Data Sources"
+        DB1[(Profiles<br/>+ Embeddings)]
+        DB2[(Posts<br/>+ Embeddings)]
+        DB3[(Projects<br/>+ Embeddings)]
+    end
+    
+    SS --> DB1
+    SS --> DB2
+    SS --> DB3
+    KS --> DB1
+    KS --> DB2
+    KS --> DB3
+    GS --> DB1
+    GS --> DB2
+    GS --> DB3

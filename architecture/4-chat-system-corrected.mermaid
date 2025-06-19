@@ -1,0 +1,32 @@
+graph TD
+    Q[User Query] --> QP[Query Parser]
+    QP --> RA[Retrieval Agent]
+    
+    subgraph "Primary Searches (Always Run)"
+        SS[Semantic Search<br/>Always Executes]
+        KS[Keyword Search<br/>If Keywords Found]
+    end
+    
+    subgraph "Conditional Searches"
+        GS[Graph Traversal<br/>If <10 results & no time constraint]
+        ES[Expansion Search<br/>If <5 results]
+    end
+    
+    RA --> SS
+    SS --> KS{Keywords<br/>Found?}
+    KS -->|Yes| KSExec[Execute Keyword Search]
+    KS -->|No| PR[Primary Results]
+    KSExec --> PR
+    
+    PR --> GC{Results < 10<br/>& No Time?}
+    GC -->|Yes| GS
+    GC -->|No| EC{Results < 5?}
+    GS --> EC
+    
+    EC -->|Yes| ES
+    EC -->|No| RES[Final Results]
+    ES --> RES
+    
+    RES --> RESP[Response Agent]
+    RESP --> GPT[GPT-4o-mini]
+    GPT --> FR[Final Response]

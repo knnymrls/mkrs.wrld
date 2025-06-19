@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant U as User
+    participant MI as MentionInput
+    participant MD as MentionDropdown
+    participant API as API/Embeddings
+    participant DB as Database
+    participant RT as Real-time
+    
+    U->>MI: Types "@"
+    MI->>MD: Show Dropdown
+    MD->>DB: Search Profiles/Projects
+    DB-->>MD: Results
+    U->>MD: Selects Mention
+    MD->>MI: Insert Mention
+    
+    U->>MI: Submits Post
+    MI->>DB: Create Post
+    MI->>API: Generate Embedding
+    API->>OpenAI: Get Embedding
+    OpenAI-->>API: Vector
+    API->>DB: Update Post Embedding
+    
+    loop For Each Mention
+        MI->>DB: Create post_mentions/post_projects
+        MI->>DB: Create Notification
+    end
+    
+    DB->>RT: Broadcast Update
+    RT-->>Other Users: New Post/Notification

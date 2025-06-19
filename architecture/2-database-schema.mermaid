@@ -1,0 +1,65 @@
+erDiagram
+    profiles ||--o{ skills : has
+    profiles ||--o{ experiences : has
+    profiles ||--o{ educations : has
+    profiles ||--o{ links : has
+    profiles ||--o{ posts : creates
+    profiles ||--o{ post_comments : writes
+    profiles ||--o{ post_likes : gives
+    profiles ||--o{ contributions : participates
+    profiles ||--o{ projects : creates
+    profiles ||--o{ notifications : receives
+    
+    posts ||--o{ post_mentions : contains
+    posts ||--o{ post_projects : references
+    posts ||--o{ post_comments : has
+    posts ||--o{ post_likes : receives
+    posts ||--o{ post_images : displays
+    
+    projects ||--o{ contributions : has
+    projects ||--o{ post_projects : mentioned_in
+    
+    post_comments ||--o{ comment_mentions : contains
+    
+    chat_sessions ||--o{ chat_messages : contains
+    
+    profiles {
+        uuid id PK
+        text name
+        text email
+        text title
+        text location
+        text bio
+        vector embedding
+        text avatar_url
+    }
+    
+    posts {
+        uuid id PK
+        uuid author_id FK
+        text content
+        vector embedding
+        timestamp created_at
+    }
+    
+    projects {
+        uuid id PK
+        text title
+        text description
+        text status
+        uuid created_by FK
+        vector embedding
+    }
+    
+    notifications {
+        uuid id PK
+        uuid recipient_id FK
+        enum type
+        text title
+        text message
+        boolean read
+        uuid post_id FK
+        uuid comment_id FK
+        uuid project_id FK
+        uuid actor_id FK
+    }
