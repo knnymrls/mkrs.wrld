@@ -68,7 +68,167 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
   useEffect(() => {
     fetchComments();
-  }, [post.id]);
+
+    // Set up real-time subscriptions
+    const commentsSubscription = supabase
+      .channel(`post-comments-${post.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_comments',
+          filter: `post_id=eq.${post.id}`
+        },
+        async (payload) => {
+          if (payload.eventType === 'INSERT') {
+            // Fetch the new comment with author details and mentions
+            const { data: newComment } = await supabase
+              .from('post_comments')
+              .select(`
+                id,
+                content,
+                created_at,
+                author_id,
+                post_id,
+                profiles:author_id (
+                  id,
+                  name,
+                  avatar_url
+                )
+              `)
+              .eq('id', payload.new.id)
+              .single();
+
+            if (newComment) {
+              // Fetch mentions for the new comment
+              const [mentionsResponse, projectMentionsResponse] = await Promise.all([
+                supabase
+                  .from('comment_mentions')
+                  .select(`
+                    id,
+                    comment_id,
+                    profile_id,
+                    profiles:profile_id (
+                      id,
+                      name,
+                      avatar_url
+                    )
+                  `)
+                  .eq('comment_id', newComment.id),
+                supabase
+                  .from('comment_project_mentions')
+                  .select(`
+                    id,
+                    comment_id,
+                    project_id,
+                    projects:project_id (
+                      id,
+                      title
+                    )
+                  `)
+                  .eq('comment_id', newComment.id)
+              ]);
+
+              const mentions = [
+                ...(mentionsResponse.data || []).map(m => ({
+                  id: m.id,
+                  profile_id: m.profile_id,
+                  profile: m.profiles
+                })),
+                ...(projectMentionsResponse.data || []).map(m => ({
+                  id: m.id,
+                  project_id: m.project_id,
+                  project: m.projects
+                }))
+              ];
+
+              const formattedComment = {
+                id: newComment.id,
+                post_id: newComment.post_id,
+                author_id: newComment.author_id,
+                content: newComment.content,
+                created_at: newComment.created_at,
+                mentions,
+                updated_at: newComment.created_at,
+                author: Array.isArray(newComment.profiles) ? newComment.profiles[0] : newComment.profiles
+              };
+
+              setComments(prev => [...prev, formattedComment]);
+              
+              // Update comment count
+              const updatedPost = {
+                ...post,
+                comments_count: post.comments_count + 1
+              };
+              onUpdate(updatedPost);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            setComments(prev => prev.map(comment => 
+              comment.id === payload.new.id 
+                ? { ...comment, content: payload.new.content, updated_at: payload.new.updated_at || payload.new.created_at }
+                : comment
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setComments(prev => prev.filter(comment => comment.id !== payload.old.id));
+            
+            // Update comment count
+            const updatedPost = {
+              ...post,
+              comments_count: Math.max(0, post.comments_count - 1)
+            };
+            onUpdate(updatedPost);
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to likes changes
+    const likesSubscription = supabase
+      .channel(`post-likes-${post.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes',
+          filter: `post_id=eq.${post.id}`
+        },
+        async (payload) => {
+          // Get updated like count
+          const { count } = await supabase
+            .from('post_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', post.id);
+
+          // Check if current user has liked
+          let userHasLiked = post.user_has_liked;
+          if (user) {
+            const { data } = await supabase
+              .from('post_likes')
+              .select('id')
+              .eq('post_id', post.id)
+              .eq('user_id', user.id)
+              .single();
+            userHasLiked = !!data;
+          }
+
+          const updatedPost = {
+            ...post,
+            likes_count: count || 0,
+            user_has_liked: userHasLiked
+          };
+          onUpdate(updatedPost);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions
+    return () => {
+      commentsSubscription.unsubscribe();
+      likesSubscription.unsubscribe();
+    };
+  }, [post.id, post.comments_count, post.likes_count, post.user_has_liked, user, onUpdate]);
 
   const renderPostContent = (post: Post) => {
     let content = post.content;
@@ -319,6 +479,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
           });
       }
 
+      // Optimistically update the UI
       const updatedPost = {
         ...post,
         user_has_liked: !post.user_has_liked,
@@ -326,6 +487,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
       };
 
       onUpdate(updatedPost);
+      // The real-time subscription will sync the actual count
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -410,14 +572,13 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
         ]
       };
 
-      setComments([...comments, newCommentObj]);
+      // Check if comment already exists (from real-time subscription)
+      if (!comments.some(c => c.id === newCommentObj.id)) {
+        setComments([...comments, newCommentObj]);
+      }
       setNewComment('');
 
-      const updatedPost = {
-        ...post,
-        comments_count: post.comments_count + 1
-      };
-      onUpdate(updatedPost);
+      // The real-time subscription will handle updating the comment count
     } catch (error) {
       console.error('Error creating comment:', error);
       alert('Failed to post comment');
