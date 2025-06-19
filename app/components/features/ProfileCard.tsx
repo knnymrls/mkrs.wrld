@@ -33,17 +33,21 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
-                  alt={profile.name}
+                  alt={profile.name || 'Profile'}
                   className="w-full h-full object-cover"
                 />
-              ) : (
+              ) : profile.name ? (
                 <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-lg">
                   {profile.name.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-lg">
+                  ?
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-onsurface-primary truncate">{profile.name}</h3>
+              <h3 className="font-medium text-onsurface-primary truncate">{profile.name || 'Unknown User'}</h3>
               {profile.title && (
                 <p className="text-sm text-onsurface-secondary truncate">{profile.title}</p>
               )}
@@ -58,7 +62,7 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
         </div>
 
         {profile.bio && (
-          <p className="text-sm text-onsurface-primary leading-relaxed line-clamp-3">
+          <p className="text-onsurface-primary leading-relaxed line-clamp-3">
             {profile.bio}
           </p>
         )}
