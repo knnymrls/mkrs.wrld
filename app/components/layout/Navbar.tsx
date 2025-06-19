@@ -12,6 +12,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const [showDropdown, setShowDropdown] = useState(false);
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleSignOut = async () => {
@@ -24,23 +25,24 @@ export default function Navbar() {
         }
     };
 
-    // Fetch user avatar
+    // Fetch user profile
     useEffect(() => {
-        const fetchUserAvatar = async () => {
+        const fetchUserProfile = async () => {
             if (user) {
                 const { data } = await supabase
                     .from('profiles')
-                    .select('avatar_url')
+                    .select('avatar_url, name')
                     .eq('id', user.id)
                     .single();
 
-                if (data?.avatar_url) {
+                if (data) {
                     setUserAvatar(data.avatar_url);
+                    setUserName(data.name);
                 }
             }
         };
 
-        fetchUserAvatar();
+        fetchUserProfile();
     }, [user]);
 
     // Close dropdown when clicking outside
@@ -142,12 +144,16 @@ export default function Navbar() {
                                 <img
                                     src={userAvatar}
                                     alt="Profile"
-                                    className="w-8 h-8 rounded-full object-cover"
+                                    className="w-6 h-6 rounded-full object-cover"
                                 />
-                            ) : (
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-semibold text-white">
-                                    {user.email?.[0].toUpperCase()}
+                            ) : userName ? (
+                                <div className="w-6 h-6 rounded-full bg-avatar-bg flex items-center justify-center text-xs font-medium text-onsurface-secondary">
+                                    {userName.charAt(0).toUpperCase()}
                                 </div>
+                            ) : (
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
                             )}
                         </button>
 

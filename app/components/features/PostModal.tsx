@@ -340,7 +340,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-surface-container-muted rounded-full overflow-hidden flex-shrink-0 mr-3">
+              <div className="w-11 h-11 bg-surface-container-muted rounded-full overflow-hidden flex-shrink-0 mr-3">
                 {post.author.avatar_url ? (
                   <img
                     src={post.author.avatar_url}
@@ -357,7 +357,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 <AuthorLink
                   authorId={post.author.id}
                   authorName={post.author.name}
-                  className="font-semibold text-onsurface-primary"
+                  className="font-medium text-onsurface-primary"
                 />
                 <p className="text-sm text-onsurface-secondary">
                   {new Date(post.created_at).toLocaleString('en-US', {
@@ -503,12 +503,15 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
           {/* Like and Comment Section */}
           <div className="flex items-center justify-between mb-4">
-            <LikeButton
-              isLiked={post.user_has_liked}
-              onClick={toggleLike}
-              showCount={false}
-            />
-            <span className="text-sm text-onsurface-secondary">{post.likes_count} {post.likes_count === 1 ? 'fire' : 'fires'}</span>
+            <div className="flex items-center gap-2">
+              <LikeButton
+                isLiked={post.user_has_liked}
+                onClick={toggleLike}
+                showCount={true}
+                count={post.likes_count}
+              />
+            </div>
+            <span className="text-sm text-onsurface-secondary">{post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}</span>
           </div>
 
           {/* Comments Section */}
@@ -525,6 +528,15 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
           />
         </div>
       </div>
+
+      {/* Image Modal */}
+      {post.image_url && (
+        <ImageModal
+          isOpen={isImageModalOpen}
+          imageUrl={post.image_url}
+          onClose={() => setIsImageModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
