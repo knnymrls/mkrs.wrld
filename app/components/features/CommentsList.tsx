@@ -246,7 +246,7 @@ export default function CommentsList({
                 <div className="bg-surface-container-muted rounded-lg px-3 py-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-onsurface-primary">{comment.author?.name}</p>
+                      <p className="text-sm text-onsurface-secondary">{comment.author?.name}</p>
                       <span className="text-xs text-onsurface-secondary">•</span>
                       <p className="text-xs text-onsurface-secondary">
                         {new Date(comment.created_at).toLocaleString('en-US', {
@@ -294,7 +294,7 @@ export default function CommentsList({
                         onMentionsChange={setEditMentions}
                         userId={user?.id}
                         autoFocus
-                        className="w-full"
+                        className=""
                       />
                       <div className="flex gap-2 mt-2">
                         <button
@@ -315,7 +315,7 @@ export default function CommentsList({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-onsurface-primary mt-0.5 leading-relaxed">
+                    <p className="text-onsurface-primary mt-0.5">
                       {renderContentWithMentions(comment.content, comment.mentions || [])}
                     </p>
                   )}

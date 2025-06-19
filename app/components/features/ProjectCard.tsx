@@ -46,12 +46,16 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       onClick={() => router.push(`/projects/${project.id}`)}
     >
       <div className="p-4 flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-1">
-            <h3 className="font-medium text-onsurface-primary line-clamp-2">
-              {project.title}
-            </h3>
-            {getStatusBadge(project.status)}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-11 h-11 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+              <div className="w-full h-full flex items-center bg-background justify-center text-onsurface-secondary font-medium text-lg">
+                {project.title.charAt(0).toUpperCase()}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-onsurface-primary truncate">{project.title}</h3>
+            </div>
           </div>
           <span className="text-sm text-onsurface-secondary flex-shrink-0">
             {new Date(project.created_at).toLocaleDateString('en-US', {
@@ -62,40 +66,43 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </div>
 
         {project.description && (
-          <p className="text-sm text-onsurface-primary leading-relaxed line-clamp-3">
+          <p className="text-onsurface-primary leading-relaxed line-clamp-3">
             {project.description}
           </p>
         )}
 
-        {project.contributors && project.contributors.length > 0 && (
-          <div className="flex items-center gap-1">
-            <div className="flex -space-x-2">
-              {project.contributors.slice(0, 3).map((contributor) => (
-                <div
-                  key={contributor.person.id}
-                  className="w-8 h-8 bg-avatar-bg rounded-full overflow-hidden border-2 border-surface-container"
-                >
-                  {contributor.person.avatar_url ? (
-                    <img
-                      src={contributor.person.avatar_url}
-                      alt={contributor.person.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-onsurface-secondary text-xs font-medium">
-                      {contributor.person.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-              ))}
+        <div className="flex items-center justify-between gap-2">
+          {project.contributors && project.contributors.length > 0 && (
+            <div className="flex items-center gap-1">
+              <div className="flex -space-x-2">
+                {project.contributors.slice(0, 3).map((contributor) => (
+                  <div
+                    key={contributor.person.id}
+                    className="w-8 h-8 bg-avatar-bg rounded-full overflow-hidden border-2 border-surface-container"
+                  >
+                    {contributor.person.avatar_url ? (
+                      <img
+                        src={contributor.person.avatar_url}
+                        alt={contributor.person.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-onsurface-secondary text-xs font-medium">
+                        {contributor.person.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {project.contributors.length > 3 && (
+                <span className="text-xs text-onsurface-secondary ml-1">
+                  +{project.contributors.length - 3}
+                </span>
+              )}
             </div>
-            {project.contributors.length > 3 && (
-              <span className="text-xs text-onsurface-secondary ml-2">
-                +{project.contributors.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
+          )}
+          {getStatusBadge(project.status)}
+        </div>
 
       </div>
     </div>
