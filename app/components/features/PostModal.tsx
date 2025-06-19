@@ -134,16 +134,16 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 ...(mentionsResponse.data || []).map(m => ({
                   id: m.id,
                   profile_id: m.profile_id,
-                  profile: m.profiles
+                  profile: Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
                 })),
                 ...(projectMentionsResponse.data || []).map(m => ({
                   id: m.id,
                   project_id: m.project_id,
-                  project: m.projects
+                  project: Array.isArray(m.projects) ? m.projects[0] : m.projects
                 }))
               ];
 
-              const formattedComment = {
+              const formattedComment: Comment = {
                 id: newComment.id,
                 post_id: newComment.post_id,
                 author_id: newComment.author_id,
