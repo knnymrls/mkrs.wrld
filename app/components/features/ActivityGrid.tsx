@@ -68,7 +68,7 @@ export type ActivityItem = PostActivity | ProfileActivity | ProjectActivity;
 interface ActivityGridProps {
   items: ActivityItem[];
   loading: boolean;
-  onPostClick?: (post: PostActivity) => void;
+  onPostClick?: (post: ActivityItem) => void;
   onLikeToggle?: (postId: string, isLiked: boolean) => Promise<void>;
   onCommentSubmit?: (postId: string) => Promise<void>;
   quickComments?: { [postId: string]: string };
@@ -116,7 +116,7 @@ export default function ActivityGrid({
               <PostCard
                 key={item.id}
                 post={item}
-                onPostClick={onPostClick || (() => {})}
+                onPostClick={(post) => onPostClick?.(item)}
                 onLikeToggle={onLikeToggle || (async () => {})}
                 onCommentSubmit={onCommentSubmit || (async () => {})}
                 quickComments={quickComments}

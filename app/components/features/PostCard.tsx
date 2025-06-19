@@ -36,6 +36,8 @@ interface Post {
   image_height?: number | null;
   // New multiple images
   images?: PostImage[];
+  // Optional type field for ActivityGrid compatibility
+  type?: 'post';
 }
 
 interface PostCardProps {

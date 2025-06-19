@@ -134,8 +134,7 @@ export default function PostImageUpload({
             alt="Upload preview"
             shape="square"
             size="auto"
-            className="h-auto rounded-lg object-contain bg-gray-50"
-            style={{ maxHeight: '120px', width: 'auto' }}
+            className="h-auto rounded-lg object-contain bg-gray-50 max-h-[120px] w-auto"
           />
           <div className="absolute -top-2 -right-2">
             <RemoveButton

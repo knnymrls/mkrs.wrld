@@ -155,7 +155,9 @@ export default function Home() {
           allActivities.push({
             ...project,
             type: 'project' as const,
-            contributors: project.contributions || []
+            contributors: (project.contributions || []).map((contrib: any) => ({
+              person: contrib.person
+            }))
           });
         });
       }
