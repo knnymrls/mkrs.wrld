@@ -5,6 +5,7 @@ import PostCard from './PostCard';
 import ProfileCard from './ProfileCard';
 import ProjectCard from './ProjectCard';
 import PostCardSkeleton from '../ui/PostCardSkeleton';
+import { TrackedMention } from '@/app/types/mention';
 
 type ActivityItemType = 'post' | 'profile' | 'project';
 
@@ -74,6 +75,8 @@ interface ActivityGridProps {
   quickComments?: { [postId: string]: string };
   setQuickComments?: React.Dispatch<React.SetStateAction<{ [postId: string]: string }>>;
   submittingQuickComment?: { [postId: string]: boolean };
+  quickCommentMentions?: { [postId: string]: TrackedMention[] };
+  setQuickCommentMentions?: React.Dispatch<React.SetStateAction<{ [postId: string]: TrackedMention[] }>>;
 }
 
 export default function ActivityGrid({
@@ -84,7 +87,9 @@ export default function ActivityGrid({
   onCommentSubmit,
   quickComments = {},
   setQuickComments = () => {},
-  submittingQuickComment = {}
+  submittingQuickComment = {},
+  quickCommentMentions = {},
+  setQuickCommentMentions = () => {}
 }: ActivityGridProps) {
   if (loading) {
     return (
@@ -122,6 +127,8 @@ export default function ActivityGrid({
                 quickComments={quickComments}
                 setQuickComments={setQuickComments}
                 submittingQuickComment={submittingQuickComment}
+                quickCommentMentions={quickCommentMentions}
+                setQuickCommentMentions={setQuickCommentMentions}
               />
             );
           case 'profile':

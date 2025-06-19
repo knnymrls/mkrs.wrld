@@ -5,6 +5,9 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { Comment } from '../../models/Comment';
 import CommentSkeleton from '../ui/CommentSkeleton';
+import CommentMentionInput from '../ui/CommentMentionInput';
+import { TrackedMention } from '@/app/types/mention';
+import { renderContentWithMentions } from '@/lib/mentions/renderMentions';
 
 interface Post {
   id: string;
@@ -18,7 +21,7 @@ interface CommentsListProps {
   newComment: string;
   setNewComment: React.Dispatch<React.SetStateAction<string>>;
   submittingComment: boolean;
-  createComment: () => void;
+  createComment: (mentions: TrackedMention[]) => void;
   post: Post;
   onUpdate: (updatedPost: any) => void;
 }
@@ -38,6 +41,8 @@ export default function CommentsList({
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [currentUserProfile, setCurrentUserProfile] = useState<{ name?: string; avatar_url?: string | null } | null>(null);
+  const [commentMentions, setCommentMentions] = useState<TrackedMention[]>([]);
+  const [editMentions, setEditMentions] = useState<TrackedMention[]>([]);
 
   // Fetch current user's profile
   useEffect(() => {
@@ -58,24 +63,74 @@ export default function CommentsList({
     fetchUserProfile();
   }, [user]);
 
-  const updateComment = async (commentId: string, newContent: string) => {
+  const updateComment = async (commentId: string, newContent: string, mentions: TrackedMention[]) => {
     if (!newContent.trim()) return;
 
     try {
-      const { error } = await supabase
+      // First update the comment
+      const { error: commentError } = await supabase
         .from('post_comments')
         .update({ content: newContent.trim() })
         .eq('id', commentId);
 
-      if (error) throw error;
+      if (commentError) throw commentError;
+
+      // Delete existing mentions
+      await supabase.from('comment_mentions').delete().eq('comment_id', commentId);
+      await supabase.from('comment_project_mentions').delete().eq('comment_id', commentId);
+
+      // Create new mentions
+      const profileMentions = mentions.filter(m => m.type === 'person');
+      const projectMentions = mentions.filter(m => m.type === 'project');
+
+      if (profileMentions.length > 0) {
+        const { error: mentionError } = await supabase
+          .from('comment_mentions')
+          .insert(
+            profileMentions.map(mention => ({
+              comment_id: commentId,
+              profile_id: mention.id
+            }))
+          );
+        if (mentionError) throw mentionError;
+      }
+
+      if (projectMentions.length > 0) {
+        const { error: projectMentionError } = await supabase
+          .from('comment_project_mentions')
+          .insert(
+            projectMentions.map(mention => ({
+              comment_id: commentId,
+              project_id: mention.id
+            }))
+          );
+        if (projectMentionError) throw projectMentionError;
+      }
 
       setComments(comments.map(comment =>
         comment.id === commentId
-          ? { ...comment, content: newContent.trim(), updated_at: new Date().toISOString() }
+          ? {
+            ...comment,
+            content: newContent.trim(),
+            updated_at: new Date().toISOString(),
+            mentions: [
+              ...profileMentions.map(m => ({
+                id: m.id,
+                profile_id: m.id,
+                profile: { id: m.id, name: m.name, avatar_url: m.imageUrl }
+              })),
+              ...projectMentions.map(m => ({
+                id: m.id,
+                project_id: m.id,
+                project: { id: m.id, title: m.name }
+              }))
+            ]
+          }
           : comment
       ));
       setEditingComment(null);
       setEditCommentText('');
+      setEditMentions([]);
     } catch (error) {
       console.error('Error updating comment:', error);
       alert('Failed to update comment');
@@ -130,22 +185,24 @@ export default function CommentsList({
           ) : null}
         </div>
         <div className="flex-1 flex gap-2">
-          <textarea
+          <CommentMentionInput
+            postId={post.id}
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                createComment();
-              }
+            onChange={setNewComment}
+            onSubmit={() => {
+              createComment(commentMentions);
+              setCommentMentions([]);
             }}
-            placeholder="Write a comment..."
-            className="flex-1 bg-surface-container-muted text-sm text-onsurface-primary placeholder-onsurface-secondary rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-onsurface-secondary transition-all"
-            rows={1}
-            style={{ minHeight: '38px' }}
+            onMentionsChange={setCommentMentions}
+            disabled={submittingComment}
+            userId={user?.id}
+            className="flex-1"
           />
           <button
-            onClick={createComment}
+            onClick={() => {
+              createComment(commentMentions);
+              setCommentMentions([]);
+            }}
             disabled={!newComment.trim() || submittingComment}
             className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
           >
@@ -228,27 +285,20 @@ export default function CommentsList({
                     )}
                   </div>
                   {editingComment === comment.id ? (
-                    <div className="mt-2">
-                      <textarea
+                    <div className="">
+                      <CommentMentionInput
+                        postId={post.id}
                         value={editCommentText}
-                        onChange={(e) => setEditCommentText(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            updateComment(comment.id, editCommentText);
-                          } else if (e.key === 'Escape') {
-                            setEditingComment(null);
-                            setEditCommentText('');
-                          }
-                        }}
+                        onChange={setEditCommentText}
+                        onSubmit={() => updateComment(comment.id, editCommentText, editMentions)}
+                        onMentionsChange={setEditMentions}
+                        userId={user?.id}
                         autoFocus
-                        className="w-full text-sm text-onsurface-primary bg-surface-container rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-onsurface-secondary transition-all"
-                        rows={1}
-                        style={{ minHeight: '36px' }}
+                        className="w-full"
                       />
                       <div className="flex gap-2 mt-2">
                         <button
-                          onClick={() => updateComment(comment.id, editCommentText)}
+                          onClick={() => updateComment(comment.id, editCommentText, editMentions)}
                           className="px-3 py-1 text-xs font-medium text-white bg-primary rounded-full hover:bg-primary-hover transition-colors"
                         >
                           Save
@@ -265,7 +315,9 @@ export default function CommentsList({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-onsurface-primary mt-0.5">{comment.content}</p>
+                    <p className="text-onsurface-primary mt-0.5 leading-relaxed">
+                      {renderContentWithMentions(comment.content, comment.mentions || [])}
+                    </p>
                   )}
                 </div>
               </div>

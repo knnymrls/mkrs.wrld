@@ -3,6 +3,7 @@
 import React from 'react';
 import PostCard from './PostCard';
 import PostCardSkeleton from '../ui/PostCardSkeleton';
+import { TrackedMention } from '@/app/types/mention';
 
 interface Post {
   id: string;
@@ -31,6 +32,8 @@ interface PostGridProps {
   quickComments: { [postId: string]: string };
   setQuickComments: React.Dispatch<React.SetStateAction<{ [postId: string]: string }>>;
   submittingQuickComment: { [postId: string]: boolean };
+  quickCommentMentions: { [postId: string]: TrackedMention[] };
+  setQuickCommentMentions: React.Dispatch<React.SetStateAction<{ [postId: string]: TrackedMention[] }>>;
 }
 
 export default function PostGrid({
@@ -41,7 +44,9 @@ export default function PostGrid({
   onCommentSubmit,
   quickComments,
   setQuickComments,
-  submittingQuickComment
+  submittingQuickComment,
+  quickCommentMentions,
+  setQuickCommentMentions
 }: PostGridProps) {
   if (loading) {
     return (
@@ -76,6 +81,8 @@ export default function PostGrid({
           quickComments={quickComments}
           setQuickComments={setQuickComments}
           submittingQuickComment={submittingQuickComment}
+          quickCommentMentions={quickCommentMentions}
+          setQuickCommentMentions={setQuickCommentMentions}
         />
       ))}
     </div>

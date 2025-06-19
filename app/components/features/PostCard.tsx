@@ -8,6 +8,7 @@ import AuthorLink from './AuthorLink';
 import QuickCommentInput from './QuickCommentInput';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
+import { TrackedMention } from '@/app/types/mention';
 
 interface PostImage {
   id: string;
@@ -48,6 +49,8 @@ interface PostCardProps {
   quickComments: { [postId: string]: string };
   setQuickComments: React.Dispatch<React.SetStateAction<{ [postId: string]: string }>>;
   submittingQuickComment: { [postId: string]: boolean };
+  quickCommentMentions: { [postId: string]: TrackedMention[] };
+  setQuickCommentMentions: React.Dispatch<React.SetStateAction<{ [postId: string]: TrackedMention[] }>>;
 }
 
 export default function PostCard({
@@ -57,7 +60,9 @@ export default function PostCard({
   onCommentSubmit,
   quickComments,
   setQuickComments,
-  submittingQuickComment
+  submittingQuickComment,
+  quickCommentMentions,
+  setQuickCommentMentions
 }: PostCardProps) {
   const { user } = useAuth();
   const router = useRouter();
@@ -205,7 +210,9 @@ export default function PostCard({
               value={quickComments[post.id] || ''}
               onChange={(value) => setQuickComments({ ...quickComments, [post.id]: value })}
               onSubmit={() => onCommentSubmit(post.id)}
+              onMentionsChange={(mentions) => setQuickCommentMentions({ ...quickCommentMentions, [post.id]: mentions })}
               disabled={submittingQuickComment[post.id]}
+              userId={user?.id}
             />
             <LikeButton
               isLiked={post.user_has_liked}

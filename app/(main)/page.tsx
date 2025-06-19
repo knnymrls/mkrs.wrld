@@ -8,6 +8,7 @@ import { TrackedMention } from '../types/mention';
 import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';
 import ActivityGrid, { ActivityItem } from '../components/features/ActivityGrid';
+import NotificationDropdown from '../components/features/NotificationDropdown';
 
 interface PostImage {
   id: string;
@@ -47,6 +48,7 @@ export default function Home() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [quickComments, setQuickComments] = useState<{ [postId: string]: string }>({});
   const [submittingQuickComment, setSubmittingQuickComment] = useState<{ [postId: string]: boolean }>({});
+  const [quickCommentMentions, setQuickCommentMentions] = useState<{ [postId: string]: TrackedMention[] }>({});
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -79,6 +81,287 @@ export default function Home() {
   useEffect(() => {
     fetchActivities();
   }, [user]); // Re-fetch when user changes
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to new posts
+    const postsChannel = supabase
+      .channel('posts-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts'
+        },
+        async (payload: any) => {
+          // Fetch the full post with author info
+          const { data } = await supabase
+            .from('posts')
+            .select(`
+              id,
+              content,
+              created_at,
+              author_id,
+              profiles:author_id (
+                id,
+                name,
+                avatar_url
+              ),
+              post_mentions (
+                profile_id,
+                profiles:profile_id (
+                  id,
+                  name,
+                  avatar_url
+                )
+              ),
+              post_projects (
+                project_id,
+                projects:project_id (
+                  id,
+                  title
+                )
+              ),
+              post_likes (user_id),
+              post_comments (id),
+              image_url,
+              image_width,
+              image_height,
+              post_images (
+                id,
+                url,
+                width,
+                height,
+                position
+              )
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (data) {
+            const formattedPost = await formatPost(data);
+            setActivities(prev => [{
+              ...formattedPost,
+              type: 'post' as const
+            }, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to new profiles
+    const profilesChannel = supabase
+      .channel('profiles-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'profiles'
+        },
+        async (payload: any) => {
+          // Fetch the full profile with skills
+          const { data } = await supabase
+            .from('profiles')
+            .select(`
+              id,
+              name,
+              title,
+              bio,
+              avatar_url,
+              location,
+              created_at,
+              skills!skills_profile_id_fkey (skill)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (data) {
+            setActivities(prev => [{
+              ...data,
+              type: 'profile' as const
+            }, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to new projects
+    const projectsChannel = supabase
+      .channel('projects-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'projects'
+        },
+        async (payload: any) => {
+          // Fetch the full project with contributors
+          const { data } = await supabase
+            .from('projects')
+            .select(`
+              id,
+              title,
+              description,
+              status,
+              created_at,
+              created_by,
+              contributions!contributions_project_id_fkey (
+                person:person_id (
+                  id,
+                  name,
+                  avatar_url
+                )
+              )
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (data) {
+            setActivities(prev => [{
+              ...data,
+              type: 'project' as const
+            }, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(projectsChannel);
+    };
+  }, [user]);
+
+  // Helper function to format a single post
+  const formatPost = async (postData: any) => {
+    // Handle both raw post data and already fetched post with relations
+    const post = postData;
+    
+    // If author data is nested, extract it
+    const author = post.profiles ? 
+      (Array.isArray(post.profiles) ? post.profiles[0] : post.profiles) :
+      null;
+
+    // Get mentions from nested relations or fetch separately
+    let mentions: Post['mentions'] = [];
+    
+    if (post.post_mentions || post.post_projects) {
+      // Use nested data if available
+      mentions = [
+        ...(post.post_mentions || []).map((m: any) => ({
+          id: m.profiles?.id || m.profile_id,
+          name: m.profiles?.name || '',
+          type: 'person' as const,
+          imageUrl: m.profiles?.avatar_url || null
+        })),
+        ...(post.post_projects || []).map((m: any) => ({
+          id: m.projects?.id || m.project_id,
+          name: m.projects?.title || '',
+          type: 'project' as const,
+          imageUrl: m.projects?.image_url || null
+        }))
+      ];
+    } else {
+      // Fetch mentions separately if not included
+      const [personMentions, projectMentions] = await Promise.all([
+        supabase
+          .from('post_mentions')
+          .select(`
+            profiles:profile_id (
+              id,
+              name,
+              avatar_url
+            )
+          `)
+          .eq('post_id', post.id),
+        supabase
+          .from('post_projects')
+          .select(`
+            projects:project_id (
+              id,
+              title,
+              image_url
+            )
+          `)
+          .eq('post_id', post.id)
+      ]);
+
+      mentions = [
+        ...(personMentions.data || []).map((m: any) => ({
+          id: m.profiles.id,
+          name: m.profiles.name,
+          type: 'person' as const,
+          imageUrl: m.profiles.avatar_url
+        })),
+        ...(projectMentions.data || []).map((m: any) => ({
+          id: m.projects.id,
+          name: m.projects.title,
+          type: 'project' as const,
+          imageUrl: m.projects.image_url
+        }))
+      ];
+    }
+
+    // Get engagement metrics
+    let likesCount = 0;
+    let userHasLiked = false;
+    let commentsCount = 0;
+
+    if (post.post_likes && Array.isArray(post.post_likes)) {
+      likesCount = post.post_likes.length;
+      userHasLiked = user ? post.post_likes.some((like: any) => like.user_id === user.id) : false;
+    } else {
+      const { count } = await supabase
+        .from('post_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', post.id);
+      likesCount = count || 0;
+
+      if (user) {
+        const { data: userLike } = await supabase
+          .from('post_likes')
+          .select('id')
+          .eq('post_id', post.id)
+          .eq('user_id', user.id)
+          .single();
+        userHasLiked = !!userLike;
+      }
+    }
+
+    if (post.post_comments && Array.isArray(post.post_comments)) {
+      commentsCount = post.post_comments.length;
+    } else {
+      const { count } = await supabase
+        .from('post_comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', post.id);
+      commentsCount = count || 0;
+    }
+
+    // Get images
+    const images = post.post_images || [];
+
+    return {
+      id: post.id,
+      content: post.content,
+      created_at: post.created_at,
+      author: author || { id: post.author_id, name: 'Unknown', avatar_url: null },
+      mentions,
+      likes_count: likesCount,
+      comments_count: commentsCount,
+      user_has_liked: userHasLiked,
+      image_url: post.image_url,
+      image_width: post.image_width,
+      image_height: post.image_height,
+      images: images.sort((a: any, b: any) => a.position - b.position)
+    };
+  };
 
   const fetchActivities = async () => {
     try {
@@ -185,113 +468,52 @@ export default function Home() {
         author_id,
         image_url,
         image_width,
-        image_height
+        image_height,
+        profiles:author_id (
+          id,
+          name,
+          avatar_url
+        ),
+        post_mentions (
+          profile_id,
+          profiles:profile_id (
+            id,
+            name,
+            avatar_url
+          )
+        ),
+        post_projects (
+          project_id,
+          projects:project_id (
+            id,
+            title,
+            image_url
+          )
+        ),
+        post_likes (user_id),
+        post_comments (id),
+        post_images (
+          id,
+          url,
+          width,
+          height,
+          position
+        )
       `)
       .order('created_at', { ascending: false })
       .limit(limit || 50);
 
     if (error) {
       console.error('Error fetching posts:', error);
-    } else {
-      // Fetch author and mentions for each post
-      const postsWithDetails = await Promise.all(
-        (data || []).map(async (post) => {
-          // Fetch author
-          const { data: author } = await supabase
-            .from('profiles')
-            .select('id, name, avatar_url')
-            .eq('id', post.author_id)
-            .single();
-
-          // Fetch person mentions
-          const { data: personMentions } = await supabase
-            .from('post_mentions')
-            .select(`
-              profiles:profile_id (
-                id,
-                name,
-                avatar_url
-              )
-            `)
-            .eq('post_id', post.id);
-
-          // Fetch project mentions
-          const { data: projectMentions } = await supabase
-            .from('post_projects')
-            .select(`
-              projects:project_id (
-                id,
-                title,
-                image_url
-              )
-            `)
-            .eq('post_id', post.id);
-
-          const mentions: Post['mentions'] = [
-            ...(personMentions || []).map((m: any) => ({
-              id: m.profiles.id,
-              name: m.profiles.name,
-              type: 'person' as const,
-              imageUrl: m.profiles.avatar_url
-            })),
-            ...(projectMentions || []).map((m: any) => ({
-              id: m.projects.id,
-              name: m.projects.title,
-              type: 'project' as const,
-              imageUrl: m.projects.image_url
-            }))
-          ];
-
-          // Fetch likes count and check if current user has liked
-          const { count: likesCount } = await supabase
-            .from('post_likes')
-            .select('*', { count: 'exact', head: true })
-            .eq('post_id', post.id);
-
-          let userHasLiked = false;
-          if (user) {
-            const { data: userLike } = await supabase
-              .from('post_likes')
-              .select('id')
-              .eq('post_id', post.id)
-              .eq('user_id', user.id)
-              .single();
-            userHasLiked = !!userLike;
-          }
-
-          // Fetch comments count
-          const { count: commentsCount } = await supabase
-            .from('post_comments')
-            .select('*', { count: 'exact', head: true })
-            .eq('post_id', post.id);
-
-          // Fetch multiple images
-          const { data: postImages } = await supabase
-            .from('post_images')
-            .select('id, url, width, height, position')
-            .eq('post_id', post.id)
-            .order('position', { ascending: true });
-
-          return {
-            id: post.id,
-            content: post.content,
-            created_at: post.created_at,
-            author: author || { id: post.author_id, name: 'Unknown', avatar_url: null },
-            mentions,
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            user_has_liked: userHasLiked,
-            image_url: post.image_url,
-            image_width: post.image_width,
-            image_height: post.image_height,
-            images: postImages || []
-          };
-        })
-      );
-
-      return postsWithDetails;
+      return [];
     }
-    return [];
+
+    // Format each post using the helper function
+    const postsWithDetails = await Promise.all(
+      (data || []).map(post => formatPost(post))
+    );
+
+    return postsWithDetails;
   };
 
   const handlePostClick = (post: ActivityItem) => {
@@ -382,6 +604,8 @@ export default function Home() {
     const commentText = quickComments[postId]?.trim();
     if (!commentText || !user) return;
 
+    const mentions = quickCommentMentions[postId] || [];
+
     setSubmittingQuickComment({ ...submittingQuickComment, [postId]: true });
     try {
       const { data, error } = await supabase
@@ -402,8 +626,37 @@ export default function Home() {
 
       if (error) throw error;
 
-      // Clear the input
+      // Create mentions for the comment
+      const profileMentions = mentions.filter(m => m.type === 'person');
+      const projectMentions = mentions.filter(m => m.type === 'project');
+
+      if (profileMentions.length > 0) {
+        const { error: mentionError } = await supabase
+          .from('comment_mentions')
+          .insert(
+            profileMentions.map(mention => ({
+              comment_id: data.id,
+              profile_id: mention.id
+            }))
+          );
+        if (mentionError) throw mentionError;
+      }
+
+      if (projectMentions.length > 0) {
+        const { error: projectMentionError } = await supabase
+          .from('comment_project_mentions')
+          .insert(
+            projectMentions.map(mention => ({
+              comment_id: data.id,
+              project_id: mention.id
+            }))
+          );
+        if (projectMentionError) throw projectMentionError;
+      }
+
+      // Clear the input and mentions
       setQuickComments({ ...quickComments, [postId]: '' });
+      setQuickCommentMentions({ ...quickCommentMentions, [postId]: [] });
 
       // Update comment count in activities
       setActivities(activities.map(activity => {
@@ -437,16 +690,23 @@ export default function Home() {
         <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl font-medium text-onsurface-primary">Activity Feed</h1>
 
-          {/* New Post Button */}
-          <button
-            onClick={() => setIsCreatingPost(true)}
-            className="px-4 py-2 hover:bg-primary-hover text-primary hover:text-surface-container-muted border-primary-hover border-[1px] rounded-full bg-surface-container transition-colors flex items-center gap-1 text-sm font-medium"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Create</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Notification Button */}
+            {user && (
+              <NotificationDropdown userId={user.id} />
+            )}
+            
+            {/* New Post Button */}
+            <button
+              onClick={() => setIsCreatingPost(true)}
+              className="px-4 py-2 hover:bg-primary-hover text-primary hover:text-surface-container-muted border-primary-hover border-[1px] rounded-full bg-surface-container transition-colors flex items-center gap-1 text-sm font-medium"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Create</span>
+            </button>
+          </div>
         </div>
 
         {/* Activity Grid */}
@@ -459,6 +719,8 @@ export default function Home() {
           quickComments={quickComments}
           setQuickComments={setQuickComments}
           submittingQuickComment={submittingQuickComment}
+          quickCommentMentions={quickCommentMentions}
+          setQuickCommentMentions={setQuickCommentMentions}
         />
       </div>
 

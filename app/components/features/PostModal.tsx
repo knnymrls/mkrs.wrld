@@ -131,15 +131,75 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
       if (error) throw error;
 
-      const formattedComments = data?.map(comment => ({
-        id: comment.id,
-        post_id: comment.post_id,
-        author_id: comment.author_id,
-        content: comment.content,
-        created_at: comment.created_at,
-        updated_at: comment.created_at,
-        author: Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles
-      })) || [];
+      // Fetch mentions for all comments
+      const commentIds = data?.map(c => c.id) || [];
+      
+      let commentMentions: any[] = [];
+      let commentProjectMentions: any[] = [];
+      
+      if (commentIds.length > 0) {
+        const [mentionsResponse, projectMentionsResponse] = await Promise.all([
+          supabase
+            .from('comment_mentions')
+            .select(`
+              id,
+              comment_id,
+              profile_id,
+              profiles:profile_id (
+                id,
+                name,
+                avatar_url
+              )
+            `)
+            .in('comment_id', commentIds),
+          supabase
+            .from('comment_project_mentions')
+            .select(`
+              id,
+              comment_id,
+              project_id,
+              projects:project_id (
+                id,
+                title
+              )
+            `)
+            .in('comment_id', commentIds)
+        ]);
+        
+        commentMentions = mentionsResponse.data || [];
+        commentProjectMentions = projectMentionsResponse.data || [];
+      }
+
+      const formattedComments = data?.map(comment => {
+        // Get mentions for this comment
+        const mentions = [
+          ...commentMentions
+            .filter(m => m.comment_id === comment.id)
+            .map(m => ({
+              id: m.id,
+              profile_id: m.profile_id,
+              profile: m.profiles
+            })),
+          ...commentProjectMentions
+            .filter(m => m.comment_id === comment.id)
+            .map(m => ({
+              id: m.id,
+              project_id: m.project_id,
+              project: m.projects
+            }))
+        ];
+        
+        return {
+          id: comment.id,
+          post_id: comment.post_id,
+          author_id: comment.author_id,
+          content: comment.content,
+          created_at: comment.created_at,
+          mentions,
+          updated_at: comment.created_at,
+          author: Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles
+        };
+      }) || [];
 
       setComments(formattedComments);
     } catch (error) {
@@ -271,7 +331,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
     }
   };
 
-  const createComment = async () => {
+  const createComment = async (mentions: TrackedMention[]) => {
     if (!newComment.trim() || !user) return;
 
     setSubmittingComment(true);
@@ -294,6 +354,34 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
       if (error) throw error;
 
+      // Create mentions for the comment
+      const profileMentions = mentions.filter(m => m.type === 'person');
+      const projectMentions = mentions.filter(m => m.type === 'project');
+
+      if (profileMentions.length > 0) {
+        const { error: mentionError } = await supabase
+          .from('comment_mentions')
+          .insert(
+            profileMentions.map(mention => ({
+              comment_id: data.id,
+              profile_id: mention.id
+            }))
+          );
+        if (mentionError) throw mentionError;
+      }
+
+      if (projectMentions.length > 0) {
+        const { error: projectMentionError } = await supabase
+          .from('comment_project_mentions')
+          .insert(
+            projectMentions.map(mention => ({
+              comment_id: data.id,
+              project_id: mention.id
+            }))
+          );
+        if (projectMentionError) throw projectMentionError;
+      }
+
       const { data: author } = await supabase
         .from('profiles')
         .select('id, name, avatar_url')
@@ -307,7 +395,19 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
         content: data.content,
         created_at: data.created_at,
         updated_at: data.created_at,
-        author: author || { id: user.id, name: 'Unknown', avatar_url: null }
+        author: author || { id: user.id, name: 'Unknown', avatar_url: null },
+        mentions: [
+          ...profileMentions.map(m => ({
+            id: m.id,
+            profile_id: m.id,
+            profile: { id: m.id, name: m.name, avatar_url: m.imageUrl }
+          })),
+          ...projectMentions.map(m => ({
+            id: m.id,
+            project_id: m.id,
+            project: { id: m.id, title: m.name }
+          }))
+        ]
       };
 
       setComments([...comments, newCommentObj]);

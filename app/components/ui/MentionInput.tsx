@@ -85,7 +85,7 @@ export default function MentionInput({
   // Notify parent of mention changes
   useEffect(() => {
     onMentionsChange(trackedMentions);
-  }, [trackedMentions, onMentionsChange]);
+  }, [trackedMentions]); // onMentionsChange is excluded to prevent infinite loops
 
   const handleTextChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -292,18 +292,17 @@ export default function MentionInput({
   };
 
   return (
-    <div className="relative">
-      <div className={`relative ${rows === 2 ? '' : 'bg-gray-50 dark:bg-gray-900'} rounded-md`}>
+    <div className="relative w-full">
+      <div className="relative w-full flex">
         {/* Mention overlay for visual styling */}
         <div
-          className={`absolute inset-0 pointer-events-none overflow-hidden`}
+          className={`absolute inset-0 pointer-events-none overflow-hidden ${rows === 1 ? 'px-3 py-2' : 'p-3'} text-sm`}
           style={{
             fontFamily: 'inherit',
-            fontSize: '16px',
             lineHeight: '1.5',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
-            maxHeight: rows === 3 ? '120px' : undefined
+            maxHeight: rows === 1 ? '120px' : rows === 3 ? '120px' : undefined
           }}
         >
           {(() => {
@@ -327,7 +326,7 @@ export default function MentionInput({
               parts.push(
                 <span
                   key={`mention-${idx}`}
-                  className="text-transparent underline decoration-gray-300 dark:decoration-gray-500 decoration-2 underline-offset-3"
+                  className="text-primary underline decoration-primary decoration-1 underline-offset-3"
                 >
                   {value.substring(mention.start, mention.end)}
                 </span>
@@ -355,12 +354,10 @@ export default function MentionInput({
           onChange={handleTextChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`w-full ${rows === 1 ? 'p-2' : 'p-3'} border ${rows === 1 ? 'border-transparent' : 'border-gray-300 dark:border-gray-700'} rounded-md resize-none focus:outline-none ${rows === 1 ? 'focus:ring-1 focus:ring-text-primary' : 'focus:ring-2 focus:ring-blue-500'} relative ${rows === 1 ? 'bg-input-bg focus:bg-input-bg-focus' : ''} ${className}`}
+          className={`w-full ${rows === 1 ? 'px-3 py-2' : 'p-3'} text-sm text-onsurface-primary placeholder-onsurface-secondary bg-surface-container-muted rounded-lg border-none outline-none focus:outline-none focus:ring-1 focus:ring-onsurface-secondary transition-all disabled:opacity-50 resize-none ${className}`}
           style={{
             fontFamily: 'inherit',
-            fontSize: '16px',
             lineHeight: '1.5',
-            backgroundColor: 'transparent',
             caretColor: 'auto',
             minHeight: rows === 1 ? '38px' : undefined,
             maxHeight: rows === 1 ? '120px' : undefined,
@@ -375,7 +372,8 @@ export default function MentionInput({
 
         {/* Visual indicator for tracked mentions */}
         {trackedMentions.length > 0 && rows > 1 && (
-          <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+          <div className="absolute bottom-2 right-2 text-sm
+           text-onsurface-secondary">
             {trackedMentions.length} mention{trackedMentions.length !== 1 ? 's' : ''}
           </div>
         )}
