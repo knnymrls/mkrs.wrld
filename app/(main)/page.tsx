@@ -56,7 +56,7 @@ export default function Home() {
         setIsCreatingPost(false);
         setSelectedPost(null);
       }
-      
+
       // Handle Cmd+Shift+P (Mac) or Ctrl+Shift+P (Windows/Linux)
       // Check for uppercase 'P' since Shift is pressed
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
@@ -65,7 +65,7 @@ export default function Home() {
         setIsCreatingPost(prev => !prev); // Toggle the modal
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
@@ -84,7 +84,7 @@ export default function Home() {
     try {
       // Fetch posts with a limit to mix with other activities
       const postsPromise = fetchPosts(20);
-      
+
       // Fetch all profiles
       const profilesPromise = supabase
         .from('profiles')
@@ -100,7 +100,7 @@ export default function Home() {
         `)
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       // Fetch all projects
       const projectsPromise = supabase
         .from('projects')
@@ -161,7 +161,7 @@ export default function Home() {
       }
 
       // Sort all activities by created_at
-      allActivities.sort((a, b) => 
+      allActivities.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -315,7 +315,7 @@ export default function Home() {
         .from('posts')
         .delete()
         .eq('id', selectedPost.id);
-      
+
       if (error) throw error;
 
       // Refresh activities and close modal
@@ -430,15 +430,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-4 px-6">
+    <div className="min-h-screen bg-background py-16 px-6">
       <div>
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl font-semibold text-text-primary">Activity Feed</h1>
+        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl font-medium text-onsurface-primary">Activity Feed</h1>
 
           {/* New Post Button */}
           <button
             onClick={() => setIsCreatingPost(true)}
-            className="px-5 py-2.5 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors flex items-center gap-2 text-sm font-medium"
+            className="px-4 py-2 hover:bg-primary-hover text-primary hover:text-surface-container-muted border-primary-hover border-[1px] rounded-full bg-surface-container transition-colors flex items-center gap-1 text-sm font-medium"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

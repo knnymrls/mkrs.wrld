@@ -205,7 +205,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
 
   return (
     <div
-      className="fixed inset-0 bg-black/25 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/35 flex items-center justify-center p-4 z-50"
       onClick={handleClose}
     >
       <div

@@ -155,10 +155,9 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({
 
       const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
 
-      // Check if user typed @ followed by a space (or navigated back to it)
-      // Also check if there's a space immediately after the @ in the full text
-      const hasSpaceAfterAt = lastAtIndex + 1 < newValue.length && newValue[lastAtIndex + 1] === ' ';
-      if (textAfterAt.startsWith(' ') || hasSpaceAfterAt) {
+      // Only prevent dropdown if user is typing a space right after @
+      // Don't prevent it if @ was inserted before existing space
+      if (textAfterAt.startsWith(' ')) {
         // Mark this @ position as invalidated
         setInvalidatedAtPositions(new Set([...invalidatedAtPositions, lastAtIndex]));
         setShowMentions(false);
@@ -166,7 +165,14 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({
       }
 
       // Check if we're inside an existing mention
-      if (!isInsideExistingMention(lastAtIndex, updatedMentions)) {
+      // When typing @ in middle of text, we want to show dropdown regardless
+      const isInsideMention = isInsideExistingMention(lastAtIndex, updatedMentions);
+      
+      // Only show dropdown if we just typed @ or if we're continuing to type after @
+      const justTypedAt = previousContent.length < newValue.length && newValue[lastAtIndex] === '@';
+      const typingAfterAt = lastAtIndex < cursorPos - 1 && !isInsideMention;
+      
+      if (!isInsideMention || justTypedAt) {
         // Calculate dropdown position BEFORE showing the dropdown
         if (textareaRef.current) {
           const position = calculateDropdownPosition(
@@ -264,6 +270,114 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({
         textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
       }
     }, 0);
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    // Check if we're in post variant and can handle images
+    if (variant !== 'post' || !onImagesChange || !userId) return;
+    
+    const items = Array.from(e.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    if (imageItems.length === 0) return;
+    
+    // Prevent default paste behavior for images
+    e.preventDefault();
+    
+    // Check image limit
+    const remainingSlots = 4 - images.length;
+    if (remainingSlots <= 0) {
+      alert('Maximum 4 images allowed.');
+      return;
+    }
+    
+    const imagesToProcess = imageItems.slice(0, remainingSlots);
+    if (imageItems.length > remainingSlots) {
+      alert(`You can only add ${remainingSlots} more image${remainingSlots > 1 ? 's' : ''}. Maximum 4 images allowed.`);
+    }
+    
+    // Process each pasted image
+    imagesToProcess.forEach(async (item, index) => {
+      const file = item.getAsFile();
+      if (!file) return;
+      
+      // Create placeholder with loading state
+      const tempId = `temp-paste-${Date.now()}-${index}`;
+      const placeholder: ImageData = {
+        url: '',
+        width: 0,
+        height: 0,
+        loading: true,
+        tempId
+      };
+      
+      // Add placeholder immediately
+      onImagesChange((currentImages: ImageData[]) => [...currentImages, placeholder]);
+      
+      try {
+        // Create object URL to get dimensions
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        
+        await new Promise<void>((resolve, reject) => {
+          img.onload = async () => {
+            const width = img.width;
+            const height = img.height;
+            URL.revokeObjectURL(objectUrl);
+            
+            try {
+              // Generate filename for pasted image
+              const timestamp = Date.now();
+              const randomStr = Math.random().toString(36).substr(2, 9);
+              const fileName = `${userId}/${timestamp}-${randomStr}-pasted-image.png`;
+              
+              // Upload to Supabase
+              const { data, error: uploadError } = await supabase.storage
+                .from('post-images')
+                .upload(fileName, file);
+              
+              if (uploadError) {
+                throw uploadError;
+              }
+              
+              if (data) {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('post-images')
+                  .getPublicUrl(fileName);
+                
+                // Update the placeholder with actual image data
+                setTimeout(() => {
+                  onImagesChange((currentImages: ImageData[]) => 
+                    currentImages.map(img => 
+                      img.tempId === tempId 
+                        ? { url: publicUrl, width, height, loading: false, tempId }
+                        : img
+                    )
+                  );
+                }, 0);
+              }
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Failed to load image'));
+          };
+          img.src = objectUrl;
+        });
+      } catch (err) {
+        console.error('Paste upload error:', err);
+        alert('Failed to upload pasted image');
+        // Remove the failed placeholder
+        setTimeout(() => {
+          onImagesChange((currentImages: ImageData[]) => 
+            currentImages.filter(img => img.tempId !== tempId)
+          );
+        }, 0);
+      }
+    });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -451,6 +565,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({
             value={value}
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={isFocused ? "" : "Ask anything..."}
