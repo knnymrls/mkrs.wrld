@@ -29,7 +29,7 @@ export default function MentionLink({ id, name, type, imageUrl, className = '', 
   return (
     <a
       href={type === 'person' ? `/profile/${id}` : `/projects/${id}`}
-      className={`inline-flex items-center gap-0.5 text-primary ${className}`}
+      className={`inline-flex items-center gap-0.5 text-onsurface-primary ${className}`}
       onClick={handleClick}
       style={{ verticalAlign: 'middle' }}
     >
@@ -59,7 +59,7 @@ export default function MentionLink({ id, name, type, imageUrl, className = '', 
           </svg>
         )
       )}
-      <span className="underline decoration-primary/30 hover:decoration-primary underline-offset-2">{name}</span>
+      <span className="underline decoration-onsurface-primary/30 hover:decoration-onsurface-primary underline-offset-2">{name}</span>
     </a>
   );
 }
