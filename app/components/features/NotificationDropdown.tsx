@@ -8,9 +8,10 @@ import NotificationIcon from '../ui/NotificationIcon';
 
 interface NotificationDropdownProps {
   userId: string;
+  onPostClick?: (postId: string) => void;
 }
 
-export default function NotificationDropdown({ userId }: NotificationDropdownProps) {
+export default function NotificationDropdown({ userId, onPostClick }: NotificationDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationModel[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -203,6 +204,23 @@ export default function NotificationDropdown({ userId }: NotificationDropdownPro
     }
   };
 
+  // Clear all notifications
+  const clearAllNotifications = async () => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('recipient_id', userId);
+
+      if (error) throw error;
+
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+    }
+  };
+
   // Handle notification click
   const handleNotificationClick = async (notification: NotificationModel) => {
     // Mark as read if not already
@@ -212,7 +230,12 @@ export default function NotificationDropdown({ userId }: NotificationDropdownPro
 
     // Navigate based on notification type
     if (notification.post_id) {
-      // TODO: Open post modal or navigate to post
+      // Open post modal if handler provided, otherwise navigate
+      if (onPostClick) {
+        onPostClick(notification.post_id);
+      } else {
+        router.push(`/?post=${notification.post_id}`);
+      }
       setIsOpen(false);
     } else if (notification.project_id) {
       router.push(`/projects/${notification.project_id}`);
@@ -267,8 +290,18 @@ export default function NotificationDropdown({ userId }: NotificationDropdownPro
       {isOpen && (
         <div className="absolute right-0 mt-2 w-96 bg-surface-container rounded-2xl shadow-xl border border-border overflow-hidden z-50">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-onsurface-primary">Notifications</h3>
+          <div className="px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-onsurface-primary">Notifications</h3>
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearAllNotifications}
+                  className="text-sm text-onsurface-secondary hover:text-red-500 transition-colors"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}

@@ -521,6 +521,49 @@ export default function Home() {
     setSelectedPost(post);
   };
 
+  const handleOpenPostFromNotification = async (postId: string) => {
+    // Find the post in current activities
+    const postActivity = activities.find(a => a.type === 'post' && a.id === postId);
+    
+    if (postActivity && postActivity.type === 'post') {
+      setSelectedPost(postActivity);
+    } else {
+      // If not in activities, fetch the post
+      try {
+        const { data: post, error } = await supabase
+          .from('posts')
+          .select(`
+            id,
+            content,
+            created_at,
+            author_id,
+            embedding,
+            updated_at,
+            image_url,
+            image_width,
+            image_height,
+            profiles:author_id (
+              id,
+              name,
+              avatar_url
+            )
+          `)
+          .eq('id', postId)
+          .single();
+
+        if (error) throw error;
+
+        if (post) {
+          // Format the post using the existing formatPost function
+          const formattedPost = await formatPost(post);
+          setSelectedPost(formattedPost);
+        }
+      } catch (error) {
+        console.error('Error fetching post:', error);
+      }
+    }
+  };
+
   const handlePostUpdate = (updatedPost: Post) => {
     setActivities(activities.map(activity => {
       if (activity.type === 'post' && activity.id === updatedPost.id) {
@@ -693,7 +736,10 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {/* Notification Button */}
             {user && (
-              <NotificationDropdown userId={user.id} />
+              <NotificationDropdown 
+                userId={user.id} 
+                onPostClick={handleOpenPostFromNotification}
+              />
             )}
             
             {/* New Post Button */}
