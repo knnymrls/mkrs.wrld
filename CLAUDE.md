@@ -329,6 +329,11 @@ app/
   - Removed unused model: Posts.ts
   - Removed unused PostGridProps interface
   - No console.log statements found in application code (only in scripts)
+- **Performance Optimizations** (Completed January 2025):
+  - Added React.memo to frequently re-rendering components
+  - Optimized PostCard with useMemo and useCallback
+  - Consolidated 3 Supabase real-time channels into 1 channel
+  - Reduced WebSocket connections from 3 to 1 for activity feed
 
 ### Import Path Standards
 - All imports now use absolute paths with `@/` prefix

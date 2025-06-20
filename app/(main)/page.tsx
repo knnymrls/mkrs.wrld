@@ -82,13 +82,18 @@ export default function Home() {
     fetchActivities();
   }, [user]); // Re-fetch when user changes
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions - consolidated into single channel
   useEffect(() => {
     if (!user) return;
 
-    // Subscribe to new posts
-    const postsChannel = supabase
-      .channel('posts-realtime')
+    // Single channel for all activity updates
+    const activityChannel = supabase
+      .channel('activity-feed-realtime', {
+        config: {
+          presence: { key: user.id }
+        }
+      })
+      // Subscribe to new posts
       .on(
         'postgres_changes',
         {
@@ -150,11 +155,7 @@ export default function Home() {
           }
         }
       )
-      .subscribe();
-
-    // Subscribe to new profiles
-    const profilesChannel = supabase
-      .channel('profiles-realtime')
+      // Subscribe to new profiles
       .on(
         'postgres_changes',
         {
@@ -187,11 +188,7 @@ export default function Home() {
           }
         }
       )
-      .subscribe();
-
-    // Subscribe to new projects
-    const projectsChannel = supabase
-      .channel('projects-realtime')
+      // Subscribe to new projects
       .on(
         'postgres_changes',
         {
@@ -229,12 +226,19 @@ export default function Home() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to activity feed updates');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to activity feed:', status);
+        }
+      });
 
+    // Cleanup function
     return () => {
-      supabase.removeChannel(postsChannel);
-      supabase.removeChannel(profilesChannel);
-      supabase.removeChannel(projectsChannel);
+      activityChannel.unsubscribe().then(() => {
+        supabase.removeChannel(activityChannel);
+      });
     };
   }, [user]);
 
