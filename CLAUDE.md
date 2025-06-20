@@ -338,6 +338,14 @@ app/
   - Extracted reusable hooks: useActivityFeed, useRealtimeActivity, useKeyboardShortcuts, usePostInteractions
   - Created utility functions for post formatting
   - Improved code organization with clear separation of concerns
+- **Notifications Feature** (Completed January 2025):
+  - Created dedicated notifications page at `/notifications`
+  - Added filtering by type (mentions, comments, projects) and read status
+  - Mark individual or all notifications as read
+  - Real-time updates for new notifications
+  - Click notification to navigate to relevant content
+  - Added notifications link to navbar
+  - Fixed TODO in NotificationDropdown for navigation
 
 ### Import Path Standards
 - All imports now use absolute paths with `@/` prefix

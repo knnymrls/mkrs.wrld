@@ -379,7 +379,7 @@ export default function NotificationDropdown({ userId, onPostClick }: Notificati
             <div className="px-4 py-2 border-t border-border">
               <button
                 onClick={() => {
-                  // TODO: Navigate to notifications page
+                  router.push('/notifications');
                   setIsOpen(false);
                 }}
                 className="text-sm text-primary hover:underline w-full text-center"

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';
@@ -40,6 +40,7 @@ interface Post {
 export default function Home() {
   const { user, hasProfile, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
@@ -81,6 +82,19 @@ export default function Home() {
 
   // Real-time subscriptions
   useRealtimeActivity({ user, onNewActivity: addActivity });
+
+  // Handle post parameter from URL (for notifications)
+  useEffect(() => {
+    const postId = searchParams.get('post');
+    if (postId && activities.length > 0) {
+      const post = activities.find(a => a.id === postId && a.type === 'post') as Post;
+      if (post) {
+        setSelectedPost(post);
+        // Clean up URL
+        router.replace('/');
+      }
+    }
+  }, [searchParams, activities, router]);
 
   // Event handlers
   const handlePostClick = useCallback((post: ActivityItem) => {
