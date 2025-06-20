@@ -18,7 +18,7 @@ interface ProfileCardProps {
   profile: Profile;
 }
 
-export default function ProfileCard({ profile }: ProfileCardProps) {
+const ProfileCard = React.memo(function ProfileCard({ profile }: ProfileCardProps) {
   const router = useRouter();
 
   return (
@@ -71,4 +71,6 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
       </div>
     </div>
   );
-}
+});
+
+export default ProfileCard;

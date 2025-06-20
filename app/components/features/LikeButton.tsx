@@ -9,7 +9,7 @@ interface LikeButtonProps {
   count?: number;
 }
 
-export default function LikeButton({ isLiked, onClick, showCount = false, count }: LikeButtonProps) {
+const LikeButton = React.memo(function LikeButton({ isLiked, onClick, showCount = false, count }: LikeButtonProps) {
   return (
     <button
       onClick={(e) => {
@@ -37,4 +37,6 @@ export default function LikeButton({ isLiked, onClick, showCount = false, count 
       )}
     </button>
   );
-}
+});
+
+export default LikeButton;

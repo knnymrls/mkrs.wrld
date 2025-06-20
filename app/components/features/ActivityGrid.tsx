@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import PostCard from './PostCard';
 import ProfileCard from './ProfileCard';
 import ProjectCard from './ProjectCard';
@@ -79,17 +79,21 @@ interface ActivityGridProps {
   setQuickCommentMentions?: React.Dispatch<React.SetStateAction<{ [postId: string]: TrackedMention[] }>>;
 }
 
-export default function ActivityGrid({
+// Default functions outside component to prevent recreating
+const noop = () => {};
+const asyncNoop = async () => {};
+
+const ActivityGrid = React.memo(function ActivityGrid({
   items,
   loading,
   onPostClick,
   onLikeToggle,
   onCommentSubmit,
   quickComments = {},
-  setQuickComments = () => {},
+  setQuickComments = noop,
   submittingQuickComment = {},
   quickCommentMentions = {},
-  setQuickCommentMentions = () => {}
+  setQuickCommentMentions = noop
 }: ActivityGridProps) {
   if (loading) {
     return (
@@ -121,9 +125,9 @@ export default function ActivityGrid({
               <PostCard
                 key={item.id}
                 post={item}
-                onPostClick={(post) => onPostClick?.(item)}
-                onLikeToggle={onLikeToggle || (async () => {})}
-                onCommentSubmit={onCommentSubmit || (async () => {})}
+                onPostClick={onPostClick ? () => onPostClick(item) : asyncNoop}
+                onLikeToggle={onLikeToggle || asyncNoop}
+                onCommentSubmit={onCommentSubmit || asyncNoop}
                 quickComments={quickComments}
                 setQuickComments={setQuickComments}
                 submittingQuickComment={submittingQuickComment}
@@ -141,4 +145,6 @@ export default function ActivityGrid({
       })}
     </div>
   );
-}
+});
+
+export default ActivityGrid;

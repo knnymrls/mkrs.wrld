@@ -1,8 +1,10 @@
+import React from 'react';
+
 interface PostCardSkeletonProps {
   variant?: 'short' | 'medium' | 'long';
 }
 
-export default function PostCardSkeleton({ variant = 'medium' }: PostCardSkeletonProps) {
+const PostCardSkeleton = React.memo(function PostCardSkeleton({ variant = 'medium' }: PostCardSkeletonProps) {
   const getContentLines = () => {
     switch (variant) {
       case 'short':
@@ -61,4 +63,6 @@ export default function PostCardSkeleton({ variant = 'medium' }: PostCardSkeleto
       </div>
     </div>
   );
-}
+});
+
+export default PostCardSkeleton;

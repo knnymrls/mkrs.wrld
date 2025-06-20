@@ -23,22 +23,22 @@ interface ProjectCardProps {
   project: Project;
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
-  const router = useRouter();
-
-  const getStatusBadge = (status: Project['status']) => {
-    const statusConfig = {
-      active: { label: 'Active', className: 'bg-green-100 text-green-800' },
-      paused: { label: 'Paused', className: 'bg-yellow-100 text-yellow-800' },
-      complete: { label: 'Complete', className: 'bg-gray-100 text-gray-800' }
-    };
-    const config = statusConfig[status];
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${config.className}`}>
-        {config.label}
-      </span>
-    );
+const getStatusBadge = (status: Project['status']) => {
+  const statusConfig = {
+    active: { label: 'Active', className: 'bg-green-100 text-green-800' },
+    paused: { label: 'Paused', className: 'bg-yellow-100 text-yellow-800' },
+    complete: { label: 'Complete', className: 'bg-gray-100 text-gray-800' }
   };
+  const config = statusConfig[status];
+  return (
+    <span className={`px-2 py-1 text-xs rounded-full ${config.className}`}>
+      {config.label}
+    </span>
+  );
+};
+
+const ProjectCard = React.memo(function ProjectCard({ project }: ProjectCardProps) {
+  const router = useRouter();
 
   return (
     <div
@@ -107,4 +107,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </div>
     </div>
   );
-}
+});
+
+export default ProjectCard;

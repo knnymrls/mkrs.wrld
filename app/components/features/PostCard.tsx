@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import MentionLink from '../ui/MentionLink';
@@ -53,7 +53,7 @@ interface PostCardProps {
   setQuickCommentMentions: React.Dispatch<React.SetStateAction<{ [postId: string]: TrackedMention[] }>>;
 }
 
-export default function PostCard({
+const PostCard = React.memo(function PostCard({
   post,
   onPostClick,
   onLikeToggle,
@@ -69,19 +69,18 @@ export default function PostCard({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
-  // Get all images (new format or legacy format)
-  const getAllImages = (): Array<{ url: string; width: number; height: number }> => {
+  // Get all images (new format or legacy format) - memoized
+  const images = useMemo(() => {
     if (post.images && post.images.length > 0) {
       return post.images.map(img => ({ url: img.url, width: img.width, height: img.height }));
     } else if (post.image_url) {
       return [{ url: post.image_url, width: post.image_width || 0, height: post.image_height || 0 }];
     }
     return [];
-  };
+  }, [post.images, post.image_url, post.image_width, post.image_height]);
 
-  const images = getAllImages();
-
-  const renderPostContent = (post: Post) => {
+  // Memoize post content rendering
+  const renderedContent = useMemo(() => {
     let content = post.content;
     const elements: React.ReactElement[] = [];
     let lastIndex = 0;
@@ -122,7 +121,30 @@ export default function PostCard({
     }
 
     return elements.length > 0 ? elements : content;
-  };
+  }, [post.content, post.mentions]);
+
+  // Callbacks to prevent re-renders
+  const handleImageClick = useCallback((e: React.MouseEvent, imageUrl: string) => {
+    e.stopPropagation();
+    setSelectedImageUrl(imageUrl);
+    setIsImageModalOpen(true);
+  }, []);
+
+  const handleLikeToggle = useCallback(() => {
+    onLikeToggle(post.id, post.user_has_liked);
+  }, [onLikeToggle, post.id, post.user_has_liked]);
+
+  const handleCommentSubmit = useCallback(() => {
+    onCommentSubmit(post.id);
+  }, [onCommentSubmit, post.id]);
+
+  const handleCommentChange = useCallback((value: string) => {
+    setQuickComments(prev => ({ ...prev, [post.id]: value }));
+  }, [setQuickComments, post.id]);
+
+  const handleMentionsChange = useCallback((mentions: TrackedMention[]) => {
+    setQuickCommentMentions(prev => ({ ...prev, [post.id]: mentions }));
+  }, [setQuickCommentMentions, post.id]);
 
   return (
     <>
@@ -163,7 +185,7 @@ export default function PostCard({
               />
 
               <div className="text-onsurface-primary leading-relaxed whitespace-pre-wrap">
-                {renderPostContent(post)}
+                {renderedContent}
               </div>
             </div>
           </div>
@@ -180,11 +202,7 @@ export default function PostCard({
                   key={index}
                   className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${images.length === 3 && index === 0 ? 'col-span-2' : ''
                     }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedImageUrl(image.url);
-                    setIsImageModalOpen(true);
-                  }}
+                  onClick={(e) => handleImageClick(e, image.url)}
                 >
                   <img
                     src={image.url}
@@ -208,15 +226,15 @@ export default function PostCard({
             <QuickCommentInput
               postId={post.id}
               value={quickComments[post.id] || ''}
-              onChange={(value) => setQuickComments({ ...quickComments, [post.id]: value })}
-              onSubmit={() => onCommentSubmit(post.id)}
-              onMentionsChange={(mentions) => setQuickCommentMentions({ ...quickCommentMentions, [post.id]: mentions })}
+              onChange={handleCommentChange}
+              onSubmit={handleCommentSubmit}
+              onMentionsChange={handleMentionsChange}
               disabled={submittingQuickComment[post.id]}
               userId={user?.id}
             />
             <LikeButton
               isLiked={post.user_has_liked}
-              onClick={() => onLikeToggle(post.id, post.user_has_liked)}
+              onClick={handleLikeToggle}
             />
           </div>
         </div>
@@ -235,4 +253,6 @@ export default function PostCard({
       )}
     </>
   );
-}
+});
+
+export default PostCard;
