@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sessionContextManager } from '../utils/session-context';
 
 export async function GET(req: NextRequest) {
   try {
+    // Clean up old session contexts periodically
+    sessionContextManager.cleanupOldSessions(24);
+    
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     const sessionId = searchParams.get('sessionId');

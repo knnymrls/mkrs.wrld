@@ -23,7 +23,7 @@ interface CommentsListProps {
   submittingComment: boolean;
   createComment: (mentions: TrackedMention[]) => void;
   post: Post;
-  onUpdate: (updatedPost: any) => void;
+  onUpdate: (updatedPost: Post) => void;
 }
 
 export default function CommentsList({

@@ -15,18 +15,18 @@ interface ActivityFeedHeaderProps {
  */
 export default function ActivityFeedHeader({ userId, onCreatePost, onPostClick }: ActivityFeedHeaderProps) {
   return (
-    <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="flex flex-col gap-4 justify-between items-start mb-4 w-full sm:flex-row sm:items-center">
       <h1 className="text-2xl font-medium text-onsurface-primary">Activity Feed</h1>
 
-      <div className="flex items-center gap-3">
+      <div className="flex gap-3 items-center">
         {/* Notification Button */}
         {userId && (
-          <NotificationDropdown 
-            userId={userId} 
+          <NotificationDropdown
+            userId={userId}
             onPostClick={onPostClick}
           />
         )}
-        
+
         {/* New Post Button */}
         <button
           onClick={onCreatePost}

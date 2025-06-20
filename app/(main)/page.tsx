@@ -48,7 +48,10 @@ export default function Home() {
   const {
     activities,
     loadingActivities,
+    loadingMore,
+    hasMore,
     fetchActivities,
+    loadMoreActivities,
     updateActivity,
     removeActivity,
     addActivity
@@ -81,7 +84,11 @@ export default function Home() {
   }, [fetchActivities]);
 
   // Real-time subscriptions
-  useRealtimeActivity({ user, onNewActivity: addActivity });
+  useRealtimeActivity({ 
+    user, 
+    onNewActivity: addActivity,
+    onRemoveActivity: removeActivity
+  });
 
   // Handle post parameter from URL (for notifications)
   useEffect(() => {
@@ -115,12 +122,41 @@ export default function Home() {
   }, [fetchActivities]);
 
   const handlePostDelete = useCallback(async (postId: string) => {
-    // Close the modal if this post was selected
-    if (selectedPost?.id === postId) {
-      setSelectedPost(null);
+    try {
+      // Import supabase client
+      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
+      const supabase = createClientComponentClient();
+      
+      // Delete the post from database
+      const { error: deleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('author_id', user?.id); // Ensure user can only delete their own posts
+      
+      if (deleteError) {
+        console.error('Error deleting post:', deleteError);
+        alert(`Failed to delete post: ${deleteError.message}`);
+        return;
+      }
+      
+      // Close the modal immediately
+      if (selectedPost?.id === postId) {
+        setSelectedPost(null);
+      }
+      
+      // Remove from UI state
+      removeActivity(postId);
+      
+      // Optional: Re-fetch to ensure consistency
+      setTimeout(() => {
+        fetchActivities();
+      }, 500);
+    } catch (error) {
+      console.error('Unexpected error deleting post:', error);
+      alert('Failed to delete post. Please try again.');
     }
-    removeActivity(postId);
-  }, [selectedPost, removeActivity]);
+  }, [selectedPost, removeActivity, user, fetchActivities]);
 
   const handleToggleLike = useCallback(async (postId: string, currentlyLiked: boolean) => {
     await toggleLike(postId, currentlyLiked);
@@ -142,6 +178,9 @@ export default function Home() {
         <ActivityGrid
           items={activities}
           loading={loadingActivities}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          onLoadMore={loadMoreActivities}
           onPostClick={handlePostClick}
           onLikeToggle={handleToggleLike}
           onCommentSubmit={handleCreateQuickComment}

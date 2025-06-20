@@ -1,17 +1,25 @@
+import { Profile } from './Profile';
+import { Post } from './Post';
+import { Project } from './Project';
+import { Education } from './Education';
+import { Experience } from './Experience';
+
+export type SearchResultData = Profile | Post | Project | Education | Experience;
+
 export interface SearchResult {
   type: 'profile' | 'post' | 'project' | 'education' | 'experience';
   id: string;
-  data: any;
+  data: SearchResultData;
   relevanceScore: number;
   matchReason: string;
 }
 
 export interface SearchResults {
-  profiles: any[];
-  posts: any[];
-  projects: any[];
-  educations: any[];
-  experiences: any[];
+  profiles: Profile[];
+  posts: Post[];
+  projects: Project[];
+  educations: Education[];
+  experiences: Experience[];
   relationships: {
     source: string;
     target: string;

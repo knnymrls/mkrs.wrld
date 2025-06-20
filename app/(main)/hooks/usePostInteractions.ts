@@ -3,9 +3,15 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from '@supabase/supabase-js';
 import { TrackedMention } from '@/app/types/mention';
 
+interface PostUpdates {
+  likes_count?: number;
+  user_has_liked?: boolean;
+  comments_count?: number;
+}
+
 interface UsePostInteractionsOptions {
   user: User | null;
-  onActivityUpdate: (activityId: string, updates: any) => void;
+  onActivityUpdate: (activityId: string, updates: PostUpdates) => void;
 }
 
 /**

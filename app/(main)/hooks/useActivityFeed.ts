@@ -10,9 +10,12 @@ import { ActivityItem } from '@/app/components/features/ActivityGrid';
 export function useActivityFeed(user: User | null) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const supabase = createClientComponentClient();
 
-  const fetchPosts = useCallback(async (limit?: number) => {
+  const fetchPosts = useCallback(async (limit?: number, offset?: number) => {
     const { data, error } = await supabase
       .from('posts')
       .select(`
@@ -55,7 +58,7 @@ export function useActivityFeed(user: User | null) {
         )
       `)
       .order('created_at', { ascending: false })
-      .limit(limit || 50);
+      .range(offset || 0, (offset || 0) + (limit || 20) - 1);
 
     if (error) {
       console.error('Error fetching posts:', error);
@@ -73,10 +76,13 @@ export function useActivityFeed(user: User | null) {
   const fetchActivities = useCallback(async () => {
     try {
       setLoadingActivities(true);
+      setPage(0);
+      setHasMore(true);
+      
       // Fetch posts with a limit to mix with other activities
-      const postsPromise = fetchPosts(20);
+      const postsPromise = fetchPosts(20, 0);
 
-      // Fetch all profiles
+      // Fetch all profiles (only on initial load)
       const profilesPromise = supabase
         .from('profiles')
         .select(`
@@ -92,7 +98,7 @@ export function useActivityFeed(user: User | null) {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Fetch all projects
+      // Fetch all projects (only on initial load)
       const projectsPromise = supabase
         .from('projects')
         .select(`
@@ -159,12 +165,52 @@ export function useActivityFeed(user: User | null) {
       );
 
       setActivities(allActivities);
+      
+      // Check if we have more posts to load
+      if (posts.length < 20) {
+        setHasMore(false);
+      }
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {
       setLoadingActivities(false);
     }
   }, [fetchPosts, supabase]);
+
+  const loadMoreActivities = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      const offset = nextPage * 20;
+      
+      // Only fetch more posts for infinite scroll
+      const morePosts = await fetchPosts(20, offset);
+      
+      if (morePosts.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      const newActivities: ActivityItem[] = morePosts.map(post => ({
+        ...post,
+        type: 'post' as const
+      } as ActivityItem));
+
+      setActivities(prev => [...prev, ...newActivities]);
+      setPage(nextPage);
+      
+      // Check if we have more posts to load
+      if (morePosts.length < 20) {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error loading more activities:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPosts, page, loadingMore, hasMore]);
 
   const updateActivity = useCallback((activityId: string, updates: Partial<ActivityItem>) => {
     setActivities(prev => prev.map(activity => 
@@ -183,7 +229,10 @@ export function useActivityFeed(user: User | null) {
   return {
     activities,
     loadingActivities,
+    loadingMore,
+    hasMore,
     fetchActivities,
+    loadMoreActivities,
     updateActivity,
     removeActivity,
     addActivity,

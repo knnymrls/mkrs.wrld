@@ -3,12 +3,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import MentionLink from '../ui/MentionLink';
 import AuthorLink from './AuthorLink';
 import QuickCommentInput from './QuickCommentInput';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
 import { TrackedMention } from '@/app/types/mention';
+import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
 
 interface PostImage {
   id: string;
@@ -79,48 +79,9 @@ const PostCard = React.memo(function PostCard({
     return [];
   }, [post.images, post.image_url, post.image_width, post.image_height]);
 
-  // Memoize post content rendering
+  // Memoize post content rendering using the utility function
   const renderedContent = useMemo(() => {
-    let content = post.content;
-    const elements: React.ReactElement[] = [];
-    let lastIndex = 0;
-
-    // Sort mentions by their position in the content (without @ symbol)
-    const mentionPositions = post.mentions.map(mention => {
-      const index = content.indexOf(mention.name);
-      return { mention, index };
-    }).filter(m => m.index !== -1).sort((a, b) => a.index - b.index);
-
-    mentionPositions.forEach(({ mention, index }) => {
-      // Add text before mention
-      if (index > lastIndex) {
-        elements.push(
-          <span key={`text-${lastIndex}`} className="align-middle">{content.substring(lastIndex, index)}</span>
-        );
-      }
-
-      // Add mention as link
-      elements.push(
-        <MentionLink
-          key={`mention-${mention.id}`}
-          id={mention.id}
-          name={mention.name}
-          type={mention.type}
-          imageUrl={mention.imageUrl}
-        />
-      );
-
-      lastIndex = index + mention.name.length;
-    });
-
-    // Add remaining text
-    if (lastIndex < content.length) {
-      elements.push(
-        <span key={`text-${lastIndex}`} className="align-middle">{content.substring(lastIndex)}</span>
-      );
-    }
-
-    return elements.length > 0 ? elements : content;
+    return renderPostContentWithMentions(post.content, post.mentions);
   }, [post.content, post.mentions]);
 
   // Callbacks to prevent re-renders

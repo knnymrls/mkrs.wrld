@@ -217,316 +217,448 @@ export default function Onboarding() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-                        Complete your profile
+        <div className="min-h-screen bg-background px-9 py-12">
+            <div className="max-w-2xl mx-auto">
+                <div className="text-center mb-8">
+                    <h2 className="text-4xl font-medium text-onsurface-primary mb-3">
+                        Let's build your profile
                     </h2>
-                    <div className="mt-4 flex justify-center space-x-4">
-                        <div className={`px-4 py-2 rounded ${currentStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                            1. Basic Info
+                    <p className="text-onsurface-secondary text-lg">
+                        Help your team discover your expertise and connect with you
+                    </p>
+                </div>
+                
+                {/* Progress Steps */}
+                <div className="flex justify-center items-center mb-12">
+                    <div className="flex items-center gap-4">
+                        <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                            currentStep >= 1 
+                                ? 'bg-primary text-white shadow-lg' 
+                                : 'bg-surface-container-muted text-onsurface-secondary border border-border'
+                        }`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
+                                currentStep >= 1 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                            }`}>
+                                1
+                            </div>
+                            <span className="font-medium">Basic Info</span>
                         </div>
-                        <div className={`px-4 py-2 rounded ${currentStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                            2. Education
+                        
+                        <div className={`w-8 h-0.5 transition-colors ${
+                            currentStep >= 2 ? 'bg-primary' : 'bg-border'
+                        }`} />
+                        
+                        <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                            currentStep >= 2 
+                                ? 'bg-primary text-white shadow-lg' 
+                                : 'bg-surface-container-muted text-onsurface-secondary border border-border'
+                        }`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
+                                currentStep >= 2 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                            }`}>
+                                2
+                            </div>
+                            <span className="font-medium">Education</span>
                         </div>
-                        <div className={`px-4 py-2 rounded ${currentStep >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                            3. Experience
+                        
+                        <div className={`w-8 h-0.5 transition-colors ${
+                            currentStep >= 3 ? 'bg-primary' : 'bg-border'
+                        }`} />
+                        
+                        <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                            currentStep >= 3 
+                                ? 'bg-primary text-white shadow-lg' 
+                                : 'bg-surface-container-muted text-onsurface-secondary border border-border'
+                        }`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
+                                currentStep >= 3 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                            }`}>
+                                3
+                            </div>
+                            <span className="font-medium">Experience</span>
                         </div>
                     </div>
                 </div>
 
                 {error && (
-                    <div className="rounded-md bg-red-50 dark:bg-red-900/50 p-4">
-                        <div className="text-sm text-red-700 dark:text-red-200">{error}</div>
+                    <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-2xl p-4 mb-6">
+                        <div className="flex items-center gap-3">
+                            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="text-sm text-red-700 dark:text-red-300 font-medium">{error}</div>
+                        </div>
                     </div>
                 )}
 
                 {currentStep === 1 && (
-                    <form className="mt-8 space-y-6" onSubmit={handleProfileSubmit}>
-                        <div className="space-y-4">
-                            <div className="flex justify-center mb-6">
-                                <ImageUploadWithCrop
-                                    currentImageUrl={null}
-                                    onImageSelected={setAvatarFile}
-                                    onImageRemoved={() => setAvatarFile(null)}
-                                    label="Upload Avatar"
-                                    shape="circle"
-                                />
+                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-8">
+                        <form className="space-y-6" onSubmit={handleProfileSubmit}>
+                            <div className="space-y-6">
+                                <div className="flex justify-center mb-8">
+                                    <div className="text-center">
+                                        <ImageUploadWithCrop
+                                            currentImageUrl={null}
+                                            onImageSelected={setAvatarFile}
+                                            onImageRemoved={() => setAvatarFile(null)}
+                                            label="Upload Avatar"
+                                            shape="circle"
+                                        />
+                                        <p className="text-sm text-onsurface-secondary mt-3">Add a photo to help your team recognize you</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="name" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                        Full Name *
+                                    </label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        required
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        placeholder="e.g. John Doe"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="title" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                        Job Title *
+                                    </label>
+                                    <input
+                                        id="title"
+                                        type="text"
+                                        required
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        placeholder="e.g. Software Engineer, Product Manager, Designer"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="location" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                        Location *
+                                    </label>
+                                    <input
+                                        id="location"
+                                        type="text"
+                                        required
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        placeholder="e.g. San Francisco, CA or Remote"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="bio" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                        About You *
+                                    </label>
+                                    <textarea
+                                        id="bio"
+                                        rows={4}
+                                        required
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+                                        placeholder="Tell your team about your background, interests, and what you're passionate about..."
+                                        value={bio}
+                                        onChange={(e) => setBio(e.target.value)}
+                                    />
+                                    <p className="text-xs text-onsurface-secondary mt-2">This helps your team understand your background and expertise</p>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="skills" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                        Skills & Technologies *
+                                    </label>
+                                    <input
+                                        id="skills"
+                                        type="text"
+                                        required
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        placeholder="e.g. React, TypeScript, Python, Figma, Project Management"
+                                        value={skills}
+                                        onChange={(e) => setSkills(e.target.value)}
+                                    />
+                                    <p className="text-xs text-onsurface-secondary mt-2">Separate multiple skills with commas</p>
+                                </div>
                             </div>
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Name *
-                                </label>
-                                <input
-                                    id="name"
-                                    type="text"
-                                    required
-                                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                                    placeholder="John Doe"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Title *
-                                </label>
-                                <input
-                                    id="title"
-                                    type="text"
-                                    required
-                                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                                    placeholder="Software Engineer Intern"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Location *
-                                </label>
-                                <input
-                                    id="location"
-                                    type="text"
-                                    required
-                                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                                    placeholder="San Francisco, CA"
-                                    value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Bio *
-                                </label>
-                                <textarea
-                                    id="bio"
-                                    rows={4}
-                                    required
-                                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                                    placeholder="Tell us about yourself..."
-                                    value={bio}
-                                    onChange={(e) => setBio(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="skills" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Skills (comma separated) *
-                                </label>
-                                <input
-                                    id="skills"
-                                    type="text"
-                                    required
-                                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                                    placeholder="React, TypeScript, Node.js"
-                                    value={skills}
-                                    onChange={(e) => setSkills(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                        >
-                            {loading ? 'Saving...' : 'Next: Education'}
-                        </button>
-                    </form>
+                            
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full flex justify-center items-center gap-2 py-4 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
+                            >
+                                {loading ? (
+                                    <>
+                                        <div className="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Continue to Education</span>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                        </svg>
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
                 )}
 
                 {currentStep === 2 && (
-                    <form className="mt-8 space-y-6" onSubmit={handleEducationSubmit}>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Education</h3>
+                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-8">
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-medium text-onsurface-primary mb-2">Education Background</h3>
+                            <p className="text-onsurface-secondary">Add your educational background (optional, but helps with matching)</p>
+                        </div>
+                        <form className="space-y-6" onSubmit={handleEducationSubmit}>
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-lg font-medium text-onsurface-primary">Educational Background</h4>
+                                    <button
+                                        type="button"
+                                        onClick={addEducation}
+                                        className="flex items-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Another
+                                    </button>
+                                </div>
+
+                                {educations.map((edu, index) => (
+                                    <div key={index} className="bg-surface-container-muted border border-border rounded-xl p-6 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                School/University
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={edu.school}
+                                                onChange={(e) => updateEducation(index, 'school', e.target.value)}
+                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                placeholder="e.g. Stanford University, MIT, UC Berkeley"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                Degree
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={edu.degree}
+                                                onChange={(e) => updateEducation(index, 'degree', e.target.value)}
+                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                placeholder="e.g. BS Computer Science, MBA, MS Design"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                Graduation Year
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={edu.year}
+                                                onChange={(e) => updateEducation(index, 'year', e.target.value)}
+                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                placeholder="e.g. 2024 or Expected 2025"
+                                            />
+                                        </div>
+
+                                        {educations.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeEducation(index)}
+                                                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="flex gap-4 pt-4">
                                 <button
                                     type="button"
-                                    onClick={addEducation}
-                                    className="text-sm text-indigo-600 hover:text-indigo-500"
+                                    onClick={() => setCurrentStep(3)}
+                                    className="flex-1 py-3 px-6 border border-border rounded-xl text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
                                 >
-                                    + Add another
+                                    Skip for Now
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex-1 flex justify-center items-center gap-2 py-3 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <div className="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            <span>Saving...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Continue to Experience</span>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                            </svg>
+                                        </>
+                                    )}
                                 </button>
                             </div>
-                            {educations.map((edu, index) => (
-                                <div key={index} className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            School/University
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={edu.school}
-                                            onChange={(e) => updateEducation(index, 'school', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                            placeholder="Stanford University"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Degree
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={edu.degree}
-                                            onChange={(e) => updateEducation(index, 'degree', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                            placeholder="BS Computer Science"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Graduation Year
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={edu.year}
-                                            onChange={(e) => updateEducation(index, 'year', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                            placeholder="2024"
-                                        />
-                                    </div>
-                                    {educations.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removeEducation(index)}
-                                            className="text-sm text-red-600 hover:text-red-500"
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-4">
-                            <button
-                                type="button"
-                                onClick={() => setCurrentStep(3)}
-                                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
-                            >
-                                Skip
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                                {loading ? 'Saving...' : 'Next: Experience'}
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 )}
 
                 {currentStep === 3 && (
-                    <form className="mt-8 space-y-6" onSubmit={handleExperienceSubmit}>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Experience</h3>
+                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-8">
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-medium text-onsurface-primary mb-2">Work Experience</h3>
+                            <p className="text-onsurface-secondary">Share your professional background to help colleagues understand your expertise</p>
+                        </div>
+                        <form className="space-y-6" onSubmit={handleExperienceSubmit}>
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-lg font-medium text-onsurface-primary">Professional Experience</h4>
+                                    <button
+                                        type="button"
+                                        onClick={addExperience}
+                                        className="flex items-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Another
+                                    </button>
+                                </div>
+
+                                {experiences.map((exp, index) => (
+                                    <div key={index} className="bg-surface-container-muted border border-border rounded-xl p-6 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                Company
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={exp.company}
+                                                onChange={(e) => updateExperience(index, 'company', e.target.value)}
+                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                placeholder="e.g. Google, Microsoft, Startup Inc."
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                Role/Position
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={exp.role}
+                                                onChange={(e) => updateExperience(index, 'role', e.target.value)}
+                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                placeholder="e.g. Software Engineer, Product Manager, Design Lead"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                    Start Date
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={exp.startDate}
+                                                    onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
+                                                    className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                    placeholder="e.g. June 2024"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                    End Date
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={exp.endDate}
+                                                    onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
+                                                    className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                    placeholder="Present or Aug 2024"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                                Description
+                                            </label>
+                                            <textarea
+                                                rows={3}
+                                                value={exp.description}
+                                                onChange={(e) => updateExperience(index, 'description', e.target.value)}
+                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+                                                placeholder="Describe your key responsibilities, achievements, and technologies used..."
+                                            />
+                                        </div>
+
+                                        {experiences.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeExperience(index)}
+                                                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="flex gap-4 pt-4">
                                 <button
                                     type="button"
-                                    onClick={addExperience}
-                                    className="text-sm text-indigo-600 hover:text-indigo-500"
+                                    onClick={() => {
+                                        refreshProfile();
+                                        router.replace('/');
+                                    }}
+                                    className="flex-1 py-3 px-6 border border-border rounded-xl text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
                                 >
-                                    + Add another
+                                    Skip & Finish
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex-1 flex justify-center items-center gap-2 py-3 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <div className="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            <span>Completing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span>Complete Profile</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
-                            {experiences.map((exp, index) => (
-                                <div key={index} className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Company
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={exp.company}
-                                            onChange={(e) => updateExperience(index, 'company', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                            placeholder="Google"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Role
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={exp.role}
-                                            onChange={(e) => updateExperience(index, 'role', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                            placeholder="Software Engineer Intern"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Start Date
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={exp.startDate}
-                                                onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                                placeholder="June 2024"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                End Date
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={exp.endDate}
-                                                onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                                placeholder="Present"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Description
-                                        </label>
-                                        <textarea
-                                            rows={3}
-                                            value={exp.description}
-                                            onChange={(e) => updateExperience(index, 'description', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                            placeholder="Describe your responsibilities and achievements..."
-                                        />
-                                    </div>
-                                    {experiences.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removeExperience(index)}
-                                            className="text-sm text-red-600 hover:text-red-500"
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-4">
-                            <button
-                                type="submit"
-                                name="skip"
-                                onClick={() => {
-                                    refreshProfile();
-                                    router.replace('/');
-                                }}
-                                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
-                            >
-                                Skip & Finish
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                                {loading ? 'Saving...' : 'Complete Profile'}
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 )}
             </div>
         </div>

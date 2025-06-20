@@ -1,19 +1,27 @@
 // Component Props Interfaces
 
 import { TrackedMention } from './mention';
-import { PostImage } from '@/app/models/Post';
+import { PostImage, Post } from '@/app/models/Post';
 import { ChatMessage, ChatSession } from '@/app/models/chat';
+import { Profile } from '@/app/models/Profile';
+import { Project } from '@/app/models/Project';
+import { Source } from '@/app/models/Search';
 
 // UI Components Props
+export type MentionSuggestion = 
+  | (Profile & { type: 'person' })
+  | (Project & { type: 'project' })
+  | { id: 'create-project'; title: string; type: 'create-project' };
+
 export interface MentionDropdownProps {
   search: string;
-  onSelect: (suggestion: any) => void;
+  onSelect: (suggestion: MentionSuggestion) => void;
   selectedIndex: number;
   onChangeSelection: (index: number) => void;
 }
 
 export interface SuggestionItemProps {
-  suggestion: any;
+  suggestion: MentionSuggestion;
   index: number;
   selectedIndex: number;
   onChangeSelection: (index: number) => void;
@@ -65,7 +73,7 @@ export interface PostImageUploadProps {
 }
 
 export interface SourceCardProps {
-  source: any;
+  source: Source;
 }
 
 export interface MentionInputProps {
@@ -88,7 +96,7 @@ export interface LikeButtonProps {
 
 
 export interface PostCardProps {
-  post: any;
+  post: Post;
   onUpdate?: () => void;
 }
 

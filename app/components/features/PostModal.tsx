@@ -6,13 +6,13 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { getEmbedding } from '@/lib/embeddings/index';
 import ChatInput from './ChatInput';
-import MentionLink from '../ui/MentionLink';
 import AuthorLink from './AuthorLink';
 import { TrackedMention } from '../../types/mention';
 import { Comment } from '../../models/Comment';
 import CommentsList from './CommentsList';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
+import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
 
 interface Post {
   id: string;
@@ -231,42 +231,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
   }, [post.id, post.comments_count, post.likes_count, post.user_has_liked, user, onUpdate]);
 
   const renderPostContent = (post: Post) => {
-    let content = post.content;
-    const elements: React.ReactElement[] = [];
-    let lastIndex = 0;
-
-    const mentionPositions = post.mentions.map(mention => {
-      const index = content.indexOf(mention.name);
-      return { mention, index };
-    }).filter(m => m.index !== -1).sort((a, b) => a.index - b.index);
-
-    mentionPositions.forEach(({ mention, index }) => {
-      if (index > lastIndex) {
-        elements.push(
-          <span key={`text-${lastIndex}`}>{content.substring(lastIndex, index)}</span>
-        );
-      }
-
-      elements.push(
-        <MentionLink
-          key={`mention-${mention.id}`}
-          id={mention.id}
-          name={mention.name}
-          type={mention.type}
-          imageUrl={mention.imageUrl}
-        />
-      );
-
-      lastIndex = index + mention.name.length;
-    });
-
-    if (lastIndex < content.length) {
-      elements.push(
-        <span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>
-      );
-    }
-
-    return elements.length > 0 ? elements : content;
+    return renderPostContentWithMentions(post.content, post.mentions);
   };
 
   const fetchComments = async () => {
@@ -668,7 +633,9 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        onDelete();
+                        if (confirm('Are you sure you want to delete this post?')) {
+                          onDelete();
+                        }
                       }}
                       className="relative z-10 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors cursor-pointer"
                       title="Delete post"

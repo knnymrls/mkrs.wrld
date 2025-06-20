@@ -252,23 +252,27 @@ app/
 
 ## Future Enhancements
 
-### 1. Enhanced Conversational Memory & Context
+### 1. Performance & UX Improvements (PRIORITY)
+- **Loading Skeletons**: Add skeleton screens for posts while they load
+- **Infinite Scroll**: Implement infinite scroll for the activity feed instead of pagination
+- **Image Optimization**: Add lazy loading and progressive image loading
+- **Optimistic Updates**: Immediate UI feedback for likes, comments, and posts
+- **Caching Strategy**: Implement client-side caching for frequently accessed data
+- **Error Boundaries**: Better error handling with retry mechanisms
+- **Mobile Optimization**: Improve responsive design for mobile devices, touch interactions, and mobile-first UI patterns
+
+### 2. Enhanced Conversational Memory & Context
 - **Session-based Context**: Track conversation history for better follow-ups
 - **Pronoun Resolution**: Understand "she", "he", "they" from previous messages
 - **Query Refinement**: Learn from user's clarifications
 
-### 2. Streamlined Onboarding & Discovery
-- **Quick Profile Import**: Import profile data from LinkedIn/GitHub
-- **Interactive Tour**: Guided walkthrough of platform features
-- **Starter Prompts**: Pre-written queries to help new users discover value quickly
-- **Profile Templates**: Role-based templates (engineer, designer, PM) for faster setup
-- **AI-Assisted Bio Writing**: Generate professional bio from minimal input
-
-### 3. Smart Notifications System
-- **Mention Alerts**: Real-time notifications when someone mentions you or your projects
-- **Expertise Matching**: "Someone just asked about [your skill]" notifications
-- **Activity Digests**: Weekly summary of relevant activity in your network
-- **Configurable Preferences**: Control notification frequency and types
+### 3. Collaboration Features (PRIORITY)
+- **Direct Messaging**: Real-time chat between users
+- **Team/Group Creation**: Organize people around projects or departments
+- **@channel/@here Mentions**: Broadcast notifications to groups
+- **Shared Workspaces**: Collaborative spaces for teams
+- **Project Discussions**: Threaded conversations within projects
+- **Meeting Integration**: Schedule and track meetings with team members
 
 ### 4. Advanced Analytics Queries
 - **Aggregation Support**: "How many people know React?"
@@ -276,7 +280,20 @@ app/
 - **Comparison Queries**: "Compare frontend vs backend expertise"
 - **Distribution Queries**: "Show skill distribution by department"
 
-### 5. Real-time Collaboration Features
+### 5. Streamlined Onboarding & Discovery (PRIORITY)
+- **Quick Profile Import**: Import profile data from LinkedIn/GitHub
+- **Interactive Tour**: Guided walkthrough of platform features
+- **Starter Prompts**: Pre-written queries to help new users discover value quickly
+- **Profile Templates**: Role-based templates (engineer, designer, PM) for faster setup
+- **AI-Assisted Bio Writing**: Generate professional bio from minimal input
+
+### 6. Smart Notifications System
+- **Mention Alerts**: Real-time notifications when someone mentions you or your projects
+- **Expertise Matching**: "Someone just asked about [your skill]" notifications
+- **Activity Digests**: Weekly summary of relevant activity in your network
+- **Configurable Preferences**: Control notification frequency and types
+
+### 7. Real-time Collaboration Features
 - **Live Activity Streams**: See what's happening in real-time
 - **Collaborative Search**: Share search results with team members
 - **Expert Recommendations**: AI suggests who to connect with based on current work
@@ -346,6 +363,13 @@ app/
   - Click notification to navigate to relevant content
   - Added notifications link to navbar
   - Fixed TODO in NotificationDropdown for navigation
+- **Testing Infrastructure** (Completed January 2025):
+  - Set up Jest with Next.js configuration
+  - Configured React Testing Library with custom test utils
+  - Created comprehensive mock setup for Supabase and Next.js
+  - Added example tests for components, hooks, and utilities
+  - Test scripts: npm test, npm test:watch, npm test:coverage
+  - Created testing documentation (README.test.md)
 
 ### Import Path Standards
 - All imports now use absolute paths with `@/` prefix

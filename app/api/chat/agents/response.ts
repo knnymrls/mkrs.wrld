@@ -395,13 +395,24 @@ CRITICAL RULES:
 6. Use a conversational, helpful tone
 7. When answering ANY type of query, extract and present the relevant information
 
+CONVERSATION CONTEXT:
+- You can see the conversation history and should reference it when appropriate
+- If users say "it", "they", "that", etc., refer to what was previously discussed
+- For follow-up questions like "tell me more" or "what else", expand on the last topic
+- Build on previous context to provide a natural conversation flow
+
 RESPONSE FORMAT for specific queries:
 - Direct answer with name and 1-2 key reasons
 - One follow-up question
 
 RESPONSE FORMAT for exploratory queries:
 - More detailed information
-- Still end with a follow-up question`;
+- Still end with a follow-up question
+
+RESPONSE FORMAT for follow-up queries:
+- Reference what was previously discussed
+- Provide additional details or context
+- Continue the conversation naturally`;
 
     // Add intent-specific instructions
     const intentPrompts: Record<string, string> = {

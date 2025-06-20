@@ -7,13 +7,14 @@ import { ActivityItem } from '@/app/components/features/ActivityGrid';
 interface UseRealtimeActivityOptions {
   user: User | null;
   onNewActivity: (activity: ActivityItem) => void;
+  onRemoveActivity?: (activityId: string) => void;
 }
 
 /**
  * Custom hook for subscribing to real-time activity updates
  * Consolidates posts, profiles, and projects into a single channel
  */
-export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivityOptions) {
+export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: UseRealtimeActivityOptions) {
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -21,11 +22,7 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
 
     // Single channel for all activity updates
     const activityChannel = supabase
-      .channel('activity-feed-realtime', {
-        config: {
-          presence: { key: user.id }
-        }
-      })
+      .channel('activity-feed-realtime')
       // Subscribe to new posts
       .on(
         'postgres_changes',
@@ -35,8 +32,9 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
           table: 'posts'
         },
         async (payload: any) => {
-          // Fetch the full post with author info
-          const { data } = await supabase
+          try {
+            // Fetch the full post with author info
+            const { data } = await supabase
             .from('posts')
             .select(`
               id,
@@ -79,12 +77,29 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
             .eq('id', payload.new.id)
             .single();
 
-          if (data) {
-            const formattedPost = await formatPost(data, user);
-            onNewActivity({
-              ...formattedPost,
-              type: 'post' as const
-            } as ActivityItem);
+            if (data) {
+              const formattedPost = await formatPost(data, user);
+              onNewActivity({
+                ...formattedPost,
+                type: 'post' as const
+              } as ActivityItem);
+            }
+          } catch (error) {
+            console.error('Error handling new post:', error);
+          }
+        }
+      )
+      // Subscribe to deleted posts
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'posts'
+        },
+        (payload: any) => {
+          if (onRemoveActivity) {
+            onRemoveActivity(payload.old.id);
           }
         }
       )
@@ -97,8 +112,9 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
           table: 'profiles'
         },
         async (payload: any) => {
-          // Fetch the full profile with skills
-          const { data } = await supabase
+          try {
+            // Fetch the full profile with skills
+            const { data } = await supabase
             .from('profiles')
             .select(`
               id,
@@ -113,11 +129,14 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
             .eq('id', payload.new.id)
             .single();
 
-          if (data) {
-            onNewActivity({
-              ...data,
-              type: 'profile' as const
-            } as ActivityItem);
+            if (data) {
+              onNewActivity({
+                ...data,
+                type: 'profile' as const
+              } as ActivityItem);
+            }
+          } catch (error) {
+            console.error('Error handling new profile:', error);
           }
         }
       )
@@ -130,8 +149,9 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
           table: 'projects'
         },
         async (payload: any) => {
-          // Fetch the full project with contributors
-          const { data } = await supabase
+          try {
+            // Fetch the full project with contributors
+            const { data } = await supabase
             .from('projects')
             .select(`
               id,
@@ -151,30 +171,35 @@ export function useRealtimeActivity({ user, onNewActivity }: UseRealtimeActivity
             .eq('id', payload.new.id)
             .single();
 
-          if (data) {
-            onNewActivity({
-              ...data,
-              type: 'project' as const,
-              contributors: data.contributions?.map((contrib: any) => ({
-                person: contrib.person
-              })) || []
-            } as ActivityItem);
+            if (data) {
+              onNewActivity({
+                ...data,
+                type: 'project' as const,
+                contributors: data.contributions?.map((contrib: any) => ({
+                  person: contrib.person
+                })) || []
+              } as ActivityItem);
+            }
+          } catch (error) {
+            console.error('Error handling new project:', error);
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, error) => {
         if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to activity feed updates');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('Error subscribing to activity feed:', status);
+          console.error('Error subscribing to activity feed:', status, error);
+        } else if (status === 'TIMED_OUT') {
+          console.warn('Activity feed subscription timed out');
+        } else if (status === 'CLOSED') {
+          console.log('Activity feed subscription closed');
         }
       });
 
     // Cleanup function
     return () => {
-      activityChannel.unsubscribe().then(() => {
-        supabase.removeChannel(activityChannel);
-      });
+      activityChannel.unsubscribe();
     };
-  }, [user, onNewActivity, supabase]);
+  }, [user, onNewActivity, onRemoveActivity, supabase]);
 }

@@ -6,6 +6,7 @@ import ProfileCard from './ProfileCard';
 import ProjectCard from './ProjectCard';
 import PostCardSkeleton from '../ui/PostCardSkeleton';
 import { TrackedMention } from '@/app/types/mention';
+import { useInfiniteScroll } from '../../(main)/hooks/useInfiniteScroll';
 
 type ActivityItemType = 'post' | 'profile' | 'project';
 
@@ -69,6 +70,9 @@ export type ActivityItem = PostActivity | ProfileActivity | ProjectActivity;
 interface ActivityGridProps {
   items: ActivityItem[];
   loading: boolean;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   onPostClick?: (post: ActivityItem) => void;
   onLikeToggle?: (postId: string, isLiked: boolean) => Promise<void>;
   onCommentSubmit?: (postId: string) => Promise<void>;
@@ -80,12 +84,15 @@ interface ActivityGridProps {
 }
 
 // Default functions outside component to prevent recreating
-const noop = () => {};
-const asyncNoop = async () => {};
+const noop = () => { };
+const asyncNoop = async () => { };
 
 const ActivityGrid = React.memo(function ActivityGrid({
   items,
   loading,
+  loadingMore = false,
+  hasMore = false,
+  onLoadMore,
   onPostClick,
   onLikeToggle,
   onCommentSubmit,
@@ -95,55 +102,80 @@ const ActivityGrid = React.memo(function ActivityGrid({
   quickCommentMentions = {},
   setQuickCommentMentions = noop
 }: ActivityGridProps) {
+  const triggerRef = useInfiniteScroll({
+    hasMore,
+    loading: loadingMore,
+    onLoadMore: onLoadMore || (() => {}),
+    threshold: 200
+  });
+
   if (loading) {
     return (
-      <div style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
-        {Array.from({ length: 12 }).map((_, index) => {
-          const variants = ['short', 'medium', 'long'] as const;
-          const variant = variants[index % 3];
-          return <PostCardSkeleton key={index} variant={variant} />;
-        })}
+      <div className="w-full" style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
+        <PostCardSkeleton count={4} variant="short" />
+        <PostCardSkeleton count={4} variant="medium" />
+        <PostCardSkeleton count={4} variant="long" />
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="text-text-muted mb-2">No activity yet</p>
+      <div className="py-16 w-full text-center">
+        <p className="mb-2 text-text-muted">No activity yet</p>
         <p className="text-sm text-text-light">Be the first to share something!</p>
       </div>
     );
   }
 
   return (
-    <div style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
-      {items.map((item) => {
-        switch (item.type) {
-          case 'post':
-            return (
-              <PostCard
-                key={item.id}
-                post={item}
-                onPostClick={onPostClick ? () => onPostClick(item) : asyncNoop}
-                onLikeToggle={onLikeToggle || asyncNoop}
-                onCommentSubmit={onCommentSubmit || asyncNoop}
-                quickComments={quickComments}
-                setQuickComments={setQuickComments}
-                submittingQuickComment={submittingQuickComment}
-                quickCommentMentions={quickCommentMentions}
-                setQuickCommentMentions={setQuickCommentMentions}
-              />
-            );
-          case 'profile':
-            return <ProfileCard key={item.id} profile={item} />;
-          case 'project':
-            return <ProjectCard key={item.id} project={item} />;
-          default:
-            return null;
-        }
-      })}
-    </div>
+    <>
+      <div className="w-full" style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
+        {items.map((item) => {
+          switch (item.type) {
+            case 'post':
+              return (
+                <PostCard
+                  key={item.id}
+                  post={item}
+                  onPostClick={onPostClick ? () => onPostClick(item) : asyncNoop}
+                  onLikeToggle={onLikeToggle || asyncNoop}
+                  onCommentSubmit={onCommentSubmit || asyncNoop}
+                  quickComments={quickComments}
+                  setQuickComments={setQuickComments}
+                  submittingQuickComment={submittingQuickComment}
+                  quickCommentMentions={quickCommentMentions}
+                  setQuickCommentMentions={setQuickCommentMentions}
+                />
+              );
+            case 'profile':
+              return <ProfileCard key={item.id} profile={item} />;
+            case 'project':
+              return <ProjectCard key={item.id} project={item} />;
+            default:
+              return null;
+          }
+        })}
+      </div>
+      
+      {/* Infinite scroll trigger */}
+      {hasMore && (
+        <div ref={triggerRef} className="w-full py-8">
+          {loadingMore && (
+            <div className="w-full" style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
+              <PostCardSkeleton count={3} variant="medium" />
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* End of feed message */}
+      {!hasMore && items.length > 0 && (
+        <div className="py-8 text-center">
+          <p className="text-sm text-onsurface-secondary">That's all for now!</p>
+        </div>
+      )}
+    </>
   );
 });
 

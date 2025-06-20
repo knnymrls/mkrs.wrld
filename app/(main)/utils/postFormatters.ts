@@ -1,39 +1,42 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from '@supabase/supabase-js';
+import { Post, PostImage } from '@/app/models/Post';
+import { TypedSupabaseClient } from '@/app/types/supabase';
+import { Profile } from '@/app/models/Profile';
+import { Project } from '@/app/models/Project';
 
-interface PostImage {
-  id: string;
-  url: string;
-  width: number;
-  height: number;
-  position: number;
-}
-
-interface Post {
+interface RawPostData {
   id: string;
   content: string;
   created_at: string;
-  author: {
+  author_id: string;
+  profiles?: Profile | Profile[] | null;
+  post_mentions?: Array<{
+    profile_id: string;
+    profiles?: Profile;
+  }>;
+  post_projects?: Array<{
+    project_id: string;
+    projects?: Project;
+  }>;
+  post_likes?: Array<{
+    user_id: string;
+  }>;
+  post_comments?: Array<{
     id: string;
-    name: string;
-    avatar_url: string | null;
-  };
-  mentions: Array<{ id: string; name: string; type: 'person' | 'project'; imageUrl?: string | null }>;
-  likes_count: number;
-  comments_count: number;
-  user_has_liked: boolean;
+  }>;
+  post_images?: PostImage[];
   image_url?: string | null;
   image_width?: number | null;
   image_height?: number | null;
-  images?: PostImage[];
 }
 
 /**
  * Formats raw post data from Supabase into a structured Post object
  * Handles both pre-fetched relations and separate fetching of relations
  */
-export async function formatPost(postData: any, user: User | null): Promise<Post> {
-  const supabase = createClientComponentClient();
+export async function formatPost(postData: RawPostData, user: User | null): Promise<Post> {
+  const supabase = createClientComponentClient() as TypedSupabaseClient;
   const post = postData;
   
   // If author data is nested, extract it
@@ -47,13 +50,13 @@ export async function formatPost(postData: any, user: User | null): Promise<Post
   if (post.post_mentions || post.post_projects) {
     // Use nested data if available
     mentions = [
-      ...(post.post_mentions || []).map((m: any) => ({
+      ...(post.post_mentions || []).map((m) => ({
         id: m.profiles?.id || m.profile_id,
         name: m.profiles?.name || '',
         type: 'person' as const,
         imageUrl: m.profiles?.avatar_url || null
       })),
-      ...(post.post_projects || []).map((m: any) => ({
+      ...(post.post_projects || []).map((m) => ({
         id: m.projects?.id || m.project_id,
         name: m.projects?.title || '',
         type: 'project' as const,
@@ -86,13 +89,13 @@ export async function formatPost(postData: any, user: User | null): Promise<Post
     ]);
 
     mentions = [
-      ...(personMentions.data || []).map((m: any) => ({
+      ...(personMentions.data || []).map((m) => ({
         id: m.profiles.id,
         name: m.profiles.name,
         type: 'person' as const,
         imageUrl: m.profiles.avatar_url
       })),
-      ...(projectMentions.data || []).map((m: any) => ({
+      ...(projectMentions.data || []).map((m) => ({
         id: m.projects.id,
         name: m.projects.title,
         type: 'project' as const,
@@ -108,7 +111,7 @@ export async function formatPost(postData: any, user: User | null): Promise<Post
 
   if (post.post_likes && Array.isArray(post.post_likes)) {
     likesCount = post.post_likes.length;
-    userHasLiked = user ? post.post_likes.some((like: any) => like.user_id === user.id) : false;
+    userHasLiked = user ? post.post_likes.some((like) => like.user_id === user.id) : false;
   } else {
     const { count } = await supabase
       .from('post_likes')
@@ -152,6 +155,6 @@ export async function formatPost(postData: any, user: User | null): Promise<Post
     image_url: post.image_url,
     image_width: post.image_width,
     image_height: post.image_height,
-    images: images.sort((a: any, b: any) => a.position - b.position)
+    images: images.sort((a, b) => a.position - b.position)
   };
 }

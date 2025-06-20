@@ -5,6 +5,14 @@ import { ResponseAgent } from './agents/response';
 import { QueryParser } from './utils/query-parser';
 import { createClient } from '@supabase/supabase-js';
 import { ChatSession, ChatMessage } from '@/app/models/chat';
+import { TypedSupabaseClient } from '@/app/types/supabase';
+import { SearchResults } from '@/app/models/Search';
+import { DataRequest } from '@/app/types/chat';
+import { Source } from '@/app/models/Search';
+import { Profile } from '@/app/models/Profile';
+import { Project } from '@/app/models/Project';
+import { Post } from '@/app/models/Post';
+import { sessionContextManager } from './utils/session-context';
 
 interface TrackedMention {
   id: string;
@@ -60,8 +68,36 @@ export async function POST(req: NextRequest) {
       currentSessionId = uuidv4();
     }
 
-    // Skip fetching chat history from database
+    // Fetch chat history from database if session exists
     const chatHistory: ChatCompletionMessageParam[] = [];
+    
+    if (currentSessionId) {
+      try {
+        const { data: sessionData } = await supabase
+          .from('chat_sessions')
+          .select('messages:chat_messages(*)')
+          .eq('id', currentSessionId)
+          .eq('user_id', userId)
+          .single();
+          
+        if (sessionData?.messages) {
+          // Convert database messages to OpenAI format
+          // Limit to last 10 messages for context window
+          const recentMessages = sessionData.messages
+            .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+            .slice(-10);
+            
+          recentMessages.forEach((msg: any) => {
+            chatHistory.push({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content
+            });
+          });
+        }
+      } catch (error) {
+        console.log('No existing session found, starting fresh');
+      }
+    }
 
     // Initialize agents without SSE for now - we'll optimize differently
     const queryParser = new QueryParser();
@@ -71,8 +107,15 @@ export async function POST(req: NextRequest) {
     // Pass the authenticated supabase client to the retrieval agent
     retrievalAgent.setSupabaseClient(supabase);
 
-    // Parse the query
-    const parsedQuery = queryParser.parse(message);
+    // Enhance query with session context
+    const enhancedMessage = sessionContextManager.enhanceQueryWithContext(
+      message, 
+      currentSessionId, 
+      chatHistory
+    );
+    
+    // Parse the enhanced query
+    const parsedQuery = queryParser.parse(enhancedMessage);
 
     // Add mentions to parsed query if any
     if (mentions.length > 0) {
@@ -83,13 +126,22 @@ export async function POST(req: NextRequest) {
         .filter(m => m.type === 'project')
         .map(m => m.name);
     }
+    
+    // Update session context
+    sessionContextManager.updateContext(currentSessionId, {
+      userId,
+      lastQuery: message,
+      lastEntities: parsedQuery.entities,
+      lastMentions: mentions,
+      messageCount: chatHistory.length + 1
+    });
 
-    // Phase 1: Initial retrieval
-    let searchResults = await retrievalAgent.retrieveInformation(message);
+    // Phase 1: Initial retrieval (use enhanced message for better context)
+    let searchResults = await retrievalAgent.retrieveInformation(enhancedMessage);
 
     // Phase 2: Response synthesis with potential feedback loop
     let finalAnswer = '';
-    let sources: any[] = [];
+    let sources: Source[] = [];
     let attempts = 0;
     const maxAttempts = 2;
 
@@ -182,23 +234,23 @@ export async function POST(req: NextRequest) {
       sessionId: currentSessionId 
     });
 
-  } catch (err: any) {
-    console.error('Chat error:', err.message, err.stack);
+  } catch (err) {
+    console.error('Chat error:', err instanceof Error ? err.message : 'Unknown error', err instanceof Error ? err.stack : '');
     
     // Return more specific error messages in development
     const errorMessage = process.env.NODE_ENV === 'development' 
-      ? `Server error: ${err.message}` 
+      ? `Server error: ${err instanceof Error ? err.message : 'Unknown error'}` 
       : 'Server error.';
       
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
-async function executeDataRequest(request: any, results: any, supabase: any) {
+async function executeDataRequest(request: DataRequest, results: SearchResults, supabase: TypedSupabaseClient) {
   switch (request.type) {
     case 'recent_activity':
       // Fetch recent posts for found profiles
-      const profileIds = results.profiles.map((p: any) => p.id).slice(0, 5);
+      const profileIds = results.profiles.map((p: Profile) => p.id).slice(0, 5);
 
       for (const profileId of profileIds) {
         const { data: recentPosts } = await supabase
@@ -217,8 +269,8 @@ async function executeDataRequest(request: any, results: any, supabase: any) {
     case 'experience_details':
       // Fetch missing experience details
       const profilesNeedingExp = results.profiles
-        .filter((p: any) => !p.experiences || p.experiences.length === 0)
-        .map((p: any) => p.id);
+        .filter((p: Profile) => !(p as any).experiences || (p as any).experiences?.length === 0)
+        .map((p: Profile) => p.id);
 
       for (const profileId of profilesNeedingExp) {
         const { data: experiences } = await supabase
@@ -227,7 +279,7 @@ async function executeDataRequest(request: any, results: any, supabase: any) {
           .eq('profile_id', profileId);
 
         if (experiences) {
-          const profile = results.profiles.find((p: any) => p.id === profileId);
+          const profile = results.profiles.find((p: Profile) => p.id === profileId) as any;
           if (profile) {
             profile.experiences = experiences;
           }
@@ -238,8 +290,8 @@ async function executeDataRequest(request: any, results: any, supabase: any) {
     case 'project_details':
       // Fetch missing contributor details
       const projectIds = results.projects
-        .filter((p: any) => !p.contributions || p.contributions.length === 0)
-        .map((p: any) => p.id);
+        .filter((p: Project) => !(p as any).contributions || (p as any).contributions?.length === 0)
+        .map((p: Project) => p.id);
 
       for (const projectId of projectIds) {
         const { data: contributions } = await supabase
@@ -253,7 +305,7 @@ async function executeDataRequest(request: any, results: any, supabase: any) {
           .eq('project_id', projectId);
 
         if (contributions) {
-          const project = results.projects.find((p: any) => p.id === projectId);
+          const project = results.projects.find((p: Project) => p.id === projectId) as any;
           if (project) {
             project.contributions = contributions;
           }
