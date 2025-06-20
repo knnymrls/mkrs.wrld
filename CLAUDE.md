@@ -313,8 +313,9 @@ app/
 
 ### Code Organization Improvements
 - **Component Reorganization**: 
-  - Moved `MentionInput` from features/ to ui/ (reusable component)
-  - Moved `AuthorLink` from ui/ to features/ (feature-specific)
+  - Kept `MentionInput` in ui/ (reusable component with better implementation)
+  - Kept `AuthorLink` in features/ (feature-specific)
+  - Removed duplicate versions of both components
 - **Type Definition Organization**:
   - Consolidated duplicate Post models (removed Posts.ts)
   - Created `app/types/props.ts` for component prop interfaces
@@ -322,11 +323,12 @@ app/
 - **Library Structure**:
   - Organized lib/ files into subdirectories (embeddings/, supabase/)
   - Updated all imports to use new paths
-- **Dead Code Removal**:
-  - Removed unused components: ImageCropModal.tsx, ChatInterface.tsx
-  - Removed unused API route: api/chat/messages/
-  - Removed all console.log statements
-  - Cleaned up empty directories
+- **Dead Code Removal** (Completed January 2025):
+  - Removed unused components: ImageCropModal.tsx, MentionText.tsx, PostGrid.tsx
+  - Removed duplicate components: ui/AuthorLink.tsx, features/MentionInput.tsx
+  - Removed unused model: Posts.ts
+  - Removed unused PostGridProps interface
+  - No console.log statements found in application code (only in scripts)
 
 ### Import Path Standards
 - All imports now use absolute paths with `@/` prefix

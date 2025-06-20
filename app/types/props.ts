@@ -86,9 +86,6 @@ export interface LikeButtonProps {
   onLikeUpdate?: (liked: boolean, newCount: number) => void;
 }
 
-export interface PostGridProps {
-  posts: any[];
-}
 
 export interface PostCardProps {
   post: any;
