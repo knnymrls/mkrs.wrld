@@ -1,0 +1,157 @@
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { User } from '@supabase/supabase-js';
+
+interface PostImage {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  position: number;
+}
+
+interface Post {
+  id: string;
+  content: string;
+  created_at: string;
+  author: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+  mentions: Array<{ id: string; name: string; type: 'person' | 'project'; imageUrl?: string | null }>;
+  likes_count: number;
+  comments_count: number;
+  user_has_liked: boolean;
+  image_url?: string | null;
+  image_width?: number | null;
+  image_height?: number | null;
+  images?: PostImage[];
+}
+
+/**
+ * Formats raw post data from Supabase into a structured Post object
+ * Handles both pre-fetched relations and separate fetching of relations
+ */
+export async function formatPost(postData: any, user: User | null): Promise<Post> {
+  const supabase = createClientComponentClient();
+  const post = postData;
+  
+  // If author data is nested, extract it
+  const author = post.profiles ? 
+    (Array.isArray(post.profiles) ? post.profiles[0] : post.profiles) :
+    null;
+
+  // Get mentions from nested relations or fetch separately
+  let mentions: Post['mentions'] = [];
+  
+  if (post.post_mentions || post.post_projects) {
+    // Use nested data if available
+    mentions = [
+      ...(post.post_mentions || []).map((m: any) => ({
+        id: m.profiles?.id || m.profile_id,
+        name: m.profiles?.name || '',
+        type: 'person' as const,
+        imageUrl: m.profiles?.avatar_url || null
+      })),
+      ...(post.post_projects || []).map((m: any) => ({
+        id: m.projects?.id || m.project_id,
+        name: m.projects?.title || '',
+        type: 'project' as const,
+        imageUrl: m.projects?.image_url || null
+      }))
+    ];
+  } else {
+    // Fetch mentions separately if not included
+    const [personMentions, projectMentions] = await Promise.all([
+      supabase
+        .from('post_mentions')
+        .select(`
+          profiles:profile_id (
+            id,
+            name,
+            avatar_url
+          )
+        `)
+        .eq('post_id', post.id),
+      supabase
+        .from('post_projects')
+        .select(`
+          projects:project_id (
+            id,
+            title,
+            image_url
+          )
+        `)
+        .eq('post_id', post.id)
+    ]);
+
+    mentions = [
+      ...(personMentions.data || []).map((m: any) => ({
+        id: m.profiles.id,
+        name: m.profiles.name,
+        type: 'person' as const,
+        imageUrl: m.profiles.avatar_url
+      })),
+      ...(projectMentions.data || []).map((m: any) => ({
+        id: m.projects.id,
+        name: m.projects.title,
+        type: 'project' as const,
+        imageUrl: m.projects.image_url
+      }))
+    ];
+  }
+
+  // Get engagement metrics
+  let likesCount = 0;
+  let userHasLiked = false;
+  let commentsCount = 0;
+
+  if (post.post_likes && Array.isArray(post.post_likes)) {
+    likesCount = post.post_likes.length;
+    userHasLiked = user ? post.post_likes.some((like: any) => like.user_id === user.id) : false;
+  } else {
+    const { count } = await supabase
+      .from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', post.id);
+    likesCount = count || 0;
+
+    if (user) {
+      const { data: userLike } = await supabase
+        .from('post_likes')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', user.id)
+        .single();
+      userHasLiked = !!userLike;
+    }
+  }
+
+  if (post.post_comments && Array.isArray(post.post_comments)) {
+    commentsCount = post.post_comments.length;
+  } else {
+    const { count } = await supabase
+      .from('post_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', post.id);
+    commentsCount = count || 0;
+  }
+
+  // Get images
+  const images = post.post_images || [];
+
+  return {
+    id: post.id,
+    content: post.content,
+    created_at: post.created_at,
+    author: author || { id: post.author_id, name: 'Unknown', avatar_url: null },
+    mentions,
+    likes_count: likesCount,
+    comments_count: commentsCount,
+    user_has_liked: userHasLiked,
+    image_url: post.image_url,
+    image_width: post.image_width,
+    image_height: post.image_height,
+    images: images.sort((a: any, b: any) => a.position - b.position)
+  };
+}
