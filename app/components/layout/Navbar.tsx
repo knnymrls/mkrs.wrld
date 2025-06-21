@@ -113,7 +113,7 @@ export default function Navbar() {
     };
 
     return (
-        <div className="fixed left-0 top-0 h-full w-16 bg-background border-r border-border flex flex-col justify-between items-center py-4">
+        <div className="hidden md:flex fixed left-0 top-0 h-full w-16 bg-background border-r border-border flex-col justify-between items-center py-4">
             {/* Logo */}
             <Link href="/">
                 <img

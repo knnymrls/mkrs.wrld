@@ -325,10 +325,10 @@ export default function ChatSessionPage() {
     }
 
     return (
-        <div className="h-screen bg-background relative">
+        <div className="h-full bg-background flex flex-col">
             {/* Messages area - scrollable with padding at bottom for input */}
-            <div className="h-full overflow-y-auto pb-32">
-                <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="flex-1 overflow-y-auto pb-24 md:pb-28">
+                <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
                     {messages.map((msg, idx) => (
                         <div
                             key={msg.id || idx}
@@ -368,9 +368,9 @@ export default function ChatSessionPage() {
                 </div>
             </div>
 
-            {/* Fixed floating input at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 bg-background/40 backdrop-blur-md">
-                <div className="max-w-4xl mx-auto px-4 mb-8">
+            {/* Fixed input at bottom - accounts for mobile bottom nav */}
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border pb-16 md:pb-0">
+                <div className="max-w-4xl mx-auto px-4 py-4 md:py-6">
                     <ChatInput
                         value={input}
                         onChange={setInput}

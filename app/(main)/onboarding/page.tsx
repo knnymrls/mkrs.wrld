@@ -217,65 +217,67 @@ export default function Onboarding() {
     };
 
     return (
-        <div className="min-h-screen bg-background px-9 py-12">
-            <div className="max-w-2xl mx-auto">
-                <div className="text-center mb-8">
-                    <h2 className="text-4xl font-medium text-onsurface-primary mb-3">
+        <div className="min-h-screen bg-background px-4 sm:px-6 lg:px-9 py-8 sm:py-12">
+            <div className="w-full max-w-2xl mx-auto">
+                <div className="text-center mb-6 sm:mb-8">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium text-onsurface-primary mb-2 sm:mb-3">
                         Let's build your profile
                     </h2>
-                    <p className="text-onsurface-secondary text-lg">
+                    <p className="text-onsurface-secondary text-base sm:text-lg px-4 sm:px-0">
                         Help your team discover your expertise and connect with you
                     </p>
                 </div>
                 
-                {/* Progress Steps */}
-                <div className="flex justify-center items-center mb-12">
-                    <div className="flex items-center gap-4">
-                        <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                            currentStep >= 1 
-                                ? 'bg-primary text-white shadow-lg' 
-                                : 'bg-surface-container-muted text-onsurface-secondary border border-border'
-                        }`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                                currentStep >= 1 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                {/* Progress Steps - Scrollable on mobile */}
+                <div className="mb-8 sm:mb-12 overflow-x-auto">
+                    <div className="flex justify-center items-center min-w-fit px-4 sm:px-0">
+                        <div className="flex items-center gap-2 sm:gap-4">
+                            <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl transition-all whitespace-nowrap ${
+                                currentStep >= 1 
+                                    ? 'bg-primary text-white shadow-lg' 
+                                    : 'bg-surface-container-muted text-onsurface-secondary border border-border'
                             }`}>
-                                1
+                                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                                    currentStep >= 1 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                                }`}>
+                                    1
+                                </div>
+                                <span className="font-medium text-sm sm:text-base">Basic Info</span>
                             </div>
-                            <span className="font-medium">Basic Info</span>
-                        </div>
-                        
-                        <div className={`w-8 h-0.5 transition-colors ${
-                            currentStep >= 2 ? 'bg-primary' : 'bg-border'
-                        }`} />
-                        
-                        <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                            currentStep >= 2 
-                                ? 'bg-primary text-white shadow-lg' 
-                                : 'bg-surface-container-muted text-onsurface-secondary border border-border'
-                        }`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                                currentStep >= 2 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                            
+                            <div className={`w-4 sm:w-8 h-0.5 transition-colors ${
+                                currentStep >= 2 ? 'bg-primary' : 'bg-border'
+                            }`} />
+                            
+                            <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl transition-all whitespace-nowrap ${
+                                currentStep >= 2 
+                                    ? 'bg-primary text-white shadow-lg' 
+                                    : 'bg-surface-container-muted text-onsurface-secondary border border-border'
                             }`}>
-                                2
+                                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                                    currentStep >= 2 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                                }`}>
+                                    2
+                                </div>
+                                <span className="font-medium text-sm sm:text-base">Education</span>
                             </div>
-                            <span className="font-medium">Education</span>
-                        </div>
-                        
-                        <div className={`w-8 h-0.5 transition-colors ${
-                            currentStep >= 3 ? 'bg-primary' : 'bg-border'
-                        }`} />
-                        
-                        <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                            currentStep >= 3 
-                                ? 'bg-primary text-white shadow-lg' 
-                                : 'bg-surface-container-muted text-onsurface-secondary border border-border'
-                        }`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                                currentStep >= 3 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                            
+                            <div className={`w-4 sm:w-8 h-0.5 transition-colors ${
+                                currentStep >= 3 ? 'bg-primary' : 'bg-border'
+                            }`} />
+                            
+                            <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl transition-all whitespace-nowrap ${
+                                currentStep >= 3 
+                                    ? 'bg-primary text-white shadow-lg' 
+                                    : 'bg-surface-container-muted text-onsurface-secondary border border-border'
                             }`}>
-                                3
+                                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                                    currentStep >= 3 ? 'bg-white text-primary' : 'bg-surface-container text-onsurface-secondary'
+                                }`}>
+                                    3
+                                </div>
+                                <span className="font-medium text-sm sm:text-base">Experience</span>
                             </div>
-                            <span className="font-medium">Experience</span>
                         </div>
                     </div>
                 </div>
@@ -292,10 +294,10 @@ export default function Onboarding() {
                 )}
 
                 {currentStep === 1 && (
-                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-8">
-                        <form className="space-y-6" onSubmit={handleProfileSubmit}>
-                            <div className="space-y-6">
-                                <div className="flex justify-center mb-8">
+                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-4 sm:p-6 lg:p-8">
+                        <form className="space-y-5 sm:space-y-6" onSubmit={handleProfileSubmit}>
+                            <div className="space-y-5 sm:space-y-6">
+                                <div className="flex justify-center mb-6 sm:mb-8">
                                     <div className="text-center">
                                         <ImageUploadWithCrop
                                             currentImageUrl={null}
@@ -304,7 +306,7 @@ export default function Onboarding() {
                                             label="Upload Avatar"
                                             shape="circle"
                                         />
-                                        <p className="text-sm text-onsurface-secondary mt-3">Add a photo to help your team recognize you</p>
+                                        <p className="text-xs sm:text-sm text-onsurface-secondary mt-2 sm:mt-3">Add a photo to help your team recognize you</p>
                                     </div>
                                 </div>
 
@@ -316,7 +318,7 @@ export default function Onboarding() {
                                         id="name"
                                         type="text"
                                         required
-                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="e.g. John Doe"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
@@ -331,7 +333,7 @@ export default function Onboarding() {
                                         id="title"
                                         type="text"
                                         required
-                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="e.g. Software Engineer, Product Manager, Designer"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
@@ -346,7 +348,7 @@ export default function Onboarding() {
                                         id="location"
                                         type="text"
                                         required
-                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="e.g. San Francisco, CA or Remote"
                                         value={location}
                                         onChange={(e) => setLocation(e.target.value)}
@@ -361,12 +363,12 @@ export default function Onboarding() {
                                         id="bio"
                                         rows={4}
                                         required
-                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+                                        className="w-full min-h-[120px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
                                         placeholder="Tell your team about your background, interests, and what you're passionate about..."
                                         value={bio}
                                         onChange={(e) => setBio(e.target.value)}
                                     />
-                                    <p className="text-xs text-onsurface-secondary mt-2">This helps your team understand your background and expertise</p>
+                                    <p className="text-xs text-onsurface-secondary mt-1 sm:mt-2">This helps your team understand your background and expertise</p>
                                 </div>
 
                                 <div>
@@ -377,19 +379,19 @@ export default function Onboarding() {
                                         id="skills"
                                         type="text"
                                         required
-                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                         placeholder="e.g. React, TypeScript, Python, Figma, Project Management"
                                         value={skills}
                                         onChange={(e) => setSkills(e.target.value)}
                                     />
-                                    <p className="text-xs text-onsurface-secondary mt-2">Separate multiple skills with commas</p>
+                                    <p className="text-xs text-onsurface-secondary mt-1 sm:mt-2">Separate multiple skills with commas</p>
                                 </div>
                             </div>
                             
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex justify-center items-center gap-2 py-4 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
+                                className="w-full min-h-[48px] flex justify-center items-center gap-2 py-3 sm:py-4 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 shadow-lg text-base sm:text-sm"
                             >
                                 {loading ? (
                                     <>
@@ -410,19 +412,19 @@ export default function Onboarding() {
                 )}
 
                 {currentStep === 2 && (
-                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-8">
-                        <div className="text-center mb-6">
-                            <h3 className="text-2xl font-medium text-onsurface-primary mb-2">Education Background</h3>
-                            <p className="text-onsurface-secondary">Add your educational background (optional, but helps with matching)</p>
+                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-4 sm:p-6 lg:p-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <h3 className="text-xl sm:text-2xl font-medium text-onsurface-primary mb-2">Education Background</h3>
+                            <p className="text-sm sm:text-base text-onsurface-secondary px-4 sm:px-0">Add your educational background (optional, but helps with matching)</p>
                         </div>
-                        <form className="space-y-6" onSubmit={handleEducationSubmit}>
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="text-lg font-medium text-onsurface-primary">Educational Background</h4>
+                        <form className="space-y-5 sm:space-y-6" onSubmit={handleEducationSubmit}>
+                            <div className="space-y-5 sm:space-y-6">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                    <h4 className="text-base sm:text-lg font-medium text-onsurface-primary">Educational Background</h4>
                                     <button
                                         type="button"
                                         onClick={addEducation}
-                                        className="flex items-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors"
+                                        className="flex items-center justify-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors min-h-[40px] px-3 py-2 rounded-lg hover:bg-surface-container-muted"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -432,7 +434,7 @@ export default function Onboarding() {
                                 </div>
 
                                 {educations.map((edu, index) => (
-                                    <div key={index} className="bg-surface-container-muted border border-border rounded-xl p-6 space-y-4">
+                                    <div key={index} className="bg-surface-container-muted border border-border rounded-xl p-4 sm:p-6 space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-onsurface-primary mb-2">
                                                 School/University
@@ -441,7 +443,7 @@ export default function Onboarding() {
                                                 type="text"
                                                 value={edu.school}
                                                 onChange={(e) => updateEducation(index, 'school', e.target.value)}
-                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                 placeholder="e.g. Stanford University, MIT, UC Berkeley"
                                             />
                                         </div>
@@ -454,7 +456,7 @@ export default function Onboarding() {
                                                 type="text"
                                                 value={edu.degree}
                                                 onChange={(e) => updateEducation(index, 'degree', e.target.value)}
-                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                 placeholder="e.g. BS Computer Science, MBA, MS Design"
                                             />
                                         </div>
@@ -467,7 +469,7 @@ export default function Onboarding() {
                                                 type="text"
                                                 value={edu.year}
                                                 onChange={(e) => updateEducation(index, 'year', e.target.value)}
-                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                 placeholder="e.g. 2024 or Expected 2025"
                                             />
                                         </div>
@@ -476,7 +478,7 @@ export default function Onboarding() {
                                             <button
                                                 type="button"
                                                 onClick={() => removeEducation(index)}
-                                                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors"
+                                                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors min-h-[40px] px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -488,18 +490,18 @@ export default function Onboarding() {
                                 ))}
                             </div>
                             
-                            <div className="flex gap-4 pt-4">
+                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
                                 <button
                                     type="button"
                                     onClick={() => setCurrentStep(3)}
-                                    className="flex-1 py-3 px-6 border border-border rounded-xl text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
+                                    className="w-full sm:flex-1 min-h-[48px] py-3 px-6 border border-border rounded-xl text-base sm:text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
                                 >
                                     Skip for Now
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex-1 flex justify-center items-center gap-2 py-3 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+                                    className="w-full sm:flex-1 min-h-[48px] flex justify-center items-center gap-2 py-3 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 text-base sm:text-sm"
                                 >
                                     {loading ? (
                                         <>
@@ -521,19 +523,19 @@ export default function Onboarding() {
                 )}
 
                 {currentStep === 3 && (
-                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-8">
-                        <div className="text-center mb-6">
-                            <h3 className="text-2xl font-medium text-onsurface-primary mb-2">Work Experience</h3>
-                            <p className="text-onsurface-secondary">Share your professional background to help colleagues understand your expertise</p>
+                    <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-4 sm:p-6 lg:p-8">
+                        <div className="text-center mb-4 sm:mb-6">
+                            <h3 className="text-xl sm:text-2xl font-medium text-onsurface-primary mb-2">Work Experience</h3>
+                            <p className="text-sm sm:text-base text-onsurface-secondary px-4 sm:px-0">Share your professional background to help colleagues understand your expertise</p>
                         </div>
-                        <form className="space-y-6" onSubmit={handleExperienceSubmit}>
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="text-lg font-medium text-onsurface-primary">Professional Experience</h4>
+                        <form className="space-y-5 sm:space-y-6" onSubmit={handleExperienceSubmit}>
+                            <div className="space-y-5 sm:space-y-6">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                    <h4 className="text-base sm:text-lg font-medium text-onsurface-primary">Professional Experience</h4>
                                     <button
                                         type="button"
                                         onClick={addExperience}
-                                        className="flex items-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors"
+                                        className="flex items-center justify-center gap-1 text-sm text-primary hover:text-primary-hover font-medium transition-colors min-h-[40px] px-3 py-2 rounded-lg hover:bg-surface-container-muted"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -543,7 +545,7 @@ export default function Onboarding() {
                                 </div>
 
                                 {experiences.map((exp, index) => (
-                                    <div key={index} className="bg-surface-container-muted border border-border rounded-xl p-6 space-y-4">
+                                    <div key={index} className="bg-surface-container-muted border border-border rounded-xl p-4 sm:p-6 space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-onsurface-primary mb-2">
                                                 Company
@@ -552,7 +554,7 @@ export default function Onboarding() {
                                                 type="text"
                                                 value={exp.company}
                                                 onChange={(e) => updateExperience(index, 'company', e.target.value)}
-                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                 placeholder="e.g. Google, Microsoft, Startup Inc."
                                             />
                                         </div>
@@ -565,12 +567,12 @@ export default function Onboarding() {
                                                 type="text"
                                                 value={exp.role}
                                                 onChange={(e) => updateExperience(index, 'role', e.target.value)}
-                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                 placeholder="e.g. Software Engineer, Product Manager, Design Lead"
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-onsurface-primary mb-2">
                                                     Start Date
@@ -579,7 +581,7 @@ export default function Onboarding() {
                                                     type="text"
                                                     value={exp.startDate}
                                                     onChange={(e) => updateExperience(index, 'startDate', e.target.value)}
-                                                    className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                    className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                     placeholder="e.g. June 2024"
                                                 />
                                             </div>
@@ -591,7 +593,7 @@ export default function Onboarding() {
                                                     type="text"
                                                     value={exp.endDate}
                                                     onChange={(e) => updateExperience(index, 'endDate', e.target.value)}
-                                                    className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                                    className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                                     placeholder="Present or Aug 2024"
                                                 />
                                             </div>
@@ -605,7 +607,7 @@ export default function Onboarding() {
                                                 rows={3}
                                                 value={exp.description}
                                                 onChange={(e) => updateExperience(index, 'description', e.target.value)}
-                                                className="w-full px-4 py-3 bg-surface-container border border-border rounded-xl text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+                                                className="w-full min-h-[96px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
                                                 placeholder="Describe your key responsibilities, achievements, and technologies used..."
                                             />
                                         </div>
@@ -614,7 +616,7 @@ export default function Onboarding() {
                                             <button
                                                 type="button"
                                                 onClick={() => removeExperience(index)}
-                                                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors"
+                                                className="flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition-colors min-h-[40px] px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -626,21 +628,21 @@ export default function Onboarding() {
                                 ))}
                             </div>
                             
-                            <div className="flex gap-4 pt-4">
+                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         refreshProfile();
                                         router.replace('/');
                                     }}
-                                    className="flex-1 py-3 px-6 border border-border rounded-xl text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
+                                    className="w-full sm:flex-1 min-h-[48px] py-3 px-6 border border-border rounded-xl text-base sm:text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
                                 >
                                     Skip & Finish
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex-1 flex justify-center items-center gap-2 py-3 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
+                                    className="w-full sm:flex-1 min-h-[48px] flex justify-center items-center gap-2 py-3 px-6 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 shadow-lg text-base sm:text-sm"
                                 >
                                     {loading ? (
                                         <>

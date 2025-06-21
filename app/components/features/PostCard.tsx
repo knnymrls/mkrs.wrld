@@ -7,6 +7,7 @@ import AuthorLink from './AuthorLink';
 import QuickCommentInput from './QuickCommentInput';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
+import LazyImage from '../ui/LazyImage';
 import { TrackedMention } from '@/app/types/mention';
 import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
 
@@ -110,26 +111,28 @@ const PostCard = React.memo(function PostCard({
   return (
     <>
       <div
-        className="bg-surface-container rounded-2xl border-[1px] border-border hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-4"
+        className="bg-surface-container rounded-xl sm:rounded-2xl border-[1px] border-border hover:scale-[1.02] sm:hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-3 sm:mb-4 touch-manipulation"
         onClick={() => onPostClick(post)}
       >
-        <div className="p-4 flex flex-col gap-3">
+        <div className="p-3 sm:p-4 flex flex-col gap-3">
           <div className="flex flex-col items-center gap-2">
             <div className="flex w-full items-center justify-between">
-              <div className="w-9 h-9 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
                 {post.author.avatar_url ? (
-                  <img
+                  <LazyImage
                     src={post.author.avatar_url}
                     alt={post.author.name}
-                    className="w-full h-full object-cover"
+                    className=""
+                    placeholder="blur"
+                    priority={false}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium">
+                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-sm sm:text-base">
                     {post.author.name.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              <p className="text-sm text-onsurface-secondary">
+              <p className="text-xs sm:text-sm text-onsurface-secondary">
                 {new Date(post.created_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -142,10 +145,10 @@ const PostCard = React.memo(function PostCard({
               <AuthorLink
                 authorId={post.author.id}
                 authorName={post.author.name}
-                className="text-sm font-sans text-onsurface-secondary"
+                className="text-xs sm:text-sm font-sans text-onsurface-secondary"
               />
 
-              <div className="text-onsurface-primary leading-relaxed whitespace-pre-wrap">
+              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap">
                 {renderedContent}
               </div>
             </div>
@@ -153,35 +156,38 @@ const PostCard = React.memo(function PostCard({
 
           {/* Post Images Grid */}
           {images.length > 0 && (
-            <div className={`grid gap-1 ${images.length === 1 ? 'grid-cols-1' :
+            <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' :
                 images.length === 2 ? 'grid-cols-2' :
                   images.length === 3 ? 'grid-cols-2' :
                     'grid-cols-2'
               }`}>
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${images.length === 3 && index === 0 ? 'col-span-2' : ''
-                    }`}
-                  onClick={(e) => handleImageClick(e, image.url)}
-                >
-                  <img
-                    src={image.url}
-                    alt={`Post image ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    style={{
-                      maxHeight: images.length === 1 ? '400px' : '200px',
-                      minHeight: images.length === 1 ? 'auto' : '200px'
-                    }}
-                  />
-                </div>
-              ))}
+              {images.map((image, index) => {
+                const aspectRatio = image.height / image.width;
+                const isVeryTall = aspectRatio > 1.5;
+                
+                return (
+                  <div
+                    key={index}
+                    className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${
+                      images.length === 3 && index === 0 ? 'col-span-2' : ''
+                    } ${isVeryTall ? 'max-h-[400px]' : ''}`}
+                    onClick={(e) => handleImageClick(e, image.url)}
+                  >
+                    <img
+                      src={image.url}
+                      alt={`Post image ${index + 1}`}
+                      className={`w-full h-auto ${isVeryTall ? 'object-contain bg-surface-container' : 'object-cover'}`}
+                      loading="lazy"
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {/* Quick Comment Input and Like Button */}
           <div
-            className=" flex items-end gap-2"
+            className="flex items-end gap-1 sm:gap-2"
             onClick={(e) => e.stopPropagation()}
           >
             <QuickCommentInput

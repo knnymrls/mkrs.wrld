@@ -146,6 +146,17 @@ export default function MentionInput({
             lastAtIndex,
             newValue
           );
+          
+          // On mobile, adjust for viewport and soft keyboard
+          if (window.innerWidth < 640) {
+            const viewportHeight = window.visualViewport?.height || window.innerHeight;
+            const maxTop = viewportHeight - 200; // Leave room for dropdown
+            
+            if (position.top > maxTop) {
+              position.top = maxTop;
+            }
+          }
+          
           setDropdownPosition(position);
         }
 
@@ -169,6 +180,17 @@ export default function MentionInput({
               lastAtIndex,
               newValue
             );
+            
+            // On mobile, adjust for viewport and soft keyboard
+            if (window.innerWidth < 640) {
+              const viewportHeight = window.visualViewport?.height || window.innerHeight;
+              const maxTop = viewportHeight - 200; // Leave room for dropdown
+              
+              if (position.top > maxTop) {
+                position.top = maxTop;
+              }
+            }
+            
             setDropdownPosition(position);
           }
         });

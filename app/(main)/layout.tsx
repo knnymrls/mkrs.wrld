@@ -1,4 +1,5 @@
 import Navbar from '../components/layout/Navbar';
+import MobileNavbar from '../components/layout/MobileNavbar';
 
 export default function MainLayout({
   children,
@@ -6,9 +7,20 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen">
-      <Navbar />
-      <main className="flex-1 ml-16 overflow-auto">{children}</main>
-    </div>
+    <>
+      {/* Main Content Area */}
+      <div className="flex h-screen">
+        {/* Desktop Navbar */}
+        <Navbar />
+        
+        {/* Main Content - Adjust padding for mobile bottom nav */}
+        <main className="flex-1 md:ml-16 overflow-auto pb-16 md:pb-0">
+          {children}
+        </main>
+      </div>
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileNavbar />
+    </>
   );
 }

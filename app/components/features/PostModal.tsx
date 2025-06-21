@@ -12,6 +12,7 @@ import { Comment } from '../../models/Comment';
 import CommentsList from './CommentsList';
 import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
+import LazyImage from '../ui/LazyImage';
 import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
 
 interface Post {
@@ -554,27 +555,29 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 flex items-center justify-center sm:p-4 z-50"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
       onClick={onClose}
     >
       <div
-        className="bg-surface-container rounded-3xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-auto"
+        className="bg-surface-container rounded-t-3xl sm:rounded-3xl shadow-lg w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Post Content */}
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-3">
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center">
-              <div className="w-11 h-11 bg-surface-container-muted rounded-full overflow-hidden flex-shrink-0 mr-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 bg-surface-container-muted rounded-full overflow-hidden flex-shrink-0 mr-2 sm:mr-3">
                 {post.author.avatar_url ? (
-                  <img
+                  <LazyImage
                     src={post.author.avatar_url}
                     alt={post.author.name}
-                    className="w-full h-full object-cover"
+                    className=""
+                    placeholder="blur"
+                    priority={true} // Modal avatars should load immediately
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium">
+                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-sm sm:text-base">
                     {post.author.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -583,9 +586,9 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 <AuthorLink
                   authorId={post.author.id}
                   authorName={post.author.name}
-                  className="font-medium text-onsurface-primary"
+                  className="font-medium text-sm sm:text-base text-onsurface-primary"
                 />
-                <p className="text-sm text-onsurface-secondary">
+                <p className="text-xs sm:text-sm text-onsurface-secondary">
                   {new Date(post.created_at).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -622,9 +625,9 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                           })
                         );
                       }}
-                      className="p-2 hover:bg-surface-container-muted rounded-full transition-colors"
+                      className="p-1.5 sm:p-2 hover:bg-surface-container-muted rounded-full transition-colors"
                     >
-                      <svg className="w-5 h-5 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
@@ -637,10 +640,10 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                           onDelete();
                         }
                       }}
-                      className="relative z-10 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors cursor-pointer"
+                      className="relative z-10 p-1.5 sm:p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors cursor-pointer"
                       title="Delete post"
                     >
-                      <svg className="w-5 h-5 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -668,7 +671,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                         })
                       );
                     }}
-                    className="px-3 py-1 text-sm font-medium text-onsurface-secondary bg-surface-container-muted rounded-full hover:bg-border transition-colors"
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-onsurface-secondary bg-surface-container-muted rounded-full hover:bg-border transition-colors"
                   >
                     Cancel
                   </button>
@@ -711,26 +714,29 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
               />
             </div>
           ) : (
-            <div className="text-onsurface-primary text-base leading-relaxed whitespace-pre-wrap mb-4">
+            <div className="text-onsurface-primary text-sm sm:text-base leading-relaxed whitespace-pre-wrap mb-3 sm:mb-4">
               {renderPostContent(post)}
             </div>
           )}
 
           {/* Post Image */}
           {post.image_url && !isEditingPost && (
-            <div className="mb-4">
-              <img
+            <div className="mb-3 sm:mb-4" style={{ maxHeight: '60vh' }}>
+              <LazyImage
                 src={post.image_url}
                 alt="Post image"
-                className="h-auto rounded-lg object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-                style={{ maxHeight: '100px', width: 'auto' }}
+                width={post.image_width || undefined}
+                height={post.image_height || undefined}
+                className="rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity"
+                placeholder="blur"
+                priority={true} // Modal images should load immediately
                 onClick={() => setIsImageModalOpen(true)}
               />
             </div>
           )}
 
           {/* Like and Comment Section */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-2">
               <LikeButton
                 isLiked={post.user_has_liked}
@@ -739,7 +745,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 count={post.likes_count}
               />
             </div>
-            <span className="text-sm text-onsurface-secondary">{post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}</span>
+            <span className="text-xs sm:text-sm text-onsurface-secondary">{post.comments_count} {post.comments_count === 1 ? 'comment' : 'comments'}</span>
           </div>
 
           {/* Comments Section */}

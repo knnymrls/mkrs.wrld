@@ -168,7 +168,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-9 py-12 mx-auto w-full">
+      <div className="px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12 mx-auto w-full">
         <ActivityFeedHeader
           userId={user?.id || null}
           onCreatePost={() => setIsCreatingPost(true)}

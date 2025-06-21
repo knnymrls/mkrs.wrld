@@ -40,13 +40,13 @@ export default function NewEducation() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md mx-auto">
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Add Education</h1>
-                    <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="min-h-screen bg-background py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-4 sm:p-6">
+                    <h1 className="text-xl sm:text-2xl font-bold text-onsurface-primary mb-4 sm:mb-6">Add Education</h1>
+                    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
                         <div>
-                            <label htmlFor="school" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="school" className="block text-sm font-medium text-onsurface-primary mb-2">
                                 School/University *
                             </label>
                             <input
@@ -55,12 +55,12 @@ export default function NewEducation() {
                                 required
                                 value={formData.school}
                                 onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="e.g. Stanford University"
                             />
                         </div>
                         <div>
-                            <label htmlFor="degree" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="degree" className="block text-sm font-medium text-onsurface-primary mb-2">
                                 Degree *
                             </label>
                             <input
@@ -69,12 +69,12 @@ export default function NewEducation() {
                                 required
                                 value={formData.degree}
                                 onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="e.g. BS Computer Science"
                             />
                         </div>
                         <div>
-                            <label htmlFor="year" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="year" className="block text-sm font-medium text-onsurface-primary mb-2">
                                 Graduation Year
                             </label>
                             <input
@@ -82,24 +82,24 @@ export default function NewEducation() {
                                 id="year"
                                 value={formData.year}
                                 onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="e.g. 2024"
                             />
                         </div>
-                        <div className="flex gap-4">
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                            >
-                                {isSubmitting ? 'Adding...' : 'Add Education'}
-                            </button>
+                        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={() => router.push('/profile')}
-                                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                                className="w-full sm:flex-1 min-h-[48px] py-3 px-4 border border-border rounded-xl text-base sm:text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
                             >
                                 Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full sm:flex-1 min-h-[48px] py-3 px-4 border border-transparent rounded-xl shadow-sm text-base sm:text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-all"
+                            >
+                                {isSubmitting ? 'Adding...' : 'Add Education'}
                             </button>
                         </div>
                     </form>

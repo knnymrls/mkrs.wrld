@@ -78,7 +78,7 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
     <button
       onClick={onSelect}
       onMouseEnter={onHover}
-      className={`w-full px-3 py-3 text-left flex items-center gap-2 transition-colors duration-150 focus:outline-none ${isSelected
+      className={`w-full px-3 py-3 sm:py-2 min-h-[48px] sm:min-h-0 text-left flex items-center gap-2 transition-colors duration-150 focus:outline-none ${isSelected
         ? 'bg-surface-container-muted text-onsurface-primary'
         : 'hover:bg-surface-container-muted text-onsurface-primary'
         }`}
@@ -131,8 +131,8 @@ const EmptyState = () => (
 );
 
 const KeyboardHints = () => (
-  <div className="px-4 py-2 text-xs text-onsurface-primary border-t border-border bg-surface-container-muted flex items-center justify-center gap-4">
-    <span className="flex items-center gap-1">
+  <div className="px-4 py-2 text-xs text-onsurface-primary border-t border-border bg-surface-container-muted flex items-center justify-center gap-2 sm:gap-4">
+    <span className="hidden sm:flex items-center gap-1">
       <kbd className="px-1.5 py-0.5 text-xs font-mono bg-surface-container border border-border rounded shadow-sm">↑↓</kbd>
       Navigate
     </span>
@@ -206,7 +206,7 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
           top: `${adjustedPosition.top}px`,
           left: `${adjustedPosition.left}px`,
           maxHeight: `${maxHeight}px`,
-          width: '320px',
+          width: window.innerWidth < 640 ? `${Math.min(window.innerWidth - 32, 320)}px` : '320px',
           transformOrigin: 'top left',
           zIndex: 10000 // Higher than backdrop-blur containers
         }}

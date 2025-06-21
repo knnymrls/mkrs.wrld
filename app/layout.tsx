@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 export const metadata = {
   title: 'Nural App',
   description: 'Your personal space for thoughts and ideas',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 };
 
 export default function RootLayout({

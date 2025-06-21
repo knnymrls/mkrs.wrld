@@ -111,7 +111,15 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   if (loading) {
     return (
-      <div className="w-full" style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
+      <div 
+        className="w-full" 
+        style={{ 
+          columnCount: 'auto', 
+          columnWidth: '280px', 
+          columnGap: '16px', 
+          position: 'relative' 
+        }}
+      >
         <PostCardSkeleton count={4} variant="short" />
         <PostCardSkeleton count={4} variant="medium" />
         <PostCardSkeleton count={4} variant="long" />
@@ -130,7 +138,15 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   return (
     <>
-      <div className="w-full" style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
+      <div 
+        className="w-full" 
+        style={{ 
+          columnCount: 'auto', 
+          columnWidth: '280px', 
+          columnGap: '16px', 
+          position: 'relative' 
+        }}
+      >
         {items.map((item) => {
           switch (item.type) {
             case 'post':
@@ -162,7 +178,15 @@ const ActivityGrid = React.memo(function ActivityGrid({
       {hasMore && (
         <div ref={triggerRef} className="w-full py-8">
           {loadingMore && (
-            <div className="w-full" style={{ columnCount: 'auto', columnWidth: '280px', columnGap: '16px', position: 'relative' }}>
+            <div 
+              className="w-full" 
+              style={{ 
+                columnCount: 'auto', 
+                columnWidth: '280px', 
+                columnGap: '16px', 
+                position: 'relative' 
+              }}
+            >
               <PostCardSkeleton count={3} variant="medium" />
             </div>
           )}

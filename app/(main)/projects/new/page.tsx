@@ -142,14 +142,14 @@ export default function NewProject() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl mx-auto">
-                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Project</h1>
+        <div className="min-h-screen bg-background py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-2xl mx-auto">
+                <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-4 sm:p-6">
+                    <h1 className="text-xl sm:text-2xl font-bold text-onsurface-primary mb-4 sm:mb-6">Create New Project</h1>
                     
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
                         <div>
-                            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="title" className="block text-sm font-medium text-onsurface-primary mb-2">
                                 Project Title *
                             </label>
                             <input
@@ -158,13 +158,13 @@ export default function NewProject() {
                                 required
                                 value={formData.title}
                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="e.g. Customer Analytics Dashboard"
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="description" className="block text-sm font-medium text-onsurface-primary mb-2">
                                 Description
                             </label>
                             <textarea
@@ -172,20 +172,20 @@ export default function NewProject() {
                                 rows={4}
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                className="w-full min-h-[120px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
                                 placeholder="Describe the project goals, scope, and any relevant details..."
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label htmlFor="status" className="block text-sm font-medium text-onsurface-primary mb-2">
                                 Status
                             </label>
                             <select
                                 id="status"
                                 value={formData.status}
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'paused' | 'complete' })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                             >
                                 <option value="active">Active</option>
                                 <option value="paused">Paused</option>
@@ -194,7 +194,7 @@ export default function NewProject() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
                                 Contributors
                             </label>
                             
@@ -206,24 +206,24 @@ export default function NewProject() {
                                         setSearchTerm(e.target.value);
                                         searchProfiles(e.target.value);
                                     }}
-                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                                    className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                     placeholder="Search for contributors by name or email..."
                                 />
                                 
                                 {searchResults.length > 0 && (
-                                    <div className="mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm max-h-48 overflow-y-auto">
+                                    <div className="mt-2 bg-surface-container border border-border rounded-xl shadow-sm max-h-48 overflow-y-auto">
                                         {searchResults.map((profile) => (
                                             <button
                                                 key={profile.id}
                                                 type="button"
                                                 onClick={() => handleAddContributor(profile)}
-                                                className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 flex justify-between items-center"
+                                                className="w-full text-left px-4 py-3 min-h-[48px] hover:bg-surface-container-muted flex justify-between items-center transition-colors"
                                             >
                                                 <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white">{profile.name}</p>
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400">{profile.email}</p>
+                                                    <p className="font-medium text-onsurface-primary">{profile.name}</p>
+                                                    <p className="text-sm text-onsurface-secondary">{profile.email}</p>
                                                 </div>
-                                                <span className="text-sm text-indigo-600 dark:text-indigo-400">Add</span>
+                                                <span className="text-sm text-primary">Add</span>
                                             </button>
                                         ))}
                                     </div>
@@ -233,16 +233,16 @@ export default function NewProject() {
                             {selectedContributors.length > 0 && (
                                 <div className="space-y-3">
                                     {selectedContributors.map((contributor) => (
-                                        <div key={contributor.profile.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-                                            <div className="flex justify-between items-start mb-2">
+                                        <div key={contributor.profile.id} className="p-3 sm:p-4 bg-surface-container-muted rounded-xl">
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                                                 <div>
-                                                    <p className="font-medium text-gray-900 dark:text-white">{contributor.profile.name}</p>
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400">{contributor.profile.email}</p>
+                                                    <p className="font-medium text-onsurface-primary">{contributor.profile.name}</p>
+                                                    <p className="text-sm text-onsurface-secondary">{contributor.profile.email}</p>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveContributor(contributor.profile.id)}
-                                                    className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                                    className="text-sm text-red-500 hover:text-red-600 self-start sm:self-auto"
                                                 >
                                                     Remove
                                                 </button>
@@ -251,14 +251,14 @@ export default function NewProject() {
                                                 type="text"
                                                 value={contributor.role}
                                                 onChange={(e) => handleContributorRoleChange(contributor.profile.id, e.target.value)}
-                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white sm:text-sm mb-2"
+                                                className="w-full min-h-[48px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all mb-2"
                                                 placeholder="Role (e.g., Developer, Designer, PM) *"
                                                 required
                                             />
                                             <textarea
                                                 value={contributor.description}
                                                 onChange={(e) => handleContributorDescriptionChange(contributor.profile.id, e.target.value)}
-                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white sm:text-sm"
+                                                className="w-full min-h-[80px] px-4 py-3 bg-surface-container border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
                                                 rows={2}
                                                 placeholder="Description (optional)"
                                             />
@@ -268,18 +268,18 @@ export default function NewProject() {
                             )}
                         </div>
 
-                        <div className="flex gap-4">
+                        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={() => router.push('/projects')}
-                                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                                className="w-full sm:flex-1 min-h-[48px] py-3 px-4 border border-border rounded-xl text-base sm:text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                className="w-full sm:flex-1 min-h-[48px] py-3 px-4 border border-transparent rounded-xl shadow-sm text-base sm:text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-all"
                             >
                                 {loading ? 'Creating...' : 'Create Project'}
                             </button>
