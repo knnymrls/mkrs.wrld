@@ -4,15 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { Comment } from '../../models/Comment';
+import { Post } from '../../models/Post';
 import CommentSkeleton from '../ui/CommentSkeleton';
 import CommentMentionInput from '../ui/CommentMentionInput';
 import { TrackedMention } from '@/app/types/mention';
 import { renderContentWithMentions } from '@/lib/mentions/renderMentions';
-
-interface Post {
-  id: string;
-  comments_count: number;
-}
 
 interface CommentsListProps {
   comments: Comment[];

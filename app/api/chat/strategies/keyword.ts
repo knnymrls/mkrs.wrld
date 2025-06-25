@@ -1,4 +1,4 @@
-import { SearchStrategy } from '@/app/types/chat';
+import { SearchStrategy, SearchParams } from '@/app/types/chat';
 import { SearchResult } from '@/app/models/Search';
 import { createClient } from '@supabase/supabase-js';
 import { EntityExpander } from '../utils/entity-expander';
@@ -17,21 +17,19 @@ export class KeywordSearchStrategy implements SearchStrategy {
     this.supabase = client;
   }
 
-  async execute(query: string, params?: { keywords?: string[]; expandTerms?: boolean }): Promise<SearchResult[]> {
+  async execute(query: string, params?: SearchParams): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
     
     // Extract keywords from query or use provided ones
-    let keywords = params?.keywords || this.extractKeywords(query);
+    let keywords = params?.searchTerms || this.extractKeywords(query);
     
-    // Expand keywords if requested
-    if (params?.expandTerms !== false) {
-      const expandedKeywords = new Set<string>();
-      for (const keyword of keywords) {
-        const expanded = await this.expander.getAllSearchTerms(keyword);
-        expanded.forEach(term => expandedKeywords.add(term.toLowerCase()));
-      }
-      keywords = Array.from(expandedKeywords);
+    // Always expand keywords for better coverage
+    const expandedKeywords = new Set<string>();
+    for (const keyword of keywords) {
+      const expanded = await this.expander.getAllSearchTerms(keyword);
+      expanded.forEach(term => expandedKeywords.add(term.toLowerCase()));
     }
+    keywords = Array.from(expandedKeywords);
     
     if (keywords.length === 0) return results;
     

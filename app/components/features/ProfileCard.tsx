@@ -37,7 +37,6 @@ const ProfileCard = React.memo(function ProfileCard({ profile }: ProfileCardProp
                   alt={profile.name || 'Profile'}
                   className=""
                   placeholder="blur"
-                  priority={false}
                 />
               ) : profile.name ? (
                 <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-base sm:text-lg">

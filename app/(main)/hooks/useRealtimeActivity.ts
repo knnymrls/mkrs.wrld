@@ -41,14 +41,14 @@ export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: U
               content,
               created_at,
               author_id,
-              profiles:author_id (
+              profiles!author_id (
                 id,
                 name,
                 avatar_url
               ),
               post_mentions (
                 profile_id,
-                profiles:profile_id (
+                profiles!profile_id (
                   id,
                   name,
                   avatar_url
@@ -56,7 +56,7 @@ export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: U
               ),
               post_projects (
                 project_id,
-                projects:project_id (
+                projects!project_id (
                   id,
                   title
                 )
@@ -78,7 +78,7 @@ export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: U
             .single();
 
             if (data) {
-              const formattedPost = await formatPost(data, user);
+              const formattedPost = await formatPost(data as any, user);
               onNewActivity({
                 ...formattedPost,
                 type: 'post' as const

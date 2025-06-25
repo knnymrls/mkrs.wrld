@@ -94,7 +94,6 @@ export class RetrievalAgent {
       strategy: 'semantic',
       params: { 
         limit: 30, // Reduced for speed
-        searchAll: true,
       },
     });
     
@@ -104,9 +103,8 @@ export class RetrievalAgent {
       plan.primary.push({
         strategy: 'keyword',
         params: { 
-          keywords: allKeywords,
-          expandTerms: true,
-          searchAll: true,
+          searchTerms: allKeywords,
+          limit: 20,
         },
       });
     }
@@ -118,9 +116,8 @@ export class RetrievalAgent {
         plan.expansion.push({
           strategy: 'keyword',
           params: {
-            keywords: expansionTerms.slice(0, 10), // Limit expansion terms
-            expandTerms: false,
-            searchAll: true,
+            searchTerms: expansionTerms.slice(0, 10), // Limit expansion terms
+            limit: 20,
           },
         });
       }
@@ -329,9 +326,10 @@ export class RetrievalAgent {
           dateField = new Date(result.data.created_at);
         } else if (result.type === 'experience') {
           // For experiences, check if they overlap with the time range
-          if (result.data.start_date) {
-            const expStart = new Date(result.data.start_date);
-            const expEnd = result.data.end_date ? new Date(result.data.end_date) : new Date();
+          const experience = result.data as any;
+          if (experience.start_date) {
+            const expStart = new Date(experience.start_date);
+            const expEnd = experience.end_date ? new Date(experience.end_date) : new Date();
             
             // Check if experience overlaps with query time range
             if (start && end) {
@@ -409,35 +407,35 @@ export class RetrievalAgent {
             ...result.data,
             _score: result.relevanceScore,
             _reason: result.matchReason,
-          });
+          } as any);
           break;
         case 'post':
           organized.posts.push({
             ...result.data,
             _score: result.relevanceScore,
             _reason: result.matchReason,
-          });
+          } as any);
           break;
         case 'project':
           organized.projects.push({
             ...result.data,
             _score: result.relevanceScore,
             _reason: result.matchReason,
-          });
+          } as any);
           break;
         case 'experience':
           organized.experiences.push({
             ...result.data,
             _score: result.relevanceScore,
             _reason: result.matchReason,
-          });
+          } as any);
           break;
         case 'education':
           organized.educations.push({
             ...result.data,
             _score: result.relevanceScore,
             _reason: result.matchReason,
-          });
+          } as any);
           break;
       }
     }
@@ -477,8 +475,8 @@ export class RetrievalAgent {
     
     // Extract author relationships from posts
     for (const post of results.posts) {
-      if (post.author_id) {
-        const author = results.profiles.find(p => p.id === post.author_id);
+      if (post.author?.id) {
+        const author = results.profiles.find(p => p.id === post.author.id);
         if (author) {
           relationships.push({
             source: author.id,
@@ -491,8 +489,9 @@ export class RetrievalAgent {
     
     // Extract contribution relationships
     for (const project of results.projects) {
-      if (project.contributions) {
-        for (const contrib of project.contributions) {
+      const projectWithContribs = project as any;
+      if (projectWithContribs.contributions) {
+        for (const contrib of projectWithContribs.contributions) {
           relationships.push({
             source: contrib.person_id,
             target: project.id,

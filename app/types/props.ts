@@ -130,10 +130,10 @@ export interface CommentsListProps {
 }
 
 export interface PostModalProps {
-  postId: string;
-  isOpen: boolean;
+  post: Post;
   onClose: () => void;
-  onUpdate?: () => void;
+  onUpdate: (updatedPost: Post) => void;
+  onDelete: () => void;
 }
 
 export interface AuthorLinkProps {

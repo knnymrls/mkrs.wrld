@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from '../components/features/CreatePostModal';
@@ -37,7 +37,7 @@ interface Post {
   }>;
 }
 
-export default function Home() {
+function HomeContent() {
   const { user, hasProfile, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -215,5 +215,13 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-onsurface-secondary">Loading...</div></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

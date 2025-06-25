@@ -123,15 +123,16 @@ export class ResponseAgent {
           
           // Check if profiles have relevant skills/experience
           const relevantProfiles = results.profiles.filter(p => {
+            const profileWithSkills = p as any;
             const hasRelevantSkills = query.entities
               .filter(e => e.type === 'skill')
               .some(skill => 
-                p.skills?.some((s: string) => 
+                profileWithSkills.skills?.some((s: string) => 
                   s.toLowerCase().includes(skill.value.toLowerCase())
                 )
               );
             
-            const hasRelevantExperience = p.experiences?.length > 0;
+            const hasRelevantExperience = profileWithSkills.experiences?.length > 0;
             
             return hasRelevantSkills || hasRelevantExperience;
           });
@@ -212,9 +213,10 @@ export class ResponseAgent {
         }
         
         // Check if we need experience details
-        const profilesWithoutExperience = results.profiles.filter(p => 
-          !p.experiences || p.experiences.length === 0
-        );
+        const profilesWithoutExperience = results.profiles.filter(p => {
+          const profileWithExp = p as any;
+          return !profileWithExp.experiences || profileWithExp.experiences.length === 0;
+        });
         
         if (profilesWithoutExperience.length > 0) {
           gaps.push({
@@ -227,9 +229,10 @@ export class ResponseAgent {
         
       case 'find_projects':
         // Check if we need contributor details
-        const projectsWithoutContributors = results.projects.filter(p => 
-          !p.contributions || p.contributions.length === 0
-        );
+        const projectsWithoutContributors = results.projects.filter(p => {
+          const projectWithContribs = p as any;
+          return !projectWithContribs.contributions || projectWithContribs.contributions.length === 0;
+        });
         
         if (projectsWithoutContributors.length > 0) {
           gaps.push({
@@ -251,28 +254,33 @@ export class ResponseAgent {
         switch (gap.type) {
           case 'recent_activity':
             return {
-              type: 'recent_activity',
-              parameters: { days: 30 },
+              type: 'recent_activity' as const,
+              parameters: { 
+                timeRange: {
+                  start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  end: new Date().toISOString()
+                }
+              },
               reason: 'To show recent work and contributions',
             };
             
           case 'experience_details':
             return {
-              type: 'experience_details',
+              type: 'experience_details' as const,
               parameters: {},
               reason: 'To provide complete work history',
             };
             
           case 'project_details':
             return {
-              type: 'project_details',
+              type: 'project_details' as const,
               parameters: {},
               reason: 'To show who is working on these projects',
             };
             
           default:
             return {
-              type: 'skill_verification',
+              type: 'skill_verification' as const,
               parameters: {},
               reason: 'To verify expertise levels',
             };
@@ -288,18 +296,19 @@ export class ResponseAgent {
       const profileContext = results.profiles
         .slice(0, 10) // Limit to top 10
         .map(p => {
+          const profileWithDetails = p as any;
           let context = `Profile: ${p.name || 'Unnamed'} - ${p.title || 'No title'} - ${p.location || 'No location'}`;
           
           if (p.bio) {
             context += ` - Bio: ${p.bio}`;
           }
           
-          if (p.skills && p.skills.length > 0) {
-            context += ` - Skills: ${p.skills.join(', ')}`;
+          if (profileWithDetails.skills && profileWithDetails.skills.length > 0) {
+            context += ` - Skills: ${profileWithDetails.skills.join(', ')}`;
           }
           
-          if (p.experiences && p.experiences.length > 0) {
-            const expText = p.experiences
+          if (profileWithDetails.experiences && profileWithDetails.experiences.length > 0) {
+            const expText = profileWithDetails.experiences
               .map((exp: any) => {
                 let expStr = `${exp.role} at ${exp.company}`;
                 if (exp.description) {
@@ -311,8 +320,8 @@ export class ResponseAgent {
             context += ` - Experience: ${expText}`;
           }
           
-          if (p._reason) {
-            context += ` (Match: ${p._reason})`;
+          if (profileWithDetails._reason) {
+            context += ` (Match: ${profileWithDetails._reason})`;
           }
           
           return context;
@@ -327,17 +336,18 @@ export class ResponseAgent {
       const projectContext = results.projects
         .slice(0, 10)
         .map(p => {
+          const projectWithContribs = p as any;
           let context = `Project: "${p.title}" - Status: ${p.status} - ${p.description}`;
           
-          if (p.contributions && p.contributions.length > 0) {
-            const contribNames = p.contributions
+          if (projectWithContribs.contributions && projectWithContribs.contributions.length > 0) {
+            const contribNames = projectWithContribs.contributions
               .map((c: any) => c.role)
               .join(', ');
             context += ` - Contributors: ${contribNames}`;
           }
           
-          if (p._reason) {
-            context += ` (Match: ${p._reason})`;
+          if (projectWithContribs._reason) {
+            context += ` (Match: ${projectWithContribs._reason})`;
           }
           
           return context;
@@ -369,8 +379,9 @@ export class ResponseAgent {
           if (e.description) {
             context += ` - ${e.description}`;
           }
-          if (e.profile) {
-            context += ` (${e.profile.name})`;
+          const expWithProfile = e as any;
+          if (expWithProfile.profile) {
+            context += ` (${expWithProfile.profile.name})`;
           }
           return context;
         })
@@ -486,8 +497,8 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
           type: 'profile',
           id: profile.id,
           name: profile.name,
-          title: profile.title,
-          relevanceScore: profile._score || 0.8, // Higher base score for profiles
+          title: profile.title || undefined,
+          relevanceScore: (profile as any)._score || 0.8, // Higher base score for profiles
         });
       }
     }
@@ -498,8 +509,8 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         type: 'project',
         id: project.id,
         name: project.title,
-        description: project.description,
-        relevanceScore: project._score || 0.6, // Lower base score for projects
+        description: project.description || undefined,
+        relevanceScore: (project as any)._score || 0.6, // Lower base score for projects
       });
     }
     
@@ -510,14 +521,14 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         : post.content;
       
       // Find author name from profiles
-      const author = results.profiles.find(p => p.id === post.author_id);
+      const author = results.profiles.find(p => p.id === post.author.id);
       
       sources.push({
         type: 'post',
         id: post.id,
         preview,
         author: author?.name || 'Unknown',
-        relevanceScore: post._score || 0.4,
+        relevanceScore: (post as any)._score || 0.4,
       });
     }
     

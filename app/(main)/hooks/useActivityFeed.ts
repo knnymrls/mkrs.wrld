@@ -26,14 +26,14 @@ export function useActivityFeed(user: User | null) {
         image_url,
         image_width,
         image_height,
-        profiles:author_id (
+        profiles!author_id (
           id,
           name,
           avatar_url
         ),
         post_mentions (
           profile_id,
-          profiles:profile_id (
+          profiles!profile_id (
             id,
             name,
             avatar_url
@@ -41,7 +41,7 @@ export function useActivityFeed(user: User | null) {
         ),
         post_projects (
           project_id,
-          projects:project_id (
+          projects!project_id (
             id,
             title,
             image_url
@@ -67,7 +67,7 @@ export function useActivityFeed(user: User | null) {
 
     // Format each post using the helper function
     const postsWithDetails = await Promise.all(
-      (data || []).map(post => formatPost(post, user))
+      (data || []).map(post => formatPost(post as any, user))
     );
 
     return postsWithDetails;

@@ -124,7 +124,6 @@ const PostCard = React.memo(function PostCard({
                     alt={post.author.name}
                     className=""
                     placeholder="blur"
-                    priority={false}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-sm sm:text-base">

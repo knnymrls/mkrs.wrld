@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     // Enhance query with session context
     const enhancedMessage = sessionContextManager.enhanceQueryWithContext(
       message, 
-      currentSessionId, 
+      currentSessionId || '', 
       chatHistory
     );
     
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Update session context
-    sessionContextManager.updateContext(currentSessionId, {
+    sessionContextManager.updateContext(currentSessionId || '', {
       userId,
       lastQuery: message,
       lastEntities: parsedQuery.entities,

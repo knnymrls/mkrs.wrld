@@ -5,19 +5,26 @@ import { TypedSupabaseClient } from '@/app/types/supabase';
 import { Profile } from '@/app/models/Profile';
 import { Project } from '@/app/models/Project';
 
-interface RawPostData {
+// Partial profile type for nested queries
+interface PartialProfile {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+}
+
+export interface RawPostData {
   id: string;
   content: string;
   created_at: string;
   author_id: string;
-  profiles?: Profile | Profile[] | null;
+  profiles?: PartialProfile | PartialProfile[] | null;
   post_mentions?: Array<{
     profile_id: string;
-    profiles?: Profile;
+    profiles?: PartialProfile;
   }>;
   post_projects?: Array<{
     project_id: string;
-    projects?: Project;
+    projects?: Partial<Project>;
   }>;
   post_likes?: Array<{
     user_id: string;
@@ -69,7 +76,7 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
       supabase
         .from('post_mentions')
         .select(`
-          profiles:profile_id (
+          profiles!profile_id (
             id,
             name,
             avatar_url
@@ -79,7 +86,7 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
       supabase
         .from('post_projects')
         .select(`
-          projects:project_id (
+          projects!project_id (
             id,
             title,
             image_url
@@ -89,13 +96,13 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
     ]);
 
     mentions = [
-      ...(personMentions.data || []).map((m) => ({
+      ...(personMentions.data || []).map((m: any) => ({
         id: m.profiles.id,
         name: m.profiles.name,
         type: 'person' as const,
         imageUrl: m.profiles.avatar_url
       })),
-      ...(projectMentions.data || []).map((m) => ({
+      ...(projectMentions.data || []).map((m: any) => ({
         id: m.projects.id,
         name: m.projects.title,
         type: 'project' as const,

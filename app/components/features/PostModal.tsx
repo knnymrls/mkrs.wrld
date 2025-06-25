@@ -14,24 +14,7 @@ import LikeButton from './LikeButton';
 import ImageModal from '../ui/ImageModal';
 import LazyImage from '../ui/LazyImage';
 import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
-
-interface Post {
-  id: string;
-  content: string;
-  created_at: string;
-  author: {
-    id: string;
-    name: string;
-    avatar_url: string | null;
-  };
-  mentions: Array<{ id: string; name: string; type: 'person' | 'project'; imageUrl?: string | null }>;
-  likes_count: number;
-  comments_count: number;
-  user_has_liked: boolean;
-  image_url?: string | null;
-  image_width?: number | null;
-  image_height?: number | null;
-}
+import { Post } from '../../models/Post';
 
 interface PostModalProps {
   post: Post;
@@ -574,7 +557,6 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                     alt={post.author.name}
                     className=""
                     placeholder="blur"
-                    priority={true} // Modal avatars should load immediately
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-sm sm:text-base">
@@ -721,16 +703,18 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
           {/* Post Image */}
           {post.image_url && !isEditingPost && (
-            <div className="mb-3 sm:mb-4" style={{ maxHeight: '60vh' }}>
+            <div 
+              className="mb-3 sm:mb-4 cursor-zoom-in" 
+              style={{ maxHeight: '60vh' }}
+              onClick={() => setIsImageModalOpen(true)}
+            >
               <LazyImage
                 src={post.image_url}
                 alt="Post image"
                 width={post.image_width || undefined}
                 height={post.image_height || undefined}
-                className="rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity"
+                className="rounded-lg hover:opacity-90 transition-opacity"
                 placeholder="blur"
-                priority={true} // Modal images should load immediately
-                onClick={() => setIsImageModalOpen(true)}
               />
             </div>
           )}
