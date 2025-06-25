@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
+import VoiceInterface from './VoiceInterface';
 
 interface AIAssistantOrbProps {
   isActive?: boolean;
@@ -10,6 +11,7 @@ interface AIAssistantOrbProps {
 export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showVoiceInterface, setShowVoiceInterface] = useState(false);
   const orbRef = useRef<HTMLDivElement>(null);
   
   // Motion values for smooth cursor tracking
@@ -48,8 +50,12 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
   };
 
   const handleVoiceActivation = () => {
-    setIsListening(!isListening);
-    // Voice activation logic will be added later
+    setShowVoiceInterface(true);
+    setIsExpanded(false);
+  };
+
+  const handleVoiceClose = () => {
+    setShowVoiceInterface(false);
   };
 
   if (!isActive) return null;
@@ -157,6 +163,12 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Voice Interface Modal */}
+      <VoiceInterface 
+        isActive={showVoiceInterface}
+        onClose={handleVoiceClose}
+      />
     </>
   );
 }
