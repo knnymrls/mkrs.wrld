@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Mic, X, Sparkles, ArrowRight, User, Briefcase, MessageSquare, Zap, Clock, Home, FolderOpen, Bell } from 'lucide-react';
+import { Search, Mic, X, Sparkles, ArrowRight, User, Briefcase, MessageSquare, Zap, Clock, Home, FolderOpen, Bell, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
@@ -306,6 +306,24 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
     },
     // Quick actions
     {
+      id: 'new-post',
+      title: 'Create new post',
+      description: 'Share your thoughts with the team',
+      icon: <PlusCircle className="w-4 h-4" />,
+      action: () => {
+        router.push('/');
+        onClose();
+        // Trigger the post creation UI
+        setTimeout(() => {
+          const createPostButton = document.querySelector('[data-create-post-trigger]');
+          if (createPostButton instanceof HTMLElement) {
+            createPostButton.click();
+          }
+        }, 100);
+      },
+      category: 'quick'
+    },
+    {
       id: 'trending',
       title: "What's trending",
       description: 'See what people are talking about',
@@ -531,7 +549,7 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
                     </div>
                     
                     <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
-                      Actions
+                      Quick Actions
                     </div>
                     <div className="pb-2">
                       {filteredCommands.filter(cmd => cmd.category === 'quick').map((cmd, idx) => {

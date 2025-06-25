@@ -74,7 +74,13 @@ export default function Navbar() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const navItems = [
+    const navItems: Array<{
+        name: string;
+        href?: string;
+        action?: () => void;
+        icon: React.ReactNode;
+        title?: string;
+    }> = [
         {
             name: 'Home',
             href: '/',
@@ -83,6 +89,16 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
             )
+        },
+        {
+            name: 'Search',
+            action: () => setShowAICommand(true),
+            icon: (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            ),
+            title: 'Search (⌘K)'
         },
         {
             name: 'Chat',
@@ -140,35 +156,45 @@ export default function Navbar() {
                 />
             </Link>
 
-            {/* AI Assistant Button */}
-            <button
-                onClick={() => setShowAICommand(true)}
-                title="AI Assistant (⌘K)"
-                className="p-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors relative group"
-            >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-                </svg>
-                <div className="absolute left-full ml-2 px-2 py-1 bg-surface-container rounded text-xs text-onsurface-primary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    ⌘K
-                </div>
-            </button>
-
             {/* Navigation Items */}
             <nav className="flex flex-col gap-2">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.name}
-                        href={item.href}
-                        title={item.name}
-                        className={`p-3 rounded-lg transition-colors ${isActive(item.href)
+                {navItems.map((item) => {
+                    const isActiveItem = item.href ? isActive(item.href) : false;
+                    const className = `p-3 rounded-lg transition-colors relative group ${
+                        isActiveItem
                             ? 'bg-primary/10 text-primary'
                             : 'text-onsurface-secondary hover:bg-surface-container-muted hover:text-onsurface-primary'
-                            }`}
-                    >
-                        {item.icon}
-                    </Link>
-                ))}
+                    }`;
+                    
+                    if (item.action) {
+                        return (
+                            <button
+                                key={item.name}
+                                onClick={item.action}
+                                title={item.title || item.name}
+                                className={className}
+                            >
+                                {item.icon}
+                                {item.title && (
+                                    <div className="absolute left-full ml-2 px-2 py-1 bg-surface-container rounded text-xs text-onsurface-primary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        ⌘K
+                                    </div>
+                                )}
+                            </button>
+                        );
+                    }
+                    
+                    return (
+                        <Link
+                            key={item.name}
+                            href={item.href!}
+                            title={item.name}
+                            className={className}
+                        >
+                            {item.icon}
+                        </Link>
+                    );
+                })}
             </nav>
 
             {/* User Section */}

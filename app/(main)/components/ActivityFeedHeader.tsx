@@ -30,6 +30,7 @@ export default function ActivityFeedHeader({ userId, onCreatePost, onPostClick }
         {/* New Post Button */}
         <button
           onClick={onCreatePost}
+          data-create-post-trigger
           className="px-4 py-2 hover:bg-primary-hover text-primary hover:text-surface-container-muted border-primary-hover border-[1px] rounded-full bg-surface-container transition-colors flex items-center gap-1 text-sm font-medium"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
