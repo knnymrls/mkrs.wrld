@@ -369,8 +369,8 @@ export default function ChatSessionPage() {
             </div>
 
             {/* Fixed input at bottom - accounts for mobile bottom nav */}
-            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border pb-16 md:pb-0">
-                <div className="max-w-4xl mx-auto px-4 py-4 md:py-6">
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm pb-16 md:pb-0">
+                <div className="max-w-4xl mx-auto px-4 pb-4 md:pb-6">
                     <ChatInput
                         value={input}
                         onChange={setInput}

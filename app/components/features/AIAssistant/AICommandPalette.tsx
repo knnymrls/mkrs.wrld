@@ -147,8 +147,20 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
           });
         }
 
-        setSearchResults(results);
-        setShowAIMode(results.length === 0 && query.trim().length > 2);
+        // Score and sort search results intelligently
+        const scoredResults = results.map(result => {
+          const titleScore = scoreMatch(result.title, query) * 2;
+          const subtitleScore = scoreMatch(result.subtitle || '', query);
+          const totalScore = Math.max(titleScore, subtitleScore);
+          
+          // Boost score based on result type priority
+          const typeBoost = result.type === 'person' ? 1.2 : result.type === 'project' ? 1.1 : 1.0;
+          
+          return { ...result, score: totalScore * typeBoost };
+        }).sort((a, b) => b.score - a.score);
+
+        setSearchResults(scoredResults);
+        setShowAIMode(scoredResults.length === 0 && query.trim().length > 2 && filteredCommands.length === 0);
         setIsSearching(false);
       } catch (error) {
         console.error('Search error:', error);
@@ -183,46 +195,6 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
     onClose();
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-
-      const allItems = showAIMode 
-        ? aiCommands 
-        : searchResults.length > 0 
-          ? searchResults 
-          : filteredCommands;
-
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % allItems.length);
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev - 1 + allItems.length) % allItems.length);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (showAIMode && selectedIndex === 0 && query.trim()) {
-            // First AI option is always "Ask AI"
-            navigateToChatbot();
-          } else if (allItems[selectedIndex]) {
-            allItems[selectedIndex].action();
-          }
-          break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, onClose, searchResults, showAIMode, query]);
-
   // AI Commands when no search results
   const aiCommands: Command[] = [
     {
@@ -251,7 +223,7 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
     }
   ];
 
-  // Default commands when no query
+  // Default commands
   const commands: Command[] = [
     // Quick navigation
     {
@@ -344,12 +316,91 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
     }
   ];
 
-  // Filter commands based on query
-  const filteredCommands = commands.filter(cmd => {
-    if (!query) return true;
-    const searchText = `${cmd.title} ${cmd.description || ''}`.toLowerCase();
-    return searchText.includes(query.toLowerCase());
-  });
+  // Score function for intelligent ordering
+  const scoreMatch = (text: string, searchQuery: string): number => {
+    const lowerText = text.toLowerCase();
+    const lowerQuery = searchQuery.toLowerCase();
+    
+    // Exact match gets highest score
+    if (lowerText === lowerQuery) return 100;
+    
+    // Starts with query gets high score
+    if (lowerText.startsWith(lowerQuery)) return 80;
+    
+    // Word boundary match (e.g., "create post" matches "post")
+    const words = lowerText.split(/\s+/);
+    if (words.some(word => word.startsWith(lowerQuery))) return 60;
+    
+    // Contains query gets medium score
+    if (lowerText.includes(lowerQuery)) {
+      // Earlier matches score higher
+      const index = lowerText.indexOf(lowerQuery);
+      return 40 - (index * 0.5);
+    }
+    
+    return 0;
+  };
+
+  // Filter and score commands based on query
+  const filteredCommands = commands
+    .map(cmd => {
+      if (!query) return { ...cmd, score: 0 };
+      
+      const titleScore = scoreMatch(cmd.title, query) * 2; // Title matches weighted higher
+      const descScore = scoreMatch(cmd.description || '', query);
+      const totalScore = Math.max(titleScore, descScore);
+      
+      return { ...cmd, score: totalScore };
+    })
+    .filter(cmd => !query || cmd.score > 0)
+    .sort((a, b) => {
+      // Sort by score (higher first), then by category priority
+      if (b.score !== a.score) return b.score - a.score;
+      
+      // Category priority: quick > navigation > ai
+      const categoryOrder = { quick: 0, navigation: 1, ai: 2, search: 3 };
+      return (categoryOrder[a.category] || 99) - (categoryOrder[b.category] || 99);
+    });
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      // Combine filtered commands and search results
+      const commandItems = filteredCommands;
+      const allItems = showAIMode 
+        ? aiCommands 
+        : [...commandItems, ...searchResults];
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prev => (prev + 1) % allItems.length);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prev => (prev - 1 + allItems.length) % allItems.length);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (showAIMode && selectedIndex === 0 && query.trim()) {
+            // First AI option is always "Ask AI"
+            navigateToChatbot();
+          } else if (allItems[selectedIndex]) {
+            allItems[selectedIndex].action();
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          onClose();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, selectedIndex, onClose, searchResults, showAIMode, query, filteredCommands, aiCommands, navigateToChatbot]);
 
   // Voice search handler
   const startVoiceSearch = () => {
@@ -445,43 +496,129 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
               </div>
             ) : (
               <>
-                {/* Search Results */}
+                {/* Commands - Always show filtered commands */}
+                {!showAIMode && filteredCommands.length > 0 && (
+                  <>
+                    {/* Navigation Commands */}
+                    {filteredCommands.filter(cmd => cmd.category === 'navigation').length > 0 && (
+                      <>
+                        <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
+                          Quick Access
+                        </div>
+                        <div className="pb-2">
+                          {filteredCommands.filter(cmd => cmd.category === 'navigation').map((cmd) => {
+                            const cmdIndex = filteredCommands.indexOf(cmd);
+                            return (
+                              <button
+                                key={cmd.id}
+                                onClick={cmd.action}
+                                onMouseEnter={() => setSelectedIndex(cmdIndex)}
+                                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                                  selectedIndex === cmdIndex 
+                                    ? 'bg-primary/10 text-primary' 
+                                    : 'hover:bg-surface-container-muted text-onsurface-primary'
+                                }`}
+                              >
+                                <div className={`${selectedIndex === cmdIndex ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                                  {cmd.icon}
+                                </div>
+                                <div className="flex-1 text-left">
+                                  <div className="font-medium">{cmd.title}</div>
+                                  {cmd.description && (
+                                    <div className="text-sm text-onsurface-secondary">{cmd.description}</div>
+                                  )}
+                                </div>
+                                {selectedIndex === cmdIndex && (
+                                  <div className="text-xs text-onsurface-secondary">Enter</div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Quick Actions */}
+                    {filteredCommands.filter(cmd => cmd.category === 'quick').length > 0 && (
+                      <>
+                        <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
+                          Quick Actions
+                        </div>
+                        <div className="pb-2">
+                          {filteredCommands.filter(cmd => cmd.category === 'quick').map((cmd) => {
+                            const cmdIndex = filteredCommands.indexOf(cmd);
+                            return (
+                              <button
+                                key={cmd.id}
+                                onClick={cmd.action}
+                                onMouseEnter={() => setSelectedIndex(cmdIndex)}
+                                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                                  selectedIndex === cmdIndex 
+                                    ? 'bg-primary/10 text-primary' 
+                                    : 'hover:bg-surface-container-muted text-onsurface-primary'
+                                }`}
+                              >
+                                <div className={`${selectedIndex === cmdIndex ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                                  {cmd.icon}
+                                </div>
+                                <div className="flex-1 text-left">
+                                  <div className="font-medium">{cmd.title}</div>
+                                  {cmd.description && (
+                                    <div className="text-sm text-onsurface-secondary">{cmd.description}</div>
+                                  )}
+                                </div>
+                                {selectedIndex === cmdIndex && (
+                                  <div className="text-xs text-onsurface-secondary">Enter</div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Search Results - Show after commands */}
                 {searchResults.length > 0 && (
                   <div>
                     <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
                       Search Results
                     </div>
                     <div className="pb-2">
-                      {searchResults.map((result, idx) => (
-                        <button
-                          key={result.id}
-                          onClick={result.action}
-                          onMouseEnter={() => setSelectedIndex(idx)}
-                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
-                            selectedIndex === idx 
-                              ? 'bg-primary/10 text-primary' 
-                              : 'hover:bg-surface-container-muted text-onsurface-primary'
-                          }`}
-                        >
-                          <div className={`${selectedIndex === idx ? 'text-primary' : 'text-onsurface-secondary'}`}>
-                            {result.icon}
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="font-medium">{result.title}</div>
-                            {result.subtitle && (
-                              <div className="text-sm text-onsurface-secondary">{result.subtitle}</div>
+                      {searchResults.map((result) => {
+                        const resultIndex = filteredCommands.length + searchResults.indexOf(result);
+                        return (
+                          <button
+                            key={result.id}
+                            onClick={result.action}
+                            onMouseEnter={() => setSelectedIndex(resultIndex)}
+                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                              selectedIndex === resultIndex 
+                                ? 'bg-primary/10 text-primary' 
+                                : 'hover:bg-surface-container-muted text-onsurface-primary'
+                            }`}
+                          >
+                            <div className={`${selectedIndex === resultIndex ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                              {result.icon}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <div className="font-medium">{result.title}</div>
+                              {result.subtitle && (
+                                <div className="text-sm text-onsurface-secondary">{result.subtitle}</div>
+                              )}
+                            </div>
+                            {selectedIndex === resultIndex && (
+                              <div className="text-xs text-onsurface-secondary">Enter</div>
                             )}
-                          </div>
-                          {selectedIndex === idx && (
-                            <div className="text-xs text-onsurface-secondary">Enter</div>
-                          )}
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* AI Mode - When no search results */}
+                {/* AI Mode - When no search results and no commands match */}
                 {showAIMode && (
                   <div>
                     <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
@@ -517,71 +654,11 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
                   </div>
                 )}
 
-                {/* Default Commands - When no query */}
-                {!query && !showAIMode && (
-                  <>
-                    <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
-                      Quick Access
-                    </div>
-                    <div className="pb-2">
-                      {filteredCommands.filter(cmd => cmd.category === 'navigation').map((cmd, idx) => (
-                        <button
-                          key={cmd.id}
-                          onClick={cmd.action}
-                          onMouseEnter={() => setSelectedIndex(idx)}
-                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
-                            selectedIndex === idx 
-                              ? 'bg-primary/10 text-primary' 
-                              : 'hover:bg-surface-container-muted text-onsurface-primary'
-                          }`}
-                        >
-                          <div className={`${selectedIndex === idx ? 'text-primary' : 'text-onsurface-secondary'}`}>
-                            {cmd.icon}
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="font-medium">{cmd.title}</div>
-                          </div>
-                          {selectedIndex === idx && (
-                            <div className="text-xs text-onsurface-secondary">Enter</div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
-                      Quick Actions
-                    </div>
-                    <div className="pb-2">
-                      {filteredCommands.filter(cmd => cmd.category === 'quick').map((cmd, idx) => {
-                        const actualIndex = filteredCommands.indexOf(cmd);
-                        return (
-                          <button
-                            key={cmd.id}
-                            onClick={cmd.action}
-                            onMouseEnter={() => setSelectedIndex(actualIndex)}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
-                              selectedIndex === actualIndex 
-                                ? 'bg-primary/10 text-primary' 
-                                : 'hover:bg-surface-container-muted text-onsurface-primary'
-                            }`}
-                          >
-                            <div className={`${selectedIndex === actualIndex ? 'text-primary' : 'text-onsurface-secondary'}`}>
-                              {cmd.icon}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <div className="font-medium">{cmd.title}</div>
-                              {cmd.description && (
-                                <div className="text-sm text-onsurface-secondary">{cmd.description}</div>
-                              )}
-                            </div>
-                            {selectedIndex === actualIndex && (
-                              <div className="text-xs text-onsurface-secondary">Enter</div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
+                {/* No results message */}
+                {query && filteredCommands.length === 0 && searchResults.length === 0 && !showAIMode && (
+                  <div className="p-4 text-center text-sm text-onsurface-secondary">
+                    No results found for "{query}"
+                  </div>
                 )}
               </>
             )}
@@ -609,10 +686,10 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
                   <Sparkles className="w-3 h-3" />
                   AI Mode
                 </>
-              ) : searchResults.length > 0 ? (
+              ) : searchResults.length > 0 || filteredCommands.length > 0 ? (
                 <>
                   <Search className="w-3 h-3" />
-                  {searchResults.length} results
+                  {filteredCommands.length + searchResults.length} results
                 </>
               ) : (
                 <>
