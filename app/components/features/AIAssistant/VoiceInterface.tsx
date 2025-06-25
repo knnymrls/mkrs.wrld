@@ -71,7 +71,7 @@ export default function VoiceInterface({ isActive, onClose, onTranscript }: Voic
     };
 
     recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+      // Silently handle errors or use a logging service
       setError(`Error: ${event.error}`);
       setIsListening(false);
     };
@@ -86,7 +86,6 @@ export default function VoiceInterface({ isActive, onClose, onTranscript }: Voic
     try {
       recognition.start();
     } catch (err) {
-      console.error('Failed to start recognition:', err);
       setError('Failed to start voice recognition');
     }
 
@@ -95,7 +94,7 @@ export default function VoiceInterface({ isActive, onClose, onTranscript }: Voic
         try {
           recognitionRef.current.stop();
         } catch (err) {
-          console.error('Error stopping recognition:', err);
+          // Silently handle cleanup errors
         }
       }
     };
@@ -132,7 +131,7 @@ export default function VoiceInterface({ isActive, onClose, onTranscript }: Voic
         setTranscript('');
         setInterimTranscript('');
       } catch (err) {
-        console.error('Failed to start recognition:', err);
+        // Silently handle start errors
       }
     }
   };

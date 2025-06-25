@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import AICommandPalette from '@/app/components/features/AIAssistant/AICommandPalette';
 
 export default function Navbar() {
     const { user, signOut } = useAuth();
@@ -13,6 +14,7 @@ export default function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showAICommand, setShowAICommand] = useState(false);
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -57,6 +59,19 @@ export default function Navbar() {
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Keyboard shortcut for AI Command Palette (Cmd/Ctrl + K)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setShowAICommand(true);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     const navItems = [
@@ -124,6 +139,20 @@ export default function Navbar() {
                     className="w-10 h-10 object-contain"
                 />
             </Link>
+
+            {/* AI Assistant Button */}
+            <button
+                onClick={() => setShowAICommand(true)}
+                title="AI Assistant (⌘K)"
+                className="p-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors relative group"
+            >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                </svg>
+                <div className="absolute left-full ml-2 px-2 py-1 bg-surface-container rounded text-xs text-onsurface-primary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    ⌘K
+                </div>
+            </button>
 
             {/* Navigation Items */}
             <nav className="flex flex-col gap-2">
@@ -246,6 +275,12 @@ export default function Navbar() {
                     </Link>
                 )}
             </div>
+            
+            {/* AI Command Palette */}
+            <AICommandPalette 
+                isOpen={showAICommand} 
+                onClose={() => setShowAICommand(false)} 
+            />
         </div>
     );
 }
