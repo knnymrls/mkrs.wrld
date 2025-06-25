@@ -44,7 +44,6 @@ const ProjectCard = React.memo(function ProjectCard({ project }: ProjectCardProp
     <div
       className="bg-surface-container rounded-2xl border-[1px] border-border hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-4"
       onClick={() => router.push(`/projects/${project.id}`)}
-      data-project-id={project.id}
     >
       <div className="p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
@@ -55,7 +54,7 @@ const ProjectCard = React.memo(function ProjectCard({ project }: ProjectCardProp
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-onsurface-primary truncate" data-project-title>{project.title}</h3>
+              <h3 className="font-medium text-onsurface-primary truncate">{project.title}</h3>
             </div>
           </div>
           <span className="text-sm text-onsurface-secondary flex-shrink-0">

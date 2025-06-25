@@ -19,6 +19,23 @@ export default function ContextDetector({ onContextChange, isActive }: ContextDe
   const hoverTimeoutRef = useRef<NodeJS.Timeout>();
 
   const extractContext = useCallback((element: Element): HoverContext | null => {
+    // Check if hovering over a mention link (MentionLink or MentionLinkSimple)
+    const mentionLink = element.closest('[data-mention-type]');
+    if (mentionLink) {
+      const mentionType = mentionLink.getAttribute('data-mention-type');
+      const mentionId = mentionLink.getAttribute('data-mention-id');
+      const mentionName = mentionLink.getAttribute('data-mention-name');
+      
+      if (mentionType && mentionId && mentionName) {
+        return {
+          type: mentionType === 'person' ? 'profile' : 'project',
+          id: mentionId,
+          content: mentionName,
+          metadata: { name: mentionName }
+        };
+      }
+    }
+
     // Check if hovering over a post
     const postCard = element.closest('[data-post-id]');
     if (postCard) {
@@ -31,34 +48,6 @@ export default function ContextDetector({ onContextChange, isActive }: ContextDe
         id: postId,
         content: content,
         metadata: { authorName }
-      };
-    }
-
-    // Check if hovering over a profile
-    const profileLink = element.closest('[data-profile-id]');
-    if (profileLink) {
-      const profileId = profileLink.getAttribute('data-profile-id');
-      const profileName = profileLink.textContent || '';
-      
-      return {
-        type: 'profile',
-        id: profileId,
-        content: profileName,
-        metadata: { name: profileName }
-      };
-    }
-
-    // Check if hovering over a project
-    const projectElement = element.closest('[data-project-id]');
-    if (projectElement) {
-      const projectId = projectElement.getAttribute('data-project-id');
-      const projectTitle = projectElement.querySelector('[data-project-title]')?.textContent || '';
-      
-      return {
-        type: 'project',
-        id: projectId,
-        content: projectTitle,
-        metadata: { title: projectTitle }
       };
     }
 

@@ -32,6 +32,9 @@ export default function MentionLink({ id, name, type, imageUrl, className = '', 
       className={`inline-flex items-center gap-0.5 text-onsurface-primary ${className}`}
       onClick={handleClick}
       style={{ verticalAlign: 'middle' }}
+      data-mention-type={type}
+      data-mention-id={id}
+      data-mention-name={name}
     >
       {/* Icon - shows image if available, otherwise default icon */}
       {type === 'person' ? (

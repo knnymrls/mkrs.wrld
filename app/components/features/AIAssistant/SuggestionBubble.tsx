@@ -2,20 +2,15 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Users, Briefcase, MessageSquare, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import { Users, Briefcase, MessageSquare, Sparkles } from 'lucide-react';
 
 interface Suggestion {
   id: string;
   type: 'connection' | 'similarity' | 'trend' | 'insight';
   title: string;
   description: string;
-  action?: {
-    label: string;
-    href?: string;
-    onClick?: () => void;
-  };
   icon?: React.ReactNode;
+  priority?: number;
 }
 
 interface SuggestionBubbleProps {
@@ -25,11 +20,11 @@ interface SuggestionBubbleProps {
   isLoading?: boolean;
 }
 
-export default function SuggestionBubble({ 
-  suggestions, 
-  isVisible, 
+export default function SuggestionBubble({
+  suggestions,
+  isVisible,
   position,
-  isLoading = false 
+  isLoading = false
 }: SuggestionBubbleProps) {
   const getIcon = (type: Suggestion['type']) => {
     switch (type) {
@@ -70,44 +65,25 @@ export default function SuggestionBubble({
             </div>
           ) : suggestions.length > 0 ? (
             <div className="divide-y divide-border">
-              {suggestions.map((suggestion) => (
-                <div key={suggestion.id} className="p-3 hover:bg-surface-container-muted transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="text-primary mt-0.5">
-                      {suggestion.icon || getIcon(suggestion.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-onsurface-primary mb-1">
-                        {suggestion.title}
-                      </h4>
-                      <p className="text-xs text-onsurface-secondary mb-2">
-                        {suggestion.description}
-                      </p>
-                      {suggestion.action && (
-                        <div className="mt-2">
-                          {suggestion.action.href ? (
-                            <Link
-                              href={suggestion.action.href}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover transition-colors"
-                            >
-                              {suggestion.action.label}
-                              <ArrowRight className="w-3 h-3" />
-                            </Link>
-                          ) : (
-                            <button
-                              onClick={suggestion.action.onClick}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover transition-colors"
-                            >
-                              {suggestion.action.label}
-                              <ArrowRight className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      )}
+              {suggestions
+                .sort((a, b) => (a.priority || 999) - (b.priority || 999))
+                .map((suggestion) => (
+                  <div key={suggestion.id} className="p-3 hover:bg-surface-container-muted transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className="text-primary mt-0.5">
+                        {suggestion.icon || getIcon(suggestion.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-base font-medium text-onsurface-primary mb-1">
+                          {suggestion.title}
+                        </h4>
+                        <p className="text-sm text-onsurface-primary">
+                          {suggestion.description}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div className="p-4 text-center">
