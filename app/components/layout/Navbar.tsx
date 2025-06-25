@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { supabase } from '@/lib/supabase/client';
 
 export default function Navbar() {
     const { user, signOut } = useAuth();
+    const { theme, setTheme, resolvedTheme } = useTheme();
     const router = useRouter();
     const pathname = usePathname();
     const [showDropdown, setShowDropdown] = useState(false);
@@ -113,7 +115,7 @@ export default function Navbar() {
     };
 
     return (
-        <div className="hidden md:flex fixed left-0 top-0 h-full w-16 bg-background border-r border-border flex-col justify-between items-center py-4">
+        <div className="hidden md:flex fixed left-0 top-0 h-full w-16 bg-background border-r border-border flex-col justify-between items-center py-4 z-50">
             {/* Logo */}
             <Link href="/">
                 <img
@@ -168,7 +170,7 @@ export default function Navbar() {
 
                         {/* Dropdown Menu */}
                         {showDropdown && (
-                            <div className="absolute overflow-clip bottom-0 left-full ml-2 w-48 bg-surface-container rounded-lg shadow-sm border border-border">
+                            <div className="absolute overflow-clip bottom-0 left-full ml-2 w-48 bg-surface-container rounded-lg shadow-md border border-border" style={{ zIndex: 50 }}>
                                 <Link
                                     href="/profile"
                                     onClick={() => setShowDropdown(false)}
@@ -181,17 +183,54 @@ export default function Navbar() {
                                         View Profile
                                     </div>
                                 </Link>
-                                <button
-                                    onClick={handleSignOut}
-                                    className="block w-full text-left px-4 py-2 text-sm text-onsurface-primary hover:bg-surface-container-muted hover:text-onsurface-primary"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                        </svg>
-                                        Sign out
-                                    </div>
-                                </button>
+
+                                {/* Theme Toggle */}
+                                <div className="border-t border-border">
+                                    <button
+                                        onClick={() => {
+                                            if (theme === 'light') setTheme('dark');
+                                            else if (theme === 'dark') setTheme('system');
+                                            else setTheme('light');
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-onsurface-primary hover:bg-surface-container-muted hover:text-onsurface-primary"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                {theme === 'system' ? (
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                    </svg>
+                                                ) : theme === 'dark' ? (
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                                    </svg>
+                                                )}
+                                                <span>Theme</span>
+                                            </div>
+                                            <span className="text-xs text-onsurface-secondary">
+                                                {theme === 'system' ? 'Auto' : theme === 'dark' ? 'Dark' : 'Light'}
+                                            </span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div className="border-t border-border">
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="block w-full text-left px-4 py-2 text-sm text-onsurface-primary hover:bg-surface-container-muted hover:text-onsurface-primary"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            Sign out
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </>

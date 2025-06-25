@@ -15,9 +15,24 @@
   --onsurface-secondary: #999999;
 }
 
-/* Dark mode support - automatically switches based on system preference */
+/* Dark mode with class-based approach */
+.dark {
+  --background: #1D1D1D;
+  --foreground: #ededed;
+  
+  /* Custom colors for dark mode */
+  --primary: #8CB332;
+  --primary-hover: #9bc23e;
+  --surface-container: #292929;
+  --surface-container-muted: #191919;
+  --border: #404040;
+  --onsurface-primary: #f3f4f6;
+  --onsurface-secondary: #cfcfcf;
+}
+
+/* Also support system preference when no manual theme is set */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light):not(.dark) {
     --background: #1D1D1D;
     --foreground: #ededed;
     
@@ -72,28 +87,53 @@ body {
 }
 
 /* Custom shadow utilities for dark mode */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .shadow {
+  box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.07), 0 1px 2px -1px rgba(255, 255, 255, 0.07);
+}
+
+.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.07), 0 2px 4px -2px rgba(255, 255, 255, 0.07);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 10px -3px rgba(255, 255, 255, 0.07), 0 4px 6px -4px rgba(255, 255, 255, 0.07);
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(255, 255, 255, 0.07), 0 8px 10px -6px rgba(255, 255, 255, 0.07);
+}
+
+.dark .shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(255, 255, 255, 0.25);
+}
+
+/* Also support system preference when no manual theme is set */
 @media (prefers-color-scheme: dark) {
-  .shadow-sm {
+  :root:not(.light):not(.dark) .shadow-sm {
     box-shadow: 0 1px 2px 0 rgba(255, 255, 255, 0.05);
   }
   
-  .shadow {
+  :root:not(.light):not(.dark) .shadow {
     box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.07), 0 1px 2px -1px rgba(255, 255, 255, 0.07);
   }
   
-  .shadow-md {
+  :root:not(.light):not(.dark) .shadow-md {
     box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.07), 0 2px 4px -2px rgba(255, 255, 255, 0.07);
   }
   
-  .shadow-lg {
+  :root:not(.light):not(.dark) .shadow-lg {
     box-shadow: 0 10px 10px -3px rgba(255, 255, 255, 0.07), 0 4px 6px -4px rgba(255, 255, 255, 0.07);
   }
   
-  .shadow-xl {
-        box-shadow: 0 20px 25px -5px rgba(255, 255, 255, 0.07), 0 8px 10px -6px rgba(255, 255, 255, 0.07);
+  :root:not(.light):not(.dark) .shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(255, 255, 255, 0.07), 0 8px 10px -6px rgba(255, 255, 255, 0.07);
   }
   
-  .shadow-2xl {
+  :root:not(.light):not(.dark) .shadow-2xl {
     box-shadow: 0 25px 50px -12px rgba(255, 255, 255, 0.25);
   }
 }
