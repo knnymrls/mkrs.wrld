@@ -2,13 +2,24 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Mic, X, Sparkles, ArrowRight, User, Briefcase, MessageSquare, Zap } from 'lucide-react';
+import { Search, Mic, X, Sparkles, ArrowRight, User, Briefcase, MessageSquare, Zap, Clock, Home, FolderOpen, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
+import { supabase } from '@/lib/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AICommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface SearchResult {
+  id: string;
+  title: string;
+  subtitle?: string;
+  type: 'person' | 'project' | 'post';
+  icon: React.ReactNode;
+  action: () => void;
 }
 
 interface Command {
@@ -24,7 +35,11 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
   const [query, setQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showAIMode, setShowAIMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const router = useRouter();
   const { user } = useAuth();
 
@@ -32,27 +47,169 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
+      setQuery('');
+      setSearchResults([]);
+      setShowAIMode(false);
+      setSelectedIndex(0);
     }
   }, [isOpen]);
+
+  // Search functionality
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowAIMode(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Search across people, projects, and recent posts
+        const [peopleResults, projectResults, postResults] = await Promise.all([
+          // Search people
+          supabase
+            .from('profiles')
+            .select('id, name, title')
+            .ilike('name', `%${query}%`)
+            .limit(3),
+          
+          // Search projects
+          supabase
+            .from('projects')
+            .select('id, title, description')
+            .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+            .limit(3),
+          
+          // Search recent posts
+          supabase
+            .from('posts')
+            .select('id, content, created_at, author:profiles(name)')
+            .ilike('content', `%${query}%`)
+            .order('created_at', { ascending: false })
+            .limit(3)
+        ]);
+
+        const results: SearchResult[] = [];
+
+        // Add people results
+        if (peopleResults.data) {
+          peopleResults.data.forEach(person => {
+            results.push({
+              id: person.id,
+              title: person.name,
+              subtitle: person.title || 'Team member',
+              type: 'person',
+              icon: <User className="w-4 h-4" />,
+              action: () => {
+                router.push(`/profile/${person.id}`);
+                onClose();
+              }
+            });
+          });
+        }
+
+        // Add project results
+        if (projectResults.data) {
+          projectResults.data.forEach(project => {
+            results.push({
+              id: project.id,
+              title: project.title,
+              subtitle: project.description?.substring(0, 50) + '...' || 'Project',
+              type: 'project',
+              icon: <Briefcase className="w-4 h-4" />,
+              action: () => {
+                router.push(`/projects/${project.id}`);
+                onClose();
+              }
+            });
+          });
+        }
+
+        // Add post results
+        if (postResults.data) {
+          postResults.data.forEach(post => {
+            results.push({
+              id: post.id,
+              title: post.content.substring(0, 60) + '...',
+              subtitle: `by ${post.author?.name || 'Unknown'}`,
+              type: 'post',
+              icon: <MessageSquare className="w-4 h-4" />,
+              action: () => {
+                router.push(`/?post=${post.id}`);
+                onClose();
+              }
+            });
+          });
+        }
+
+        setSearchResults(results);
+        setShowAIMode(results.length === 0 && query.trim().length > 2);
+        setIsSearching(false);
+      } catch (error) {
+        console.error('Search error:', error);
+        setIsSearching(false);
+        setShowAIMode(true);
+      }
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [query, router, onClose]);
+
+  // Function to navigate to chatbot with query
+  const navigateToChatbot = (questionText?: string) => {
+    const sessionId = uuidv4();
+    const textToUse = questionText || query;
+    
+    if (textToUse.trim()) {
+      // Save the pending message to localStorage
+      const pendingMessage = {
+        text: textToUse,
+        mentions: []
+      };
+      localStorage.setItem(`pending-message-${sessionId}`, JSON.stringify(pendingMessage));
+    }
+    
+    // Navigate to chatbot session
+    router.push(`/chatbot/${sessionId}`);
+    onClose();
+  };
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
 
+      const allItems = showAIMode 
+        ? aiCommands 
+        : searchResults.length > 0 
+          ? searchResults 
+          : filteredCommands;
+
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % filteredCommands.length);
+          setSelectedIndex(prev => (prev + 1) % allItems.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+          setSelectedIndex(prev => (prev - 1 + allItems.length) % allItems.length);
           break;
         case 'Enter':
           e.preventDefault();
-          if (filteredCommands[selectedIndex]) {
-            filteredCommands[selectedIndex].action();
+          if (showAIMode && selectedIndex === 0 && query.trim()) {
+            // First AI option is always "Ask AI"
+            navigateToChatbot();
+          } else if (allItems[selectedIndex]) {
+            allItems[selectedIndex].action();
           }
           break;
         case 'Escape':
@@ -64,60 +221,43 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, onClose]);
+  }, [isOpen, selectedIndex, onClose, searchResults, showAIMode, query]);
 
-  // Commands
-  const commands: Command[] = [
-    // AI-powered searches
+  // AI Commands when no search results
+  const aiCommands: Command[] = [
+    {
+      id: 'ask-ai',
+      title: `Ask AI: "${query}"`,
+      description: 'Get AI-powered answers about your organization',
+      icon: <Sparkles className="w-4 h-4" />,
+      action: () => navigateToChatbot(),
+      category: 'ai'
+    },
     {
       id: 'find-expert',
-      title: 'Find an expert',
-      description: 'Search for people with specific skills',
+      title: `Find experts in "${query}"`,
+      description: 'Discover people with this expertise',
       icon: <User className="w-4 h-4" />,
-      action: () => {
-        router.push(`/chatbot?q=Who knows ${query || 'about this topic'}?`);
-        onClose();
-      },
+      action: () => navigateToChatbot(`Who knows about ${query}?`),
       category: 'ai'
     },
     {
-      id: 'discover-similar',
-      title: 'Discover similar content',
-      description: 'Find related posts and discussions',
+      id: 'similar-work',
+      title: `Find similar work on "${query}"`,
+      description: 'Discover related projects and discussions',
       icon: <MessageSquare className="w-4 h-4" />,
-      action: () => {
-        router.push(`/chatbot?q=Show me content about ${query || 'recent topics'}`);
-        onClose();
-      },
+      action: () => navigateToChatbot(`Show me work related to ${query}`),
       category: 'ai'
-    },
-    {
-      id: 'trending',
-      title: "What's trending",
-      description: 'See what people are talking about',
-      icon: <Zap className="w-4 h-4" />,
-      action: () => {
-        router.push('/chatbot?q=What are the trending topics this week?');
-        onClose();
-      },
-      category: 'ai'
-    },
-    {
-      id: 'ai-chat',
-      title: 'Ask AI anything',
-      description: 'Get intelligent answers about your organization',
-      icon: <Sparkles className="w-4 h-4" />,
-      action: () => {
-        router.push(query ? `/chatbot?q=${encodeURIComponent(query)}` : '/chatbot');
-        onClose();
-      },
-      category: 'ai'
-    },
+    }
+  ];
+
+  // Default commands when no query
+  const commands: Command[] = [
     // Quick navigation
     {
       id: 'nav-home',
-      title: 'Go to Home',
-      icon: <ArrowRight className="w-4 h-4" />,
+      title: 'Home',
+      icon: <Home className="w-4 h-4" />,
       action: () => {
         router.push('/');
         onClose();
@@ -125,8 +265,18 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
       category: 'navigation'
     },
     {
+      id: 'nav-chatbot',
+      title: 'AI Chat',
+      icon: <MessageSquare className="w-4 h-4" />,
+      action: () => {
+        router.push('/chatbot');
+        onClose();
+      },
+      category: 'navigation'
+    },
+    {
       id: 'nav-profile',
-      title: 'View Profile',
+      title: 'Profile',
       icon: <User className="w-4 h-4" />,
       action: () => {
         router.push('/profile');
@@ -136,21 +286,40 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
     },
     {
       id: 'nav-projects',
-      title: 'Browse Projects',
-      icon: <Briefcase className="w-4 h-4" />,
+      title: 'Projects',
+      icon: <FolderOpen className="w-4 h-4" />,
       action: () => {
         router.push('/projects');
         onClose();
       },
       category: 'navigation'
     },
+    {
+      id: 'nav-notifications',
+      title: 'Notifications',
+      icon: <Bell className="w-4 h-4" />,
+      action: () => {
+        router.push('/notifications');
+        onClose();
+      },
+      category: 'navigation'
+    },
     // Quick actions
     {
-      id: 'create-post',
-      title: 'Create a post',
-      icon: <MessageSquare className="w-4 h-4" />,
+      id: 'trending',
+      title: "What's trending",
+      description: 'See what people are talking about',
+      icon: <Zap className="w-4 h-4" />,
+      action: () => navigateToChatbot("What are the trending topics this week?"),
+      category: 'quick'
+    },
+    {
+      id: 'recent-activity',
+      title: 'Recent activity',
+      description: 'See latest posts and updates',
+      icon: <Clock className="w-4 h-4" />,
       action: () => {
-        // You can emit an event here to open the create post modal
+        router.push('/');
         onClose();
       },
       category: 'quick'
@@ -163,20 +332,6 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
     const searchText = `${cmd.title} ${cmd.description || ''}`.toLowerCase();
     return searchText.includes(query.toLowerCase());
   });
-
-  // Group commands by category
-  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) acc[cmd.category] = [];
-    acc[cmd.category].push(cmd);
-    return acc;
-  }, {} as Record<string, Command[]>);
-
-  const categoryLabels = {
-    ai: 'AI Features',
-    search: 'Search',
-    navigation: 'Navigation',
-    quick: 'Quick Actions'
-  };
 
   // Voice search handler
   const startVoiceSearch = () => {
@@ -261,45 +416,157 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
             </div>
           </div>
 
-          {/* Commands List */}
+          {/* Results */}
           <div className="max-h-[400px] overflow-y-auto">
-            {Object.entries(groupedCommands).map(([category, cmds]) => (
-              <div key={category}>
-                <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
-                  {categoryLabels[category as keyof typeof categoryLabels]}
-                </div>
-                <div className="pb-2">
-                  {cmds.map((cmd, idx) => {
-                    const globalIndex = filteredCommands.indexOf(cmd);
-                    return (
-                      <button
-                        key={cmd.id}
-                        onClick={cmd.action}
-                        onMouseEnter={() => setSelectedIndex(globalIndex)}
-                        className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
-                          selectedIndex === globalIndex 
-                            ? 'bg-primary/10 text-primary' 
-                            : 'hover:bg-surface-container-muted text-onsurface-primary'
-                        }`}
-                      >
-                        <div className={`${selectedIndex === globalIndex ? 'text-primary' : 'text-onsurface-secondary'}`}>
-                          {cmd.icon}
-                        </div>
-                        <div className="flex-1 text-left">
-                          <div className="font-medium">{cmd.title}</div>
-                          {cmd.description && (
-                            <div className="text-sm text-onsurface-secondary">{cmd.description}</div>
-                          )}
-                        </div>
-                        {selectedIndex === globalIndex && (
-                          <div className="text-xs text-onsurface-secondary">Enter</div>
-                        )}
-                      </button>
-                    );
-                  })}
+            {isSearching ? (
+              <div className="px-4 py-8 text-center">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-surface-container-muted rounded w-32 mx-auto mb-2"></div>
+                  <div className="h-3 bg-surface-container-muted rounded w-24 mx-auto"></div>
                 </div>
               </div>
-            ))}
+            ) : (
+              <>
+                {/* Search Results */}
+                {searchResults.length > 0 && (
+                  <div>
+                    <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
+                      Search Results
+                    </div>
+                    <div className="pb-2">
+                      {searchResults.map((result, idx) => (
+                        <button
+                          key={result.id}
+                          onClick={result.action}
+                          onMouseEnter={() => setSelectedIndex(idx)}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                            selectedIndex === idx 
+                              ? 'bg-primary/10 text-primary' 
+                              : 'hover:bg-surface-container-muted text-onsurface-primary'
+                          }`}
+                        >
+                          <div className={`${selectedIndex === idx ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                            {result.icon}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="font-medium">{result.title}</div>
+                            {result.subtitle && (
+                              <div className="text-sm text-onsurface-secondary">{result.subtitle}</div>
+                            )}
+                          </div>
+                          {selectedIndex === idx && (
+                            <div className="text-xs text-onsurface-secondary">Enter</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Mode - When no search results */}
+                {showAIMode && (
+                  <div>
+                    <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
+                      AI Suggestions
+                    </div>
+                    <div className="pb-2">
+                      {aiCommands.map((cmd, idx) => (
+                        <button
+                          key={cmd.id}
+                          onClick={cmd.action}
+                          onMouseEnter={() => setSelectedIndex(idx)}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                            selectedIndex === idx 
+                              ? 'bg-primary/10 text-primary' 
+                              : 'hover:bg-surface-container-muted text-onsurface-primary'
+                          }`}
+                        >
+                          <div className={`${selectedIndex === idx ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                            {cmd.icon}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="font-medium">{cmd.title}</div>
+                            {cmd.description && (
+                              <div className="text-sm text-onsurface-secondary">{cmd.description}</div>
+                            )}
+                          </div>
+                          {selectedIndex === idx && (
+                            <div className="text-xs text-onsurface-secondary">Enter</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Default Commands - When no query */}
+                {!query && !showAIMode && (
+                  <>
+                    <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
+                      Quick Access
+                    </div>
+                    <div className="pb-2">
+                      {filteredCommands.filter(cmd => cmd.category === 'navigation').map((cmd, idx) => (
+                        <button
+                          key={cmd.id}
+                          onClick={cmd.action}
+                          onMouseEnter={() => setSelectedIndex(idx)}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                            selectedIndex === idx 
+                              ? 'bg-primary/10 text-primary' 
+                              : 'hover:bg-surface-container-muted text-onsurface-primary'
+                          }`}
+                        >
+                          <div className={`${selectedIndex === idx ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                            {cmd.icon}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="font-medium">{cmd.title}</div>
+                          </div>
+                          {selectedIndex === idx && (
+                            <div className="text-xs text-onsurface-secondary">Enter</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="px-4 py-2 text-xs font-medium text-onsurface-secondary uppercase tracking-wider">
+                      Actions
+                    </div>
+                    <div className="pb-2">
+                      {filteredCommands.filter(cmd => cmd.category === 'quick').map((cmd, idx) => {
+                        const actualIndex = filteredCommands.indexOf(cmd);
+                        return (
+                          <button
+                            key={cmd.id}
+                            onClick={cmd.action}
+                            onMouseEnter={() => setSelectedIndex(actualIndex)}
+                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors ${
+                              selectedIndex === actualIndex 
+                                ? 'bg-primary/10 text-primary' 
+                                : 'hover:bg-surface-container-muted text-onsurface-primary'
+                            }`}
+                          >
+                            <div className={`${selectedIndex === actualIndex ? 'text-primary' : 'text-onsurface-secondary'}`}>
+                              {cmd.icon}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <div className="font-medium">{cmd.title}</div>
+                              {cmd.description && (
+                                <div className="text-sm text-onsurface-secondary">{cmd.description}</div>
+                              )}
+                            </div>
+                            {selectedIndex === actualIndex && (
+                              <div className="text-xs text-onsurface-secondary">Enter</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* Footer */}
@@ -319,8 +586,22 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              AI Powered
+              {showAIMode ? (
+                <>
+                  <Sparkles className="w-3 h-3" />
+                  AI Mode
+                </>
+              ) : searchResults.length > 0 ? (
+                <>
+                  <Search className="w-3 h-3" />
+                  {searchResults.length} results
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3" />
+                  Type to search
+                </>
+              )}
             </div>
           </div>
         </motion.div>

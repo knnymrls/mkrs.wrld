@@ -58,15 +58,10 @@ export default function ChatbotPage() {
         <div className="min-h-screen bg-background overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 md:px-9 md:py-12">
             <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
                 <div className="w-full max-w-4xl">
-                    <div className="text-center mb-8 md:mb-12">
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium text-onsurface-primary mb-4">
-                            Who can I help you find?
-                        </h1>
-                        <p className="text-lg sm:text-xl text-onsurface-secondary max-w-2xl mx-auto">
-                            Ask about people, projects, or expertise within your organization. Use @ to mention specific people or projects.
-                        </p>
-                    </div>
-                    
+                    <h1 className="text-4xl text-center sm:text-2xl md:text-3xl font-medium text-onsurface-primary mb-8">
+                        Who can I help you find?
+                    </h1>
+
                     <div className="mb-8">
                         <ChatInput
                             value={input}
@@ -79,15 +74,13 @@ export default function ChatbotPage() {
                             rows={3}
                         />
                     </div>
-                    
+
                     {/* Example prompts */}
                     <div className="text-center mb-8">
-                        <p className="text-sm text-onsurface-secondary mb-4">Try asking:</p>
                         <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                             {[
                                 "Who knows React?",
                                 "Find someone with design experience",
-                                "Who's working on @ProjectX?",
                                 "Recent activity from the ML team"
                             ].map((prompt, index) => (
                                 <button
@@ -100,7 +93,7 @@ export default function ChatbotPage() {
                             ))}
                         </div>
                     </div>
-                    
+
                     <div className="mt-12">
                         <ChatHistory />
                     </div>
