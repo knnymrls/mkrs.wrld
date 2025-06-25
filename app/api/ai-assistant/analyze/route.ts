@@ -89,7 +89,7 @@ async function performGraphTraversal(
       // Get people who work on the same projects
       let collaborators: any[] = [];
       if (contributions && contributions.length > 0) {
-        const projectIds = contributions.map(c => c.project.id);
+        const projectIds = contributions.map((c: any) => c.project.id);
         const { data: projectCollaborators } = await supabase
           .from('contributions')
           .select(`
@@ -117,12 +117,12 @@ async function performGraphTraversal(
       
       // Process and deduplicate collaborators
       const allCollaborators = [
-        ...collaborators.map(c => ({ ...c.person, source: 'project' })),
-        ...(mentionedByThem?.flatMap(p => p.post_mentions?.map((m: any) => ({ ...m.profile, source: 'mention' })) || []) || [])
+        ...collaborators.map((c: any) => ({ ...c.person, source: 'project' })),
+        ...(mentionedByThem?.flatMap((p: any) => p.post_mentions?.map((m: any) => ({ ...m.profile, source: 'mention' })) || []) || [])
       ];
       
       insights.connections = {
-        projects: contributions?.map(c => c.project).filter(p => p) || [],
+        projects: contributions?.map((c: any) => c.project).filter((p: any) => p) || [],
         frequentCollaborators: deduplicatePeople(allCollaborators)
       };
       
@@ -533,7 +533,7 @@ export async function POST(req: NextRequest) {
         'paused': 'Temporarily on hold',
         'complete': 'Successfully delivered'
       };
-      summaryParts.push(statusContext[status] || 'In progress');
+      summaryParts.push(statusContext[status as keyof typeof statusContext] || 'In progress');
       
       const summary = summaryParts.join('. ') + '.';
       

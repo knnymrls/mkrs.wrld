@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         results.push({
           test: test.name,
           success: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Test failed', 
-        message: error.message,
+        message: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
       },
       { status: 500 }

@@ -16,7 +16,7 @@ interface ContextDetectorProps {
 
 export default function ContextDetector({ onContextChange, isActive }: ContextDetectorProps) {
   const lastContextRef = useRef<HoverContext>({ type: null, id: null, content: null });
-  const hoverTimeoutRef = useRef<NodeJS.Timeout>();
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const extractContext = useCallback((element: Element): HoverContext | null => {
     // Check if hovering over a mention link (MentionLink or MentionLinkSimple)

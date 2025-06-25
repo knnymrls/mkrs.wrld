@@ -56,7 +56,7 @@ async function callAPI(context: any, userId?: string) {
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

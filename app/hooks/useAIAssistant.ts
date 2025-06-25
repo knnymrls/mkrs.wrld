@@ -18,7 +18,7 @@ export function useAIAssistant({ enabled = true, userId }: UseAIAssistantOptions
   const [showSuggestions, setShowSuggestions] = useState(false);
   
   const analysisCache = useRef<Map<string, Suggestion[]>>(new Map());
-  const analysisTimeoutRef = useRef<NodeJS.Timeout>();
+  const analysisTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Handle context changes from the detector
   const handleContextChange = useCallback(async (context: HoverContext) => {
@@ -123,20 +123,12 @@ export function useAIAssistant({ enabled = true, userId }: UseAIAssistantOptions
           type: 'similarity',
           title: 'Similar discussions',
           description: '3 related posts about this topic in the past week',
-          action: {
-            label: 'View related',
-            href: `/search?q=${encodeURIComponent(context.content || '')}`,
-          },
         },
         {
           id: '2',
           type: 'connection',
           title: 'Connect with experts',
           description: 'Sarah Chen and Mike Johnson have expertise in this area',
-          action: {
-            label: 'View profiles',
-            onClick: () => console.log('View experts'),
-          },
         },
       ];
     } else if (context.type === 'profile') {
@@ -146,20 +138,12 @@ export function useAIAssistant({ enabled = true, userId }: UseAIAssistantOptions
           type: 'insight',
           title: 'Recent activity',
           description: 'Active in Machine Learning and React discussions',
-          action: {
-            label: 'View posts',
-            href: `/profile/${context.id}`,
-          },
         },
         {
           id: '2',
           type: 'connection',
           title: 'Common connections',
           description: 'You both know 5 people',
-          action: {
-            label: 'See connections',
-            onClick: () => console.log('View connections'),
-          },
         },
       ];
     } else if (context.type === 'project') {
@@ -169,20 +153,12 @@ export function useAIAssistant({ enabled = true, userId }: UseAIAssistantOptions
           type: 'trend',
           title: 'Project momentum',
           description: 'Activity increased 40% this week',
-          action: {
-            label: 'View analytics',
-            href: `/projects/${context.id}`,
-          },
         },
         {
           id: '2',
           type: 'connection',
           title: 'Contributors',
           description: '8 people are actively contributing',
-          action: {
-            label: 'View team',
-            href: `/projects/${context.id}#contributors`,
-          },
         },
       ];
     }

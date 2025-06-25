@@ -39,7 +39,7 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showAIMode, setShowAIMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const router = useRouter();
   const { user } = useAuth();
 
@@ -88,7 +88,7 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
           // Search recent posts
           supabase
             .from('posts')
-            .select('id, content, created_at, author:profiles(name)')
+            .select('id, content, created_at, author:profiles!posts_author_id_fkey(name)')
             .ilike('content', `%${query}%`)
             .order('created_at', { ascending: false })
             .limit(3)
@@ -136,7 +136,7 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
             results.push({
               id: post.id,
               title: post.content.substring(0, 60) + '...',
-              subtitle: `by ${post.author?.name || 'Unknown'}`,
+              subtitle: `by ${(post as any).author?.name || 'Unknown'}`,
               type: 'post',
               icon: <MessageSquare className="w-4 h-4" />,
               action: () => {
