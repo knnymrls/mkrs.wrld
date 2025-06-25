@@ -113,6 +113,7 @@ const PostCard = React.memo(function PostCard({
       <div
         className="bg-surface-container rounded-xl sm:rounded-2xl border-[1px] border-border hover:scale-[1.02] sm:hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-3 sm:mb-4 touch-manipulation"
         onClick={() => onPostClick(post)}
+        data-post-id={post.id}
       >
         <div className="p-3 sm:p-4 flex flex-col gap-3">
           <div className="flex flex-col items-center gap-2">
@@ -147,7 +148,7 @@ const PostCard = React.memo(function PostCard({
                 className="text-xs sm:text-sm font-sans text-onsurface-secondary"
               />
 
-              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap">
+              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap" data-post-content>
                 {renderedContent}
               </div>
             </div>

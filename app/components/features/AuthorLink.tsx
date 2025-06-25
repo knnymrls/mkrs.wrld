@@ -25,6 +25,7 @@ export default function AuthorLink({ authorId, authorName, className = '', onCli
     <h3
       className={`cursor-pointer w-fit hover:text-text-primary hover:underline transition-all ${className}`}
       onClick={handleClick}
+      data-profile-id={authorId}
     >
       {authorName}
     </h3>

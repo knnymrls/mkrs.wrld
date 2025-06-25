@@ -25,6 +25,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "framer-motion": "^12.19.1",
     "lucide-react": "^0.517.0",
     "next": "15.3.3",
     "openai": "^5.0.1",

@@ -7,6 +7,7 @@ import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';
 import ActivityGrid, { ActivityItem } from '../components/features/ActivityGrid';
 import ActivityFeedHeader from './components/ActivityFeedHeader';
+import AIAssistant from '../components/features/AIAssistant';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useActivityFeed } from './hooks/useActivityFeed';
 import { useRealtimeActivity } from './hooks/useRealtimeActivity';
@@ -168,6 +169,9 @@ function HomeContent() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* AI Assistant - Floating orb with context-aware suggestions */}
+      <AIAssistant enabled={!!user} />
+      
       <div className="px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12 mx-auto w-full">
         <ActivityFeedHeader
           userId={user?.id || null}
