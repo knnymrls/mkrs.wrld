@@ -58,7 +58,7 @@ export default function ChatbotPage() {
         <div className="min-h-screen bg-background overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 md:px-9 md:py-12">
             <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
                 <div className="w-full max-w-4xl">
-                    <h1 className="text-4xl text-center sm:text-2xl md:text-3xl font-medium text-onsurface-primary mb-8">
+                    <h1 className="text-4xl text-center sm:text-2xl mt-12 md:text-3xl font-medium text-onsurface-primary mb-8">
                         Who can I help you find?
                     </h1>
 
