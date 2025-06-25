@@ -5,12 +5,19 @@ We've implemented an AI-powered command palette and context-aware suggestion sys
 
 ## Key Features
 
-### 1. **AI Command Palette**
+### 1. **Smart Command Palette**
 - Quick access via navbar button or Cmd/Ctrl+K shortcut
-- Spotlight-style interface with real-time search
+- **Search-First Design**:
+  - Real-time search across people, projects, and posts
+  - Instant results as you type (300ms debounce)
+  - Shows up to 3 results per category
+- **Intelligent AI Mode**:
+  - Automatically activates when no search results found
+  - Provides contextual AI suggestions based on query
+  - Direct integration with chatbot - takes you straight to conversation
+- **Seamless Flow**: Search → AI suggestions → Quick navigation
 - Keyboard navigation (arrow keys + Enter)
-- Categorized commands: AI features, navigation, quick actions
-- Clean, centered modal design
+- Voice search button for hands-free queries
 
 ### 2. **Context-Aware Intelligence**
 - Detects when hovering over:
@@ -74,10 +81,10 @@ app/components/layout/
 
 ### For Users
 1. Press Cmd/Ctrl+K or click the sparkles icon in navbar
-2. Type to search or browse available commands
-3. Use arrow keys to navigate, Enter to select
-4. Hover over posts, profiles, or projects to see AI insights
-5. Use voice search button for hands-free queries
+2. Start typing to search for people, projects, or posts
+3. If no results found, AI suggestions appear automatically
+4. Press Enter to select or ask AI your question
+5. Hover over posts, profiles, or projects to see AI insights (on homepage)
 
 ### For Developers
 To add AI Assistant support to new components:
