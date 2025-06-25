@@ -1,15 +1,16 @@
-# AI Assistant Widget Implementation
+# AI Assistant Implementation
 
 ## Overview
-We've implemented an interactive AI Assistant widget that provides context-aware suggestions as users navigate the Nural platform. The assistant appears as a floating orb that follows the cursor and provides intelligent insights based on what the user is hovering over.
+We've implemented an AI-powered command palette and context-aware suggestion system for the Nural platform. The AI Assistant is accessible via a navbar button or keyboard shortcut (Cmd/Ctrl+K) and provides intelligent search, navigation, and discovery features.
 
 ## Key Features
 
-### 1. **Floating AI Orb**
-- Smooth cursor-following animation using Framer Motion
-- Glowing effects with particle animations
-- Expandable interface on click
-- Green gradient design matching Nural's brand
+### 1. **AI Command Palette**
+- Quick access via navbar button or Cmd/Ctrl+K shortcut
+- Spotlight-style interface with real-time search
+- Keyboard navigation (arrow keys + Enter)
+- Categorized commands: AI features, navigation, quick actions
+- Clean, centered modal design
 
 ### 2. **Context-Aware Intelligence**
 - Detects when hovering over:
@@ -34,23 +35,26 @@ We've implemented an interactive AI Assistant widget that provides context-aware
 - Action buttons for quick navigation
 
 ### 5. **User Experience**
-- Onboarding tooltip for first-time users
-- Rotating tips about features
-- Settings button for customization
-- Quick access to chat interface
-- Responsive design with proper overflow handling
+- Always accessible via navbar (sparkles icon)
+- Keyboard shortcut (Cmd/Ctrl+K) works globally
+- Search-as-you-type with instant filtering
+- Clear categorization of commands
+- Voice search button for hands-free queries
+- Responsive design with keyboard hints
 
 ## Technical Implementation
 
 ### Components Structure
 ```
 app/components/features/AIAssistant/
-├── index.tsx              # Main coordinator component
-├── AIAssistantOrb.tsx     # Floating orb with animations
+├── AICommandPalette.tsx   # Main command palette interface
+├── ContextTooltip.tsx     # Lightweight context tooltip coordinator
 ├── ContextDetector.tsx    # Hover detection logic
 ├── SuggestionBubble.tsx   # Tooltip for suggestions
-├── VoiceInterface.tsx     # Voice search modal
-└── OnboardingTooltip.tsx  # First-time user guide
+└── VoiceInterface.tsx     # Voice search modal (legacy)
+
+app/components/layout/
+└── Navbar.tsx             # Contains AI button and keyboard handler
 ```
 
 ### Data Flow
@@ -69,10 +73,11 @@ app/components/features/AIAssistant/
 ## Usage
 
 ### For Users
-1. The AI orb automatically appears and follows your cursor
-2. Hover over any post, profile, or project to see insights
-3. Click the orb to access voice search or chat
-4. Say "Hey Nural, [your question]" for hands-free search
+1. Press Cmd/Ctrl+K or click the sparkles icon in navbar
+2. Type to search or browse available commands
+3. Use arrow keys to navigate, Enter to select
+4. Hover over posts, profiles, or projects to see AI insights
+5. Use voice search button for hands-free queries
 
 ### For Developers
 To add AI Assistant support to new components:
@@ -94,10 +99,17 @@ if (newTypeElement) {
 
 ## Configuration
 
-### Disable for Specific Pages
-Pass `enabled={false}` to the AIAssistant component:
+### Adding New Commands
+Add commands to the `commands` array in AICommandPalette.tsx:
 ```tsx
-<AIAssistant enabled={!isAuthPage} />
+{
+  id: 'unique-id',
+  title: 'Command Title',
+  description: 'Optional description',
+  icon: <Icon />,
+  action: () => { /* handler */ },
+  category: 'ai' | 'navigation' | 'quick'
+}
 ```
 
 ### Customize Suggestions
