@@ -16,7 +16,7 @@ export default function OnboardingTooltip({ isVisible, onDismiss, position }: On
   const tips = [
     {
       title: "Meet your AI Assistant",
-      description: "I'll follow your cursor and provide intelligent suggestions as you browse.",
+      description: "Click me to get started! I'll follow your cursor and provide intelligent suggestions as you browse.",
       icon: <Sparkles className="w-5 h-5" />
     },
     {

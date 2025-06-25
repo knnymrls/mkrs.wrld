@@ -12,6 +12,8 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
   const [isExpanded, setIsExpanded] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasStartedFollowing, setHasStartedFollowing] = useState(false);
   const orbRef = useRef<HTMLDivElement>(null);
   
   // Motion values for smooth cursor tracking
@@ -23,10 +25,29 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
   const orbX = useSpring(mouseX, springConfig);
   const orbY = useSpring(mouseY, springConfig);
 
+  // Start following cursor after a delay
   useEffect(() => {
-    if (!isActive) return;
+    if (isActive && !hasStartedFollowing) {
+      const timer = setTimeout(() => {
+        setHasStartedFollowing(true);
+        // Set initial position to bottom right corner
+        const currentX = window.innerWidth - 80;
+        const currentY = window.innerHeight - 80;
+        mouseX.set(currentX);
+        mouseY.set(currentY);
+      }, 1000); // Wait 1 second before starting to follow
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, hasStartedFollowing, mouseX, mouseY]);
+
+  useEffect(() => {
+    if (!isActive || !hasStartedFollowing) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      // Don't follow cursor if orb is hovered or expanded
+      if (isHovered || isExpanded) return;
+      
       const { clientX, clientY } = e;
       
       // Offset the orb position to follow cursor with some distance
@@ -43,7 +64,7 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [isActive, mouseX, mouseY]);
+  }, [isActive, hasStartedFollowing, isHovered, isExpanded, mouseX, mouseY]);
 
   const handleOrbClick = () => {
     setIsExpanded(!isExpanded);
@@ -57,6 +78,19 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
   const handleVoiceClose = () => {
     setShowVoiceInterface(false);
   };
+
+  // Keyboard shortcut to toggle expansion (Cmd/Ctrl + K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsExpanded(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   if (!isActive) return null;
 
@@ -77,14 +111,35 @@ export default function AIAssistantOrb({ isActive = true }: AIAssistantOrbProps)
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={handleOrbClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Glowing effect layers */}
         <div 
-          className="absolute inset-[-20px] rounded-full blur-xl animate-pulse"
+          className={`absolute inset-[-20px] rounded-full blur-xl ${isHovered || !hasStartedFollowing ? 'animate-pulse' : ''}`}
           style={{
             background: 'radial-gradient(circle at center, rgba(140, 179, 50, 0.4) 0%, rgba(140, 179, 50, 0.2) 40%, transparent 70%)'
           }}
         />
+        
+        {/* Extra glow when stationary to draw attention */}
+        {!hasStartedFollowing && (
+          <motion.div 
+            className="absolute inset-[-30px] rounded-full"
+            style={{
+              background: 'radial-gradient(circle at center, rgba(140, 179, 50, 0.3) 0%, transparent 60%)'
+            }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.5, 0.8, 0.5],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+        )}
         
         <div className="relative w-full h-full rounded-full bg-gradient-to-br from-primary to-primary-hover shadow-lg shadow-primary/50 overflow-hidden">
           {/* Inner gradient */}
