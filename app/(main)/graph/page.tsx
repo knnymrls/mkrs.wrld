@@ -757,10 +757,10 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    // Better visibility for lines - always 100% opacity
+                                    // Lines - 100% for related, 5% for others
                                     ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
                                     ctx.lineWidth = 1;
-                                    ctx.globalAlpha = 1;
+                                    ctx.globalAlpha = isRelated ? 1 : 0.05;
                                     
                                     // Calculate arrow direction
                                     const dx = target.x - source.x;
