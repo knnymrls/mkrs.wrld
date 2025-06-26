@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Mic, X, Sparkles, ArrowRight, User, Briefcase, MessageSquare, Zap, Clock, Home, FolderOpen, Bell, PlusCircle } from 'lucide-react';
+import { Search, Mic, X, Sparkles, ArrowRight, User, Briefcase, MessageSquare, Zap, Clock, Home, FolderOpen, Bell, PlusCircle, MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import FeedbackModal from '@/app/components/features/FeedbackModal';
 
 interface AICommandPaletteProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showAIMode, setShowAIMode] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const router = useRouter();
@@ -311,6 +313,16 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
       action: () => {
         router.push('/');
         onClose();
+      },
+      category: 'quick'
+    },
+    {
+      id: 'send-feedback',
+      title: 'Send feedback',
+      description: 'Report bugs or suggest improvements',
+      icon: <MessageCircle className="w-4 h-4" />,
+      action: () => {
+        setShowFeedback(true);
       },
       category: 'quick'
     }
@@ -701,6 +713,12 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
           </div>
         </motion.div>
       </motion.div>
+      
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+      />
     </AnimatePresence>
   );
 }
