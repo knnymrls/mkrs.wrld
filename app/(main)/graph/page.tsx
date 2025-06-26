@@ -374,9 +374,9 @@ export default function GraphPage() {
 
 
     return (
-        <div className="relative w-full h-screen bg-gray-900 overflow-hidden">
+        <div className="relative w-full h-screen bg-background overflow-hidden">
             {/* Clean Header */}
-            <div className="absolute top-0 left-0 right-0 z-30 bg-gray-900 border-b border-gray-800">
+            <div className="absolute top-0 left-0 right-0 z-30 bg-background border-b border-border">
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -625,7 +625,7 @@ export default function GraphPage() {
                                 graphData={filteredData}
                                 width={dimensions.width}
                                 height={dimensions.height - 73}
-                                backgroundColor="#111827"
+                                backgroundColor="transparent"
                                 nodeLabel={() => ''}
                                 nodeRelSize={0}
                                 nodeVal={() => 0}
@@ -675,8 +675,8 @@ export default function GraphPage() {
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
                                     const size = baseSize + Math.sqrt(connections) * 0.8;
                                     
-                                    // Opacity for non-related nodes - very subtle
-                                    ctx.globalAlpha = isRelated ? 1 : 0.3;
+                                    // Opacity for non-related nodes - 5% when not hovering
+                                    ctx.globalAlpha = isRelated ? 1 : 0.05;
                                     
                                     // Skip rendering if node position is not initialized
                                     if (!isFinite(node.x!) || !isFinite(node.y!)) return;
@@ -730,8 +730,8 @@ export default function GraphPage() {
                                     // Draw labels only when zoomed in - Obsidian style
                                     if ((node.type === 'profile' || node.type === 'project') && 
                                         isFinite(node.x!) && isFinite(node.y!) && globalScale < 0.7) {
-                                        // Only show labels when zoomed in enough
-                                        ctx.globalAlpha = isRelated ? Math.min((0.7 - globalScale) * 2, 1) : 0.1;
+                                        // Only show labels when zoomed in enough - 5% opacity for non-related
+                                        ctx.globalAlpha = isRelated ? Math.min((0.7 - globalScale) * 2, 1) : 0.05;
                                         const label = node.label && node.label.length > 30 ? node.label.slice(0, 30) + '...' : node.label;
                                         
                                         // Simple text, no badge
@@ -757,10 +757,10 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    // Better visibility for lines
+                                    // Better visibility for lines - always 100% opacity
                                     ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
                                     ctx.lineWidth = 1;
-                                    ctx.globalAlpha = isRelated ? 0.6 : 0.2;
+                                    ctx.globalAlpha = 1;
                                     
                                     // Calculate arrow direction
                                     const dx = target.x - source.x;
