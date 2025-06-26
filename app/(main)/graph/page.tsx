@@ -83,10 +83,10 @@ export default function GraphPage() {
     });
     const [currentMode, setCurrentMode] = useState<GraphMode>('network');
     
-    // New visibility controls - show only people to reduce clutter initially
+    // New visibility controls - show everything from the start
     const [showPeople, setShowPeople] = useState(true);
-    const [showProjects, setShowProjects] = useState(false);
-    const [showPosts, setShowPosts] = useState(false);
+    const [showProjects, setShowProjects] = useState(true);
+    const [showPosts, setShowPosts] = useState(true);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
 
     // Update dimensions on window resize
@@ -741,20 +741,14 @@ export default function GraphPage() {
                                         isFinite(node.x!) && isFinite(node.y!)) {
                                         ctx.globalAlpha = isRelated ? 1 : 0.5;
                                         const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
-                                        const fontSize = node.type === 'profile' ? 14 : 12;
+                                        const fontSize = node.type === 'profile' ? 11 : 10; // Smaller font sizes
                                         ctx.font = `${fontSize}px Inter, sans-serif`;
                                         
-                                        // Semi-transparent background for all labels
-                                        const textWidth = ctx.measureText(label as string).width;
                                         const padding = 4;
-                                        const bgHeight = fontSize + padding * 2;
                                         const bgY = node.y! + size + 4;
                                         
-                                        // Skip background for cleaner look
-                                        
-                                        // Text color based on node type
-                                        ctx.fillStyle = node.type === 'profile' ? '#1F2937' : 
-                                                       node.type === 'project' ? '#F59E0B' : '#10B981';
+                                        // Use proper text color classes
+                                        ctx.fillStyle = '#6B7280'; // text-onsurface-secondary equivalent
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'top';
                                         ctx.fillText(label as string, node.x!, bgY + padding);
