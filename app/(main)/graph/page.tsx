@@ -83,10 +83,10 @@ export default function GraphPage() {
     });
     const [currentMode, setCurrentMode] = useState<GraphMode>('network');
     
-    // New visibility controls - show everything from the start
+    // New visibility controls - hide posts from the start
     const [showPeople, setShowPeople] = useState(true);
     const [showProjects, setShowProjects] = useState(true);
-    const [showPosts, setShowPosts] = useState(true);
+    const [showPosts, setShowPosts] = useState(false);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
 
     // Update dimensions on window resize
@@ -663,8 +663,8 @@ export default function GraphPage() {
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
                                     const size = baseSize + Math.sqrt(connections) * 2;
                                     
-                                    // Opacity for non-related nodes
-                                    ctx.globalAlpha = isRelated ? 1 : 0.2;
+                                    // Opacity for non-related nodes - 10% when hovering
+                                    ctx.globalAlpha = isRelated ? 1 : 0.1;
                                     
                                     // Draw profile nodes with images
                                     if (node.type === 'profile' && (node as ProfileNode).avatar_url) {
@@ -739,9 +739,12 @@ export default function GraphPage() {
                                     // Draw label for all nodes with better styling
                                     if ((node.type === 'profile' || node.type === 'project' || (isHovered && node.type === 'post')) && 
                                         isFinite(node.x!) && isFinite(node.y!)) {
-                                        ctx.globalAlpha = isRelated ? 1 : 0.5;
+                                        ctx.globalAlpha = isRelated ? 1 : 0.1; // 10% opacity for non-related labels
                                         const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
-                                        const fontSize = node.type === 'profile' ? 11 : 10; // Smaller font sizes
+                                        
+                                        // Scale font size based on zoom level
+                                        const baseFontSize = node.type === 'profile' ? 11 : 10;
+                                        const fontSize = Math.max(baseFontSize / globalScale, 8); // Min 8px, scales with zoom
                                         ctx.font = `${fontSize}px Inter, sans-serif`;
                                         
                                         const padding = 4;
@@ -796,7 +799,7 @@ export default function GraphPage() {
                                     
                                     ctx.strokeStyle = linkColor;
                                     ctx.lineWidth = lineWidth;
-                                    ctx.globalAlpha = isRelated ? 0.5 : 0.05;
+                                    ctx.globalAlpha = isRelated ? 0.5 : 0.02; // Even more subtle for non-related links
                                     
                                     if (dashPattern.length > 0) {
                                         ctx.setLineDash(dashPattern);
