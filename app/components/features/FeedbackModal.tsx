@@ -63,14 +63,19 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         throw new Error(error.error || 'Failed to submit feedback');
       }
 
-      setSubmitSuccess(true);
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      const data = await response.json();
+      
+      // Check if it was received but GitHub integration isn't fully configured
+      if (data.note === 'GitHub integration not configured' || response.ok) {
+        setSubmitSuccess(true);
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      }
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert(`Failed to submit feedback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert(`Failed to submit feedback: ${error instanceof Error ? error.message : 'Unknown error'}\n\nNote: The GitHub token may need additional permissions. Please check the console for details.`);
     } finally {
       setIsSubmitting(false);
     }

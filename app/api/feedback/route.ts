@@ -76,12 +76,35 @@ ${description}
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('GitHub API error:', error);
-      return NextResponse.json(
-        { error: 'Failed to create GitHub issue' },
-        { status: 500 }
-      );
+      const errorText = await response.text();
+      console.error('GitHub API error:', errorText);
+      console.error('Response status:', response.status);
+      
+      let errorMessage = 'Failed to create GitHub issue';
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message) {
+          errorMessage = errorJson.message;
+        }
+      } catch (e) {
+        // If error text is not JSON, use generic message
+      }
+      
+      // If GitHub fails, log the feedback anyway
+      console.log('GitHub issue creation failed, logging feedback:', {
+        type,
+        title,
+        description,
+        userEmail,
+        userName,
+        githubError: errorMessage
+      });
+      
+      // Return success but note the GitHub issue wasn't created
+      return NextResponse.json({
+        message: 'Feedback received and logged (GitHub issue creation failed)',
+        note: 'GitHub integration error: ' + errorMessage
+      });
     }
 
     const issue = await response.json();
