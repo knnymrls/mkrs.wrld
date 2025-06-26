@@ -4,8 +4,10 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { Search, ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Activity, TrendingUp, Network } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import GraphModeSelector, { GraphMode } from '@/app/components/features/graph/GraphModeSelector';
+import SkillRadarVisualization from '@/app/components/features/graph/SkillRadarVisualization';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -81,6 +83,7 @@ export default function GraphPage() {
         avgConnections: 0,
         mostConnected: null as GraphNode | null
     });
+    const [currentMode, setCurrentMode] = useState<GraphMode>('network');
 
     // Update dimensions on window resize
     useEffect(() => {
@@ -408,111 +411,68 @@ export default function GraphPage() {
         }
     };
 
-    return (
-        <div className="relative w-full h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
-            {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-30 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Knowledge Graph</h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Network size={16} />
-                            <span>{graphStats.totalNodes} nodes</span>
-                            <span className="text-gray-400">•</span>
-                            <span>{graphStats.totalEdges} connections</span>
-                        </div>
-                    </div>
-                    
-                    {/* Search Bar */}
-                    <div className="relative flex-1 max-w-md mx-6" ref={searchInputRef}>
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
-                            onKeyDown={handleSearchKeyDown}
-                            onFocus={() => searchQuery && setShowSearchDropdown(searchResults.length > 0)}
-                            placeholder="Search people, projects, or posts..."
-                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                        />
-                        
-                        {/* Search Dropdown */}
-                        {showSearchDropdown && (
-                            <div className="absolute top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-80 overflow-y-auto">
-                                {searchResults.map((node, index) => (
-                                    <button
-                                        key={node.id}
-                                        onClick={() => selectSearchResult(node)}
-                                        onMouseEnter={() => setSelectedSearchIndex(index)}
-                                        className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
-                                            index === selectedSearchIndex
-                                                ? 'bg-blue-50 dark:bg-blue-900/30'
-                                                : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                                        }`}
-                                    >
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                            node.type === 'profile' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
-                                            node.type === 'project' ? 'bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400' :
-                                            'bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400'
-                                        }`}>
-                                            {node.type === 'profile' ? <Users size={16} /> :
-                                             node.type === 'project' ? <Briefcase size={16} /> : 
-                                             <MessageCircle size={16} />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-gray-900 dark:text-white truncate">
-                                                {node.label.length > 50 ? node.label.slice(0, 50) + '...' : node.label}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {node.type === 'profile' && (node as ProfileNode).title ? (node as ProfileNode).title :
-                                                 node.type === 'project' ? `${(node as ProjectNode).status || 'Active'} Project` :
-                                                 node.type === 'post' ? `by ${(node as PostNode).authorName}` : node.type}
-                                            </p>
-                                        </div>
-                                        <div className="text-xs text-gray-400">
-                                            {nodeConnectionCounts[node.id] || 0} connections
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Controls */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className={`p-2 rounded-lg transition-colors ${
-                                showFilters 
-                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' 
-                                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
-                            }`}
-                        >
-                            <Filter size={20} />
-                        </button>
+    return (
+        <div className="relative w-full h-screen bg-surface-bright overflow-hidden">
+            {/* Clean Header */}
+            <div className="absolute top-0 left-0 right-0 z-30 bg-surface-bright border-b border-border">
+                <div className="px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-xl font-semibold text-onsurface-primary">Knowledge Graph</h1>
+                            <GraphModeSelector 
+                                currentMode={currentMode}
+                                onModeChange={setCurrentMode}
+                            />
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`p-2 rounded-lg transition-colors ${
+                                    showFilters 
+                                        ? 'bg-primary/10 text-primary' 
+                                        : 'text-onsurface-secondary hover:bg-surface-container-muted'
+                                }`}
+                            >
+                                <Filter size={20} />
+                            </button>
+                            <button
+                                onClick={handleZoomReset}
+                                className="p-2 rounded-lg text-onsurface-secondary hover:bg-surface-container-muted transition-colors"
+                                title="Reset view"
+                            >
+                                <Maximize2 size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Legacy Search Bar - Hidden but kept for compatibility */}
+            <div className="hidden" ref={searchInputRef}></div>
 
             {/* Main Content */}
             <div className="relative w-full h-full pt-[73px]">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full">
-                        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-500 dark:text-gray-400">Loading knowledge graph...</p>
+                        <div className="animate-pulse">
+                            <div className="w-12 h-12 bg-surface-container-muted rounded-full mb-4"></div>
+                            <div className="h-2 bg-surface-container-muted rounded w-32"></div>
+                        </div>
                     </div>
                 ) : (
                     <>
                         {/* Filters Panel */}
                         {showFilters && (
-                            <div className="absolute top-4 left-4 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-64">
+                            <div className="absolute top-4 left-4 z-20 bg-surface-container rounded-xl shadow-lg p-4 w-64">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
+                                    <h3 className="font-medium text-onsurface-primary">Filters</h3>
                                     <button
                                         onClick={() => setShowFilters(false)}
-                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                        className="p-1 rounded hover:bg-surface-container-muted transition-colors"
                                     >
-                                        <X size={16} />
+                                        <X className="w-4 h-4 text-onsurface-secondary" />
                                     </button>
                                 </div>
                                 
@@ -569,53 +529,21 @@ export default function GraphPage() {
                             </div>
                         )}
 
-                        {/* Graph Stats */}
-                        <div className="absolute bottom-4 left-4 z-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-xs">
-                            <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                                <Activity size={16} />
-                                Graph Insights
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-600 dark:text-gray-400">Avg. connections</span>
-                                    <span className="font-medium text-gray-900 dark:text-white">{graphStats.avgConnections}</span>
-                                </div>
-                                {graphStats.mostConnected && (
-                                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                                        <p className="text-gray-600 dark:text-gray-400 mb-1">Most connected:</p>
-                                        <p className="font-medium text-gray-900 dark:text-white truncate">
-                                            {graphStats.mostConnected.label}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            {nodeConnectionCounts[graphStats.mostConnected.id]} connections
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
                         {/* Zoom Controls */}
-                        <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2">
+                        <div className="absolute bottom-4 right-4 z-20 flex gap-2">
                             <button
                                 onClick={handleZoomIn}
-                                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                className="p-2 bg-surface-container rounded-lg hover:bg-surface-container-hover transition-colors"
                                 title="Zoom In"
                             >
-                                <ZoomIn size={20} />
+                                <ZoomIn className="w-5 h-5 text-onsurface-secondary" />
                             </button>
                             <button
                                 onClick={handleZoomOut}
-                                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                className="p-2 bg-surface-container rounded-lg hover:bg-surface-container-hover transition-colors"
                                 title="Zoom Out"
                             >
-                                <ZoomOut size={20} />
-                            </button>
-                            <button
-                                onClick={handleZoomReset}
-                                className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                title="Reset View"
-                            >
-                                <Maximize2 size={20} />
+                                <ZoomOut className="w-5 h-5 text-onsurface-secondary" />
                             </button>
                         </div>
 
@@ -626,7 +554,7 @@ export default function GraphPage() {
                             if (!nodeData) return null;
                             
                             return (
-                                <div className={`absolute top-20 right-4 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-80 max-h-[calc(100vh-200px)] overflow-y-auto ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                                <div className={`absolute top-20 right-4 z-20 bg-surface-container rounded-xl shadow-lg p-4 w-72 ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="flex items-center gap-3 flex-1">
                                             {nodeData.type === 'profile' && (nodeData as ProfileNode).avatar_url ? (
@@ -759,9 +687,18 @@ export default function GraphPage() {
                             );
                         })()}
 
-                        {/* Graph Canvas */}
-                        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-                            <ForceGraph2D
+                        {/* Graph Canvas - Mode-specific rendering */}
+                        <div className="w-full h-full">
+                            {currentMode === 'skill-radar' ? (
+                                <SkillRadarVisualization
+                                    graphData={graphData}
+                                    dimensions={dimensions}
+                                    onNodeClick={handleNodeClick}
+                                    onNodeHover={(node: any) => setHoveredNode(node?.id || null)}
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-surface-bright">
+                                    <ForceGraph2D
                                 ref={graphRef}
                                 graphData={filteredData}
                                 width={dimensions.width}
@@ -946,10 +883,13 @@ export default function GraphPage() {
                                 warmupTicks={100}
                                 onEngineStop={() => {}}
                             />
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
             </div>
+
         </div>
     );
 }
