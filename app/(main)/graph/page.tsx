@@ -83,11 +83,11 @@ export default function GraphPage() {
     });
     const [currentMode, setCurrentMode] = useState<GraphMode>('network');
     
-    // New visibility controls - show only people by default for less clutter
+    // New visibility controls - show everything by default
     const [showPeople, setShowPeople] = useState(true);
-    const [showProjects, setShowProjects] = useState(false);
-    const [showPosts, setShowPosts] = useState(false);
-    const [connectionThreshold, setConnectionThreshold] = useState(1);
+    const [showProjects, setShowProjects] = useState(true);
+    const [showPosts, setShowPosts] = useState(true);
+    const [connectionThreshold, setConnectionThreshold] = useState(0);
 
     // Update dimensions on window resize
     useEffect(() => {
@@ -612,7 +612,7 @@ export default function GraphPage() {
                                     onNodeHover={(node: any) => setHoveredNode(node?.id || null)}
                                 />
                             ) : (
-                                <div className="w-full h-full bg-surface-bright">
+                                <div className="w-full h-full">
                                     <ForceGraph2D
                                 ref={graphRef}
                                 graphData={filteredData}
@@ -631,9 +631,21 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
-                                linkDistance={600}
+                                linkDistance={(link) => {
+                                    // Dynamic link distance based on node types
+                                    const source = link.source as any;
+                                    const target = link.target as any;
+                                    if (source.type === 'post' || target.type === 'post') return 200;
+                                    if (source.type === 'project' || target.type === 'project') return 400;
+                                    return 600;
+                                }}
                                 linkStrength={0.01}
-                                chargeStrength={-4000}
+                                chargeStrength={(node) => {
+                                    // Stronger repulsion for larger nodes
+                                    if (node.type === 'profile') return -5000;
+                                    if (node.type === 'project') return -3000;
+                                    return -1000;
+                                }}
                                 nodeCanvasObjectMode={() => 'after'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
@@ -646,14 +658,14 @@ export default function GraphPage() {
                                     
                                     if (node.type === 'profile') {
                                         color = '#3B82F6'; // blue
-                                        baseSize = 20; // Much larger for profiles
+                                        baseSize = 8; // Smaller for less overlap
                                     } else if (node.type === 'project') {
                                         color = '#F59E0B'; // amber
-                                        baseSize = 16;
+                                        baseSize = 10;
                                         emoji = '🚀'; // Project emoji
                                     } else if (node.type === 'post') {
                                         color = '#10B981'; // emerald
-                                        baseSize = 6; // Slightly bigger for visibility
+                                        baseSize = 4; // Smaller posts
                                         emoji = '💬'; // Post emoji
                                     }
                                     
@@ -727,7 +739,7 @@ export default function GraphPage() {
                                         
                                         // Draw emoji for projects and posts
                                         if (emoji) {
-                                            ctx.font = `${size}px Inter, sans-serif`;
+                                            ctx.font = `${Math.max(size * 0.8, 12)}px Inter, sans-serif`;
                                             ctx.textAlign = 'center';
                                             ctx.textBaseline = 'middle';
                                             ctx.fillText(emoji, node.x!, node.y!);
@@ -831,13 +843,16 @@ export default function GraphPage() {
                                     ctx.globalAlpha = 1;
                                 }}
                                 nodePointerAreaPaint={(node, color, ctx) => {
+                                    // Skip if coordinates not ready
+                                    if (!isFinite(node.x!) || !isFinite(node.y!)) return;
+                                    
                                     // Make the entire node clickable
                                     let baseSize = 5;
                                     
                                     if (node.type === 'profile') {
                                         baseSize = 8;
                                     } else if (node.type === 'project') {
-                                        baseSize = 8;
+                                        baseSize = 10;
                                     } else if (node.type === 'post') {
                                         baseSize = 4;
                                     }
