@@ -675,9 +675,9 @@ export default function GraphPage() {
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
                                     const size = baseSize + Math.sqrt(connections) * 0.8;
                                     
-                                    // Opacity: 80% normal, 100% for related, 10% for non-related when hovering
+                                    // Opacity: 100% normal for nodes, 10% for non-related when hovering
                                     if (!hoveredNode) {
-                                        ctx.globalAlpha = 0.8; // Normal state - 80% opacity
+                                        ctx.globalAlpha = 1; // Normal state - 100% opacity for nodes
                                     } else {
                                         ctx.globalAlpha = isRelated ? 1 : 0.1; // Hover state - 100% or 10%
                                     }
@@ -737,7 +737,7 @@ export default function GraphPage() {
                                         // Only show labels when zoomed in enough - 10% opacity for non-related
                                         const labelOpacity = Math.min((0.7 - globalScale) * 2, 1);
                                         if (!hoveredNode) {
-                                            ctx.globalAlpha = labelOpacity * 0.8; // Normal state - 80% of label opacity
+                                            ctx.globalAlpha = labelOpacity; // Normal state - 100% of label opacity
                                         } else {
                                             ctx.globalAlpha = isRelated ? labelOpacity : labelOpacity * 0.1; // Hover state
                                         }
@@ -766,11 +766,11 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    // Lines - 80% normal, 100% for related, 10% for others when hovering
+                                    // Lines - 50% normal, 100% for related, 10% for others when hovering
                                     ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
                                     ctx.lineWidth = 1;
                                     if (!hoveredNode) {
-                                        ctx.globalAlpha = 0.8; // Normal state - 80% opacity
+                                        ctx.globalAlpha = 0.5; // Normal state - 50% opacity for lines
                                     } else {
                                         ctx.globalAlpha = isRelated ? 1 : 0.1; // Hover state - 100% or 10%
                                     }
