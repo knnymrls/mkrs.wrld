@@ -643,9 +643,6 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
-                                linkDistance={150}
-                                linkStrength={0.1}
-                                chargeStrength={-300}
                                 nodeCanvasObjectMode={() => 'replace'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
@@ -823,8 +820,6 @@ export default function GraphPage() {
                                     ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
                                     ctx.fill();
                                 }}
-                                d3AlphaDecay={0.02}
-                                d3VelocityDecay={0.4}
                                 warmupTicks={100}
                                 onEngineStop={() => {
                                     // Auto zoom out to see all nodes
@@ -834,9 +829,6 @@ export default function GraphPage() {
                                         }, 100);
                                     }
                                 }}
-                                enablePanInteraction={true}
-                                enableZoomInteraction={true}
-                                enableZoomPanInteraction={true}
                             />
                                 </div>
                             )}
