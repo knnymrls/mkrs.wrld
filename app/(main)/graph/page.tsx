@@ -83,10 +83,10 @@ export default function GraphPage() {
     });
     const [currentMode, setCurrentMode] = useState<GraphMode>('network');
     
-    // New visibility controls - show everything by default
+    // New visibility controls - show only people to reduce clutter initially
     const [showPeople, setShowPeople] = useState(true);
-    const [showProjects, setShowProjects] = useState(true);
-    const [showPosts, setShowPosts] = useState(true);
+    const [showProjects, setShowProjects] = useState(false);
+    const [showPosts, setShowPosts] = useState(false);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
 
     // Update dimensions on window resize
@@ -326,7 +326,7 @@ export default function GraphPage() {
 
     const handleZoomReset = () => {
         if (graphRef.current) {
-            graphRef.current.zoomToFit(400, 50);
+            graphRef.current.zoomToFit(400, 200);
         }
     };
 
@@ -626,26 +626,16 @@ export default function GraphPage() {
                                     setHoveredNode(null);
                                     setClickedNode(null);
                                 }}
-                                cooldownTicks={200}
+                                cooldownTicks={300}
+                                minZoom={0.1}
+                                maxZoom={4}
                                 enableZoomInteraction={true}
                                 enableNodeDrag={true}
-                                d3AlphaDecay={0.02}
-                                d3VelocityDecay={0.4}
-                                linkDistance={(link) => {
-                                    // Dynamic link distance based on node types
-                                    const source = link.source as any;
-                                    const target = link.target as any;
-                                    if (source.type === 'post' || target.type === 'post') return 200;
-                                    if (source.type === 'project' || target.type === 'project') return 400;
-                                    return 600;
-                                }}
-                                linkStrength={0.01}
-                                chargeStrength={(node) => {
-                                    // Stronger repulsion for larger nodes
-                                    if (node.type === 'profile') return -5000;
-                                    if (node.type === 'project') return -3000;
-                                    return -1000;
-                                }}
+                                d3AlphaDecay={0.001}
+                                d3VelocityDecay={0.02}
+                                linkDistance={2000}
+                                linkStrength={0.001}
+                                chargeStrength={-30000}
                                 nodeCanvasObjectMode={() => 'after'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
@@ -760,28 +750,11 @@ export default function GraphPage() {
                                         const bgHeight = fontSize + padding * 2;
                                         const bgY = node.y! + size + 4;
                                         
-                                        // Rounded rectangle background
-                                        ctx.fillStyle = 'rgba(23, 23, 23, 0.8)';
-                                        const bgX = node.x! - textWidth/2 - padding;
-                                        const bgWidth = textWidth + padding * 2;
-                                        const radius = 4;
-                                        
-                                        ctx.beginPath();
-                                        ctx.moveTo(bgX + radius, bgY);
-                                        ctx.lineTo(bgX + bgWidth - radius, bgY);
-                                        ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + radius);
-                                        ctx.lineTo(bgX + bgWidth, bgY + bgHeight - radius);
-                                        ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - radius, bgY + bgHeight);
-                                        ctx.lineTo(bgX + radius, bgY + bgHeight);
-                                        ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - radius);
-                                        ctx.lineTo(bgX, bgY + radius);
-                                        ctx.quadraticCurveTo(bgX, bgY, bgX + radius, bgY);
-                                        ctx.closePath();
-                                        ctx.fill();
+                                        // Skip background for cleaner look
                                         
                                         // Text color based on node type
-                                        ctx.fillStyle = node.type === 'profile' ? '#ffffff' : 
-                                                       node.type === 'project' ? '#fbbf24' : '#34d399';
+                                        ctx.fillStyle = node.type === 'profile' ? '#1F2937' : 
+                                                       node.type === 'project' ? '#F59E0B' : '#10B981';
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'top';
                                         ctx.fillText(label as string, node.x!, bgY + padding);
@@ -829,7 +802,7 @@ export default function GraphPage() {
                                     
                                     ctx.strokeStyle = linkColor;
                                     ctx.lineWidth = lineWidth;
-                                    ctx.globalAlpha = isRelated ? 0.8 : 0.1;
+                                    ctx.globalAlpha = isRelated ? 0.5 : 0.05;
                                     
                                     if (dashPattern.length > 0) {
                                         ctx.setLineDash(dashPattern);
@@ -865,10 +838,17 @@ export default function GraphPage() {
                                     ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
                                     ctx.fill();
                                 }}
-                                d3AlphaDecay={0.005}
-                                d3VelocityDecay={0.1}
-                                warmupTicks={300}
-                                onEngineStop={() => {}}
+                                d3AlphaDecay={0.001}
+                                d3VelocityDecay={0.02}
+                                warmupTicks={1000}
+                                onEngineStop={() => {
+                                    // Auto zoom out to see all nodes
+                                    if (graphRef.current) {
+                                        setTimeout(() => {
+                                            graphRef.current.zoomToFit(400, 250);
+                                        }, 100);
+                                    }
+                                }}
                                 enablePanInteraction={true}
                                 enableZoomInteraction={true}
                             />
