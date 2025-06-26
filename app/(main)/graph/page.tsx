@@ -374,9 +374,9 @@ export default function GraphPage() {
 
 
     return (
-        <div className="relative w-full h-screen bg-surface-bright overflow-hidden">
+        <div className="relative w-full h-screen bg-gray-900 overflow-hidden">
             {/* Clean Header */}
-            <div className="absolute top-0 left-0 right-0 z-30 bg-surface-bright border-b border-border">
+            <div className="absolute top-0 left-0 right-0 z-30 bg-gray-900 border-b border-gray-800">
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -625,7 +625,7 @@ export default function GraphPage() {
                                 graphData={filteredData}
                                 width={dimensions.width}
                                 height={dimensions.height - 73}
-                                backgroundColor="transparent"
+                                backgroundColor="#111827"
                                 nodeLabel={() => ''}
                                 onNodeClick={handleNodeClick}
                                 onNodeHover={(node: any) => setHoveredNode(node?.id || null)}
@@ -640,9 +640,9 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
-                                linkDistance={1000}
-                                linkStrength={0.01}
-                                chargeStrength={-8000}
+                                linkDistance={150}
+                                linkStrength={0.1}
+                                chargeStrength={-300}
                                 nodeCanvasObjectMode={(node) => {
                                     // Draw hovered and related nodes on top
                                     const isHovered = node.id === hoveredNode;
@@ -658,30 +658,27 @@ export default function GraphPage() {
                                         // These will be drawn with lower opacity
                                     }
                                     
-                                    // Node styling based on type with emojis
-                                    let color = '#3B82F6'; // blue
-                                    let baseSize = 5;
-                                    let emoji = '';
+                                    // Node styling based on type - Obsidian style
+                                    let color = '#ffffff'; // Default white
+                                    let baseSize = 3;
                                     
                                     if (node.type === 'profile') {
-                                        color = '#3B82F6'; // blue
-                                        baseSize = 8; // Smaller for less overlap
+                                        color = '#ffffff'; // white
+                                        baseSize = 4;
                                     } else if (node.type === 'project') {
-                                        color = '#F59E0B'; // amber
-                                        baseSize = 10;
-                                        emoji = '🚀'; // Project emoji
+                                        color = '#ffffff'; // white
+                                        baseSize = 5;
                                     } else if (node.type === 'post') {
-                                        color = '#10B981'; // emerald
-                                        baseSize = 4; // Smaller posts
-                                        emoji = '💬'; // Post emoji
+                                        color = '#10B981'; // green for posts
+                                        baseSize = 3;
                                     }
                                     
                                     // Size based on connections
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
-                                    const size = baseSize + Math.sqrt(connections) * 2;
+                                    const size = baseSize + Math.min(Math.sqrt(connections), 3);
                                     
-                                    // Opacity for non-related nodes - 10% when hovering
-                                    ctx.globalAlpha = isRelated ? 1 : 0.1;
+                                    // Opacity for non-related nodes - very subtle
+                                    ctx.globalAlpha = isRelated ? 1 : 0.3;
                                     
                                     // Draw profile nodes with images
                                     if (node.type === 'profile' && (node as ProfileNode).avatar_url) {
@@ -749,52 +746,25 @@ export default function GraphPage() {
                                             ctx.stroke();
                                         }
                                         
-                                        // Draw emoji for projects and posts
-                                        if (emoji) {
-                                            ctx.font = `${Math.max(size * 0.8, 12)}px Inter, sans-serif`;
-                                            ctx.textAlign = 'center';
-                                            ctx.textBaseline = 'middle';
-                                            ctx.fillText(emoji, node.x!, node.y!);
-                                        }
+                                        // No emojis - keep it clean like Obsidian
                                     }
                                     
-                                    // Draw label as badge for all nodes
-                                    if ((node.type === 'profile' || node.type === 'project' || (isHovered && node.type === 'post')) && 
-                                        isFinite(node.x!) && isFinite(node.y!)) {
-                                        ctx.globalAlpha = isRelated ? 1 : 0.1; // 10% opacity for non-related labels
-                                        const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
+                                    // Draw labels only when zoomed in - Obsidian style
+                                    if ((node.type === 'profile' || node.type === 'project') && 
+                                        isFinite(node.x!) && isFinite(node.y!) && globalScale < 0.7) {
+                                        // Only show labels when zoomed in enough
+                                        ctx.globalAlpha = isRelated ? Math.min((0.7 - globalScale) * 2, 1) : 0.1;
+                                        const label = node.label && node.label.length > 30 ? node.label.slice(0, 30) + '...' : node.label;
                                         
-                                        // Scale font size based on zoom level
-                                        const baseFontSize = 7;
-                                        const fontSize = Math.max(baseFontSize / globalScale, 6); // Min 6px, scales with zoom
+                                        // Simple text, no badge
+                                        const fontSize = 12;
                                         ctx.font = `400 ${fontSize}px Inter, sans-serif`;
                                         
-                                        // Measure text for badge
-                                        const textWidth = ctx.measureText(label as string).width;
-                                        const padding = 2;
-                                        const badgeHeight = fontSize + padding * 2;
-                                        const badgeWidth = textWidth + padding * 2;
-                                        const badgeY = node.y! + size + 3;
-                                        const badgeX = node.x! - badgeWidth / 2;
-                                        const radius = 3;
-                                        
-                                        // Apply blur effect
-                                        ctx.filter = 'blur(0.5px)';
-                                        
-                                        // Draw black badge background with 50% opacity
-                                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                                        ctx.beginPath();
-                                        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, radius);
-                                        ctx.fill();
-                                        
-                                        // Reset filter for text
-                                        ctx.filter = 'none';
-                                        
-                                        // Draw text in white
-                                        ctx.fillStyle = '#FFFFFF';
+                                        // Text color
+                                        ctx.fillStyle = '#9CA3AF'; // gray-400
                                         ctx.textAlign = 'center';
-                                        ctx.textBaseline = 'middle';
-                                        ctx.fillText(label as string, node.x!, badgeY + badgeHeight / 2);
+                                        ctx.textBaseline = 'top';
+                                        ctx.fillText(label as string, node.x!, node.y! + size + 5);
                                     }
                                     
                                     ctx.globalAlpha = 1;
@@ -837,9 +807,10 @@ export default function GraphPage() {
                                             break;
                                     }
                                     
-                                    ctx.strokeStyle = linkColor;
-                                    ctx.lineWidth = lineWidth;
-                                    ctx.globalAlpha = isRelated ? 0.5 : 0.02; // Even more subtle for non-related links
+                                    // Obsidian-style subtle gray links
+                                    ctx.strokeStyle = isRelated && hoveredNode ? linkColor : '#374151';
+                                    ctx.lineWidth = isRelated && hoveredNode ? 2 : 1;
+                                    ctx.globalAlpha = isRelated ? 0.6 : 0.2;
                                     
                                     if (dashPattern.length > 0) {
                                         ctx.setLineDash(dashPattern);
