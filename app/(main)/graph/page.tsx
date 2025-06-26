@@ -743,32 +743,33 @@ export default function GraphPage() {
                                         const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
                                         
                                         // Scale font size based on zoom level
-                                        const baseFontSize = 9;
-                                        const fontSize = Math.max(baseFontSize / globalScale, 7); // Min 7px, scales with zoom
+                                        const baseFontSize = 7;
+                                        const fontSize = Math.max(baseFontSize / globalScale, 6); // Min 6px, scales with zoom
                                         ctx.font = `400 ${fontSize}px Inter, sans-serif`;
                                         
                                         // Measure text for badge
                                         const textWidth = ctx.measureText(label as string).width;
-                                        const padding = 3;
+                                        const padding = 2;
                                         const badgeHeight = fontSize + padding * 2;
                                         const badgeWidth = textWidth + padding * 2;
-                                        const badgeY = node.y! + size + 4;
+                                        const badgeY = node.y! + size + 3;
                                         const badgeX = node.x! - badgeWidth / 2;
-                                        const radius = badgeHeight / 2;
+                                        const radius = 3;
                                         
-                                        // Draw white badge background
-                                        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                                        // Apply blur effect
+                                        ctx.filter = 'blur(0.5px)';
+                                        
+                                        // Draw black badge background with 50% opacity
+                                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                                         ctx.beginPath();
                                         ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, radius);
                                         ctx.fill();
                                         
-                                        // Draw black border
-                                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-                                        ctx.lineWidth = 1;
-                                        ctx.stroke();
+                                        // Reset filter for text
+                                        ctx.filter = 'none';
                                         
-                                        // Draw text in black
-                                        ctx.fillStyle = '#000000';
+                                        // Draw text in white
+                                        ctx.fillStyle = '#FFFFFF';
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'middle';
                                         ctx.fillText(label as string, node.x!, badgeY + badgeHeight / 2);
