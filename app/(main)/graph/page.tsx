@@ -673,9 +673,9 @@ export default function GraphPage() {
                                         baseSize = 3;
                                     }
                                     
-                                    // Size based on connections
+                                    // Size based on connections - make it more prominent
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
-                                    const size = baseSize + Math.min(Math.sqrt(connections), 3);
+                                    const size = baseSize + Math.sqrt(connections) * 1.5;
                                     
                                     // Opacity for non-related nodes - very subtle
                                     ctx.globalAlpha = isRelated ? 1 : 0.3;
@@ -699,15 +699,15 @@ export default function GraphPage() {
                                             img.src = avatarUrl;
                                             (node as any).__img = img;
                                             
-                                            // Draw placeholder while loading - just a simple circle
-                                            ctx.fillStyle = '#6B7280';
+                                            // Draw placeholder while loading - white circle
+                                            ctx.fillStyle = '#ffffff';
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else if (img.complete && img.naturalWidth > 0) {
                                             // Draw the loaded image
                                             ctx.drawImage(img, node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else {
                                             // Still loading, draw placeholder
-                                            ctx.fillStyle = '#6B7280';
+                                            ctx.fillStyle = '#ffffff';
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         }
                                         
@@ -734,8 +734,8 @@ export default function GraphPage() {
                                             ctx.fillStyle = color;
                                             ctx.fill();
                                         } else {
-                                            // For profiles without images, just show a gray circle
-                                            ctx.fillStyle = '#6B7280';
+                                            // For profiles without images, show white circle
+                                            ctx.fillStyle = '#ffffff';
                                             ctx.fill();
                                         }
                                         
@@ -779,48 +779,51 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    ctx.globalAlpha = isRelated ? 0.3 : 0.05;
+                                    // Basic onsurface-secondary lines
+                                    ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
+                                    ctx.lineWidth = 1;
+                                    ctx.globalAlpha = isRelated ? 0.8 : 0.2;
                                     
-                                    // More vibrant colored links like Capacities
-                                    let linkColor = '#374151'; // Default gray
-                                    let lineWidth = 1;
-                                    let dashPattern: number[] = [];
+                                    // Calculate arrow direction
+                                    const dx = target.x - source.x;
+                                    const dy = target.y - source.y;
+                                    const distance = Math.sqrt(dx * dx + dy * dy);
+                                    const unitX = dx / distance;
+                                    const unitY = dy / distance;
                                     
-                                    switch ((link as any).type) {
-                                        case 'authored':
-                                            linkColor = '#3B82F6'; // Blue solid
-                                            lineWidth = 2;
-                                            break;
-                                        case 'mentions_profile':
-                                            linkColor = '#8B5CF6'; // Purple dashed
-                                            lineWidth = 2;
-                                            dashPattern = [5, 5];
-                                            break;
-                                        case 'mentions_project':
-                                            linkColor = '#F59E0B'; // Orange dashed
-                                            lineWidth = 2;
-                                            dashPattern = [5, 5];
-                                            break;
-                                        case 'contributes':
-                                            linkColor = '#EF4444'; // Red solid
-                                            lineWidth = 3;
-                                            break;
-                                    }
+                                    // Adjust for node radius
+                                    const baseSize = 5;
+                                    const sourceRadius = nodeConnectionCounts[source.id] ? baseSize + Math.sqrt(nodeConnectionCounts[source.id]) * 1.5 : baseSize;
+                                    const targetRadius = nodeConnectionCounts[target.id] ? baseSize + Math.sqrt(nodeConnectionCounts[target.id]) * 1.5 : baseSize;
                                     
-                                    // Obsidian-style subtle gray links
-                                    ctx.strokeStyle = isRelated && hoveredNode ? linkColor : '#374151';
-                                    ctx.lineWidth = isRelated && hoveredNode ? 2 : 1;
-                                    ctx.globalAlpha = isRelated ? 0.6 : 0.2;
+                                    const startX = source.x + unitX * sourceRadius;
+                                    const startY = source.y + unitY * sourceRadius;
+                                    const endX = target.x - unitX * (targetRadius + 5); // Leave space for arrow
+                                    const endY = target.y - unitY * (targetRadius + 5);
                                     
-                                    if (dashPattern.length > 0) {
-                                        ctx.setLineDash(dashPattern);
-                                    }
+                                    // Draw line
+                                    ctx.beginPath();
+                                    ctx.moveTo(startX, startY);
+                                    ctx.lineTo(endX, endY);
+                                    ctx.stroke();
+                                    
+                                    // Draw arrow
+                                    const arrowLength = 8;
+                                    const arrowAngle = Math.PI / 6;
                                     
                                     ctx.beginPath();
-                                    ctx.moveTo(source.x, source.y);
-                                    ctx.lineTo(target.x, target.y);
+                                    ctx.moveTo(endX, endY);
+                                    ctx.lineTo(
+                                        endX - arrowLength * Math.cos(Math.atan2(dy, dx) - arrowAngle),
+                                        endY - arrowLength * Math.sin(Math.atan2(dy, dx) - arrowAngle)
+                                    );
+                                    ctx.moveTo(endX, endY);
+                                    ctx.lineTo(
+                                        endX - arrowLength * Math.cos(Math.atan2(dy, dx) + arrowAngle),
+                                        endY - arrowLength * Math.sin(Math.atan2(dy, dx) + arrowAngle)
+                                    );
                                     ctx.stroke();
-                                    ctx.setLineDash([]);
+                                    
                                     ctx.globalAlpha = 1;
                                 }}
                                 nodePointerAreaPaint={(node, color, ctx) => {
