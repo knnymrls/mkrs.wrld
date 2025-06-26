@@ -675,8 +675,12 @@ export default function GraphPage() {
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
                                     const size = baseSize + Math.sqrt(connections) * 0.8;
                                     
-                                    // Opacity for non-related nodes - 5% when not hovering
-                                    ctx.globalAlpha = isRelated ? 1 : 0.05;
+                                    // Opacity: 80% normal, 100% for related, 10% for non-related when hovering
+                                    if (!hoveredNode) {
+                                        ctx.globalAlpha = 0.8; // Normal state - 80% opacity
+                                    } else {
+                                        ctx.globalAlpha = isRelated ? 1 : 0.1; // Hover state - 100% or 10%
+                                    }
                                     
                                     // Skip rendering if node position is not initialized
                                     if (!isFinite(node.x!) || !isFinite(node.y!)) return;
@@ -730,8 +734,13 @@ export default function GraphPage() {
                                     // Draw labels only when zoomed in - Obsidian style
                                     if ((node.type === 'profile' || node.type === 'project') && 
                                         isFinite(node.x!) && isFinite(node.y!) && globalScale < 0.7) {
-                                        // Only show labels when zoomed in enough - 5% opacity for non-related
-                                        ctx.globalAlpha = isRelated ? Math.min((0.7 - globalScale) * 2, 1) : 0.05;
+                                        // Only show labels when zoomed in enough - 10% opacity for non-related
+                                        const labelOpacity = Math.min((0.7 - globalScale) * 2, 1);
+                                        if (!hoveredNode) {
+                                            ctx.globalAlpha = labelOpacity * 0.8; // Normal state - 80% of label opacity
+                                        } else {
+                                            ctx.globalAlpha = isRelated ? labelOpacity : labelOpacity * 0.1; // Hover state
+                                        }
                                         const label = node.label && node.label.length > 30 ? node.label.slice(0, 30) + '...' : node.label;
                                         
                                         // Simple text, no badge
@@ -757,10 +766,14 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    // Lines - 100% for related, 5% for others
+                                    // Lines - 80% normal, 100% for related, 10% for others when hovering
                                     ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
                                     ctx.lineWidth = 1;
-                                    ctx.globalAlpha = isRelated ? 1 : 0.05;
+                                    if (!hoveredNode) {
+                                        ctx.globalAlpha = 0.8; // Normal state - 80% opacity
+                                    } else {
+                                        ctx.globalAlpha = isRelated ? 1 : 0.1; // Hover state - 100% or 10%
+                                    }
                                     
                                     // Calculate arrow direction
                                     const dx = target.x - source.x;
