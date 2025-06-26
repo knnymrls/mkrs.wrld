@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import AICommandPalette from '@/app/components/features/AIAssistant/AICommandPalette';
+import FeedbackModal from '@/app/components/features/FeedbackModal';
 
 export default function Navbar() {
     const { user, signOut } = useAuth();
@@ -15,6 +16,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const [showDropdown, setShowDropdown] = useState(false);
     const [showAICommand, setShowAICommand] = useState(false);
+    const [showFeedback, setShowFeedback] = useState(false);
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -61,12 +63,18 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Keyboard shortcut for AI Command Palette (Cmd/Ctrl + K)
+    // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // AI Command Palette (Cmd/Ctrl + K)
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                 e.preventDefault();
                 setShowAICommand(true);
+            }
+            // Feedback Modal (Cmd/Ctrl + Shift + F)
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'F') {
+                e.preventDefault();
+                setShowFeedback(true);
             }
         };
 
@@ -273,6 +281,27 @@ export default function Navbar() {
                                     </button>
                                 </div>
 
+                                {/* Feedback Button */}
+                                <div className="border-t border-border">
+                                    <button
+                                        onClick={() => {
+                                            setShowDropdown(false);
+                                            setShowFeedback(true);
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-onsurface-primary hover:bg-surface-container-muted hover:text-onsurface-primary"
+                                    >
+                                        <div className="flex items-center justify-between w-full">
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                </svg>
+                                                Send Feedback
+                                            </div>
+                                            <span className="text-xs text-onsurface-secondary">⌘⇧F</span>
+                                        </div>
+                                    </button>
+                                </div>
+
                                 <div className="border-t border-border">
                                     <button
                                         onClick={handleSignOut}
@@ -306,6 +335,12 @@ export default function Navbar() {
             <AICommandPalette 
                 isOpen={showAICommand} 
                 onClose={() => setShowAICommand(false)} 
+            />
+            
+            {/* Feedback Modal */}
+            <FeedbackModal
+                isOpen={showFeedback}
+                onClose={() => setShowFeedback(false)}
             />
         </div>
     );
