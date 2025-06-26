@@ -743,18 +743,28 @@ export default function GraphPage() {
                                         const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
                                         
                                         // Scale font size based on zoom level
-                                        const baseFontSize = node.type === 'profile' ? 11 : 10;
-                                        const fontSize = Math.max(baseFontSize / globalScale, 8); // Min 8px, scales with zoom
-                                        ctx.font = `${fontSize}px Inter, sans-serif`;
+                                        const baseFontSize = node.type === 'profile' ? 14 : 12;
+                                        const fontSize = Math.max(baseFontSize / globalScale, 10); // Min 10px, scales with zoom
+                                        ctx.font = `600 ${fontSize}px Inter, sans-serif`; // Semi-bold for better readability
                                         
                                         const padding = 4;
                                         const bgY = node.y! + size + 4;
                                         
-                                        // Use proper text color classes
-                                        ctx.fillStyle = '#6B7280'; // text-onsurface-secondary equivalent
+                                        // Add text shadow for better readability
+                                        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                                        ctx.shadowBlur = 3;
+                                        ctx.shadowOffsetX = 0;
+                                        ctx.shadowOffsetY = 0;
+                                        
+                                        // Use darker color for better contrast
+                                        ctx.fillStyle = '#111827'; // text-gray-900 equivalent
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'top';
                                         ctx.fillText(label as string, node.x!, bgY + padding);
+                                        
+                                        // Reset shadow
+                                        ctx.shadowColor = 'transparent';
+                                        ctx.shadowBlur = 0;
                                     }
                                     
                                     ctx.globalAlpha = 1;
