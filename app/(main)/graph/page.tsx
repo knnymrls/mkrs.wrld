@@ -680,6 +680,9 @@ export default function GraphPage() {
                                     // Opacity for non-related nodes - very subtle
                                     ctx.globalAlpha = isRelated ? 1 : 0.3;
                                     
+                                    // Skip rendering if node position is not initialized
+                                    if (!isFinite(node.x!) || !isFinite(node.y!)) return;
+                                    
                                     // Draw profile nodes with images
                                     if (node.type === 'profile' && (node as ProfileNode).avatar_url) {
                                         // Create a circular clipping mask
@@ -699,54 +702,31 @@ export default function GraphPage() {
                                             img.src = avatarUrl;
                                             (node as any).__img = img;
                                             
-                                            // Draw placeholder while loading - white circle
-                                            ctx.fillStyle = '#ffffff';
+                                            // Draw placeholder while loading - gray circle
+                                            ctx.fillStyle = '#6B7280';
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else if (img.complete && img.naturalWidth > 0) {
                                             // Draw the loaded image
                                             ctx.drawImage(img, node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else {
                                             // Still loading, draw placeholder
-                                            ctx.fillStyle = '#ffffff';
+                                            ctx.fillStyle = '#6B7280';
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         }
                                         
                                         ctx.restore();
-                                        
-                                        // Only draw border on hover
-                                        if (isHovered) {
-                                            ctx.beginPath();
-                                            ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI);
-                                            ctx.strokeStyle = '#FFFFFF';
-                                            ctx.lineWidth = 2;
-                                            ctx.stroke();
-                                        }
-                                    } else {
-                                        // Skip rendering if node position is not initialized
-                                        if (!isFinite(node.x!) || !isFinite(node.y!)) return;
-                                        
-                                        // Draw regular node with more visual appeal
+                                    } else if (node.type === 'profile') {
+                                        // Profile without image - draw gray circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        
-                                        // Only fill with color for non-profile nodes
-                                        if (node.type !== 'profile') {
-                                            ctx.fillStyle = color;
-                                            ctx.fill();
-                                        } else {
-                                            // For profiles without images, show white circle
-                                            ctx.fillStyle = '#ffffff';
-                                            ctx.fill();
-                                        }
-                                        
-                                        // Only show border on hover
-                                        if (isHovered) {
-                                            ctx.strokeStyle = '#ffffff';
-                                            ctx.lineWidth = 2;
-                                            ctx.stroke();
-                                        }
-                                        
-                                        // No emojis - keep it clean like Obsidian
+                                        ctx.fillStyle = '#6B7280';
+                                        ctx.fill();
+                                    } else {
+                                        // Non-profile nodes (projects and posts)
+                                        ctx.beginPath();
+                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                        ctx.fillStyle = color;
+                                        ctx.fill();
                                     }
                                     
                                     // Draw labels only when zoomed in - Obsidian style
@@ -801,28 +781,28 @@ export default function GraphPage() {
                                     const endX = target.x - unitX * (targetRadius + 5); // Leave space for arrow
                                     const endY = target.y - unitY * (targetRadius + 5);
                                     
-                                    // Draw line
+                                    // Draw minimal line
                                     ctx.beginPath();
                                     ctx.moveTo(startX, startY);
                                     ctx.lineTo(endX, endY);
                                     ctx.stroke();
                                     
-                                    // Draw arrow
-                                    const arrowLength = 8;
-                                    const arrowAngle = Math.PI / 6;
+                                    // Draw minimal arrow - smaller and cleaner
+                                    const arrowLength = 5;
+                                    const arrowAngle = Math.PI / 8;
+                                    
+                                    ctx.save();
+                                    ctx.translate(endX, endY);
+                                    ctx.rotate(Math.atan2(dy, dx));
                                     
                                     ctx.beginPath();
-                                    ctx.moveTo(endX, endY);
-                                    ctx.lineTo(
-                                        endX - arrowLength * Math.cos(Math.atan2(dy, dx) - arrowAngle),
-                                        endY - arrowLength * Math.sin(Math.atan2(dy, dx) - arrowAngle)
-                                    );
-                                    ctx.moveTo(endX, endY);
-                                    ctx.lineTo(
-                                        endX - arrowLength * Math.cos(Math.atan2(dy, dx) + arrowAngle),
-                                        endY - arrowLength * Math.sin(Math.atan2(dy, dx) + arrowAngle)
-                                    );
+                                    ctx.moveTo(0, 0);
+                                    ctx.lineTo(-arrowLength, -arrowLength * Math.tan(arrowAngle));
+                                    ctx.moveTo(0, 0);
+                                    ctx.lineTo(-arrowLength, arrowLength * Math.tan(arrowAngle));
                                     ctx.stroke();
+                                    
+                                    ctx.restore();
                                     
                                     ctx.globalAlpha = 1;
                                 }}
