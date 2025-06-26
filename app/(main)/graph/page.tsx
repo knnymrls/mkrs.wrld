@@ -633,16 +633,16 @@ export default function GraphPage() {
                                     setHoveredNode(null);
                                     setClickedNode(null);
                                 }}
-                                cooldownTicks={300}
+                                cooldownTicks={100}
                                 minZoom={0.1}
                                 maxZoom={4}
                                 enableZoomInteraction={true}
                                 enableNodeDrag={true}
-                                d3AlphaDecay={0.001}
-                                d3VelocityDecay={0.02}
-                                linkDistance={2000}
-                                linkStrength={0.001}
-                                chargeStrength={-30000}
+                                d3AlphaDecay={0.02}
+                                d3VelocityDecay={0.4}
+                                linkDistance={1000}
+                                linkStrength={0.01}
+                                chargeStrength={-8000}
                                 nodeCanvasObjectMode={(node) => {
                                     // Draw hovered and related nodes on top
                                     const isHovered = node.id === hoveredNode;
@@ -702,31 +702,28 @@ export default function GraphPage() {
                                             img.src = avatarUrl;
                                             (node as any).__img = img;
                                             
-                                            // Draw placeholder while loading
-                                            ctx.fillStyle = color;
+                                            // Draw placeholder while loading - just a simple circle
+                                            ctx.fillStyle = '#6B7280';
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
-                                            
-                                            // Force re-render when image loads
-                                            img.onload = () => {
-                                                // No need to refresh, it will update on next frame
-                                            };
                                         } else if (img.complete && img.naturalWidth > 0) {
                                             // Draw the loaded image
                                             ctx.drawImage(img, node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else {
                                             // Still loading, draw placeholder
-                                            ctx.fillStyle = color;
+                                            ctx.fillStyle = '#6B7280';
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         }
                                         
                                         ctx.restore();
                                         
-                                        // Draw border
-                                        ctx.beginPath();
-                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = isHovered ? color : '#E5E7EB';
-                                        ctx.lineWidth = isHovered ? 3 : 2;
-                                        ctx.stroke();
+                                        // Only draw border on hover
+                                        if (isHovered) {
+                                            ctx.beginPath();
+                                            ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI);
+                                            ctx.strokeStyle = '#FFFFFF';
+                                            ctx.lineWidth = 2;
+                                            ctx.stroke();
+                                        }
                                     } else {
                                         // Skip rendering if node position is not initialized
                                         if (!isFinite(node.x!) || !isFinite(node.y!)) return;
@@ -735,14 +732,22 @@ export default function GraphPage() {
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
                                         
-                                        // Simple solid color instead of gradient to avoid errors
-                                        ctx.fillStyle = color;
-                                        ctx.fill();
+                                        // Only fill with color for non-profile nodes
+                                        if (node.type !== 'profile') {
+                                            ctx.fillStyle = color;
+                                            ctx.fill();
+                                        } else {
+                                            // For profiles without images, just show a gray circle
+                                            ctx.fillStyle = '#6B7280';
+                                            ctx.fill();
+                                        }
                                         
-                                        // Border
-                                        ctx.strokeStyle = isHovered ? '#ffffff' : color + '40';
-                                        ctx.lineWidth = isHovered ? 3 : 2;
-                                        ctx.stroke();
+                                        // Only show border on hover
+                                        if (isHovered) {
+                                            ctx.strokeStyle = '#ffffff';
+                                            ctx.lineWidth = 2;
+                                            ctx.stroke();
+                                        }
                                         
                                         // Draw emoji for projects and posts
                                         if (emoji) {
@@ -870,9 +875,9 @@ export default function GraphPage() {
                                     ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
                                     ctx.fill();
                                 }}
-                                d3AlphaDecay={0.001}
-                                d3VelocityDecay={0.02}
-                                warmupTicks={1000}
+                                d3AlphaDecay={0.02}
+                                d3VelocityDecay={0.4}
+                                warmupTicks={100}
                                 onEngineStop={() => {
                                     // Auto zoom out to see all nodes
                                     if (graphRef.current) {
