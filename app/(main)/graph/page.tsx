@@ -736,35 +736,38 @@ export default function GraphPage() {
                                         }
                                     }
                                     
-                                    // Draw label for all nodes with better styling
+                                    // Draw label as badge for all nodes
                                     if ((node.type === 'profile' || node.type === 'project' || (isHovered && node.type === 'post')) && 
                                         isFinite(node.x!) && isFinite(node.y!)) {
                                         ctx.globalAlpha = isRelated ? 1 : 0.1; // 10% opacity for non-related labels
                                         const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
                                         
                                         // Scale font size based on zoom level
-                                        const baseFontSize = node.type === 'profile' ? 14 : 12;
-                                        const fontSize = Math.max(baseFontSize / globalScale, 10); // Min 10px, scales with zoom
-                                        ctx.font = `600 ${fontSize}px Inter, sans-serif`; // Semi-bold for better readability
+                                        const baseFontSize = 11;
+                                        const fontSize = Math.max(baseFontSize / globalScale, 9); // Min 9px, scales with zoom
+                                        ctx.font = `500 ${fontSize}px Inter, sans-serif`;
                                         
-                                        const padding = 4;
-                                        const bgY = node.y! + size + 4;
+                                        // Measure text for badge
+                                        const textWidth = ctx.measureText(label as string).width;
+                                        const padding = 6;
+                                        const badgeHeight = fontSize + padding * 2;
+                                        const badgeWidth = textWidth + padding * 2;
+                                        const badgeY = node.y! + size + 6;
+                                        const badgeX = node.x! - badgeWidth / 2;
+                                        const radius = badgeHeight / 2;
                                         
-                                        // Add text shadow for better readability
-                                        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-                                        ctx.shadowBlur = 3;
-                                        ctx.shadowOffsetX = 0;
-                                        ctx.shadowOffsetY = 0;
+                                        // Draw badge background
+                                        ctx.fillStyle = node.type === 'profile' ? '#3B82F6' : 
+                                                       node.type === 'project' ? '#F59E0B' : '#10B981';
+                                        ctx.beginPath();
+                                        ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, radius);
+                                        ctx.fill();
                                         
-                                        // Use darker color for better contrast
-                                        ctx.fillStyle = '#111827'; // text-gray-900 equivalent
+                                        // Draw text
+                                        ctx.fillStyle = '#FFFFFF';
                                         ctx.textAlign = 'center';
-                                        ctx.textBaseline = 'top';
-                                        ctx.fillText(label as string, node.x!, bgY + padding);
-                                        
-                                        // Reset shadow
-                                        ctx.shadowColor = 'transparent';
-                                        ctx.shadowBlur = 0;
+                                        ctx.textBaseline = 'middle';
+                                        ctx.fillText(label as string, node.x!, badgeY + badgeHeight / 2);
                                     }
                                     
                                     ctx.globalAlpha = 1;
