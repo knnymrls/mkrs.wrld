@@ -27,7 +27,7 @@
   --surface-container-muted: #191919;
   --border: #404040;
   --onsurface-primary: #f3f4f6;
-  --onsurface-secondary: #cfcfcf;
+  --onsurface-secondary: #b7b7b7;
 }
 
 /* Also support system preference when no manual theme is set */
@@ -43,7 +43,7 @@
     --surface-container-muted: #191919;
     --border: #404040;
     --onsurface-primary: #f3f4f6;
-    --onsurface-secondary: #cfcfcf;
+    --onsurface-secondary: #b7b7b7;
   }
 }
 
