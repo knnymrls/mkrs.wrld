@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { getEmbedding } from '@/lib/embeddings/index';
 import { uploadAvatar } from '@/lib/supabase/storage';
 import ImageUploadWithCrop from '../../components/ui/ImageUploadWithCrop';
+import { ManualLinkedInParser } from '@/lib/linkedin/manual-parser';
 
 export default function Onboarding() {
     const { user, refreshProfile } = useAuth();
@@ -14,6 +15,12 @@ export default function Onboarding() {
     const [currentStep, setCurrentStep] = useState(1);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const [linkedinUrl, setLinkedinUrl] = useState('');
+    const [showLinkedInModal, setShowLinkedInModal] = useState(false);
+    const [importMethod, setImportMethod] = useState<'url' | 'paste'>('url');
+    const [pastedText, setPastedText] = useState('');
+    const [importStatus, setImportStatus] = useState<string>('');
     
     // Profile data
     const [name, setName] = useState('');
@@ -22,6 +29,7 @@ export default function Onboarding() {
     const [location, setLocation] = useState('');
     const [title, setTitle] = useState('');
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
     
     // Education data
     const [educations, setEducations] = useState<Array<{
@@ -29,6 +37,15 @@ export default function Onboarding() {
         degree: string;
         year: string;
     }>>([{ school: '', degree: '', year: '' }]);
+    
+    // Cleanup preview URLs on unmount
+    useEffect(() => {
+        return () => {
+            if (avatarPreviewUrl) {
+                URL.revokeObjectURL(avatarPreviewUrl);
+            }
+        };
+    }, [avatarPreviewUrl]);
     
     // Experience data
     const [experiences, setExperiences] = useState<Array<{
@@ -38,6 +55,145 @@ export default function Onboarding() {
         endDate: string;
         description: string;
     }>>([{ company: '', role: '', startDate: '', endDate: '', description: '' }]);
+
+    const handleManualPaste = () => {
+        if (!pastedText.trim()) {
+            setError('Please paste your LinkedIn profile content');
+            return;
+        }
+
+        try {
+            const parsed = ManualLinkedInParser.parseProfileText(pastedText);
+            
+            // Populate form fields with parsed data
+            if (parsed.name) setName(parsed.name);
+            if (parsed.title) setTitle(parsed.title);
+            if (parsed.location) setLocation(parsed.location);
+            if (parsed.about) setBio(parsed.about);
+            if (parsed.skills) setSkills(parsed.skills.join(', '));
+            
+            if (parsed.education && parsed.education.length > 0) {
+                setEducations(parsed.education.map(edu => ({
+                    school: edu.school || '',
+                    degree: edu.degree || '',
+                    year: edu.year || ''
+                })));
+            }
+            
+            if (parsed.experience && parsed.experience.length > 0) {
+                setExperiences(parsed.experience.map(exp => ({
+                    company: exp.company || '',
+                    role: exp.title || '',
+                    startDate: exp.duration || '',
+                    endDate: '',
+                    description: exp.description || ''
+                })));
+            }
+            
+            setShowLinkedInModal(false);
+            setPastedText('');
+            setError(null);
+        } catch (err) {
+            setError('Failed to parse the pasted content. Please try copying different sections.');
+        }
+    };
+
+    const handleLinkedInImport = async () => {
+        if (!linkedinUrl.trim()) {
+            setError('Please enter a LinkedIn profile URL');
+            return;
+        }
+        
+        setImporting(true);
+        setError(null);
+        setImportStatus('Connecting to LinkedIn...');
+        
+        try {
+            // Add a small delay to show the initial message
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setImportStatus('Fetching your profile data...');
+            
+            const response = await fetch('/api/linkedin/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ linkedinUrl }),
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                // Handle setup instructions
+                if (response.status === 503 && data.setupInstructions) {
+                    const instructions = Object.values(data.setupInstructions).join('\n');
+                    setError(`Setup Required:\n${instructions}\n\nFor now, please use the Copy & Paste method.`);
+                    setImportMethod('paste');
+                    return;
+                }
+                // Handle fallback to paste method
+                if (data.fallbackMethod === 'paste') {
+                    setError(data.error);
+                    setImportMethod('paste');
+                    return;
+                }
+                throw new Error(data.error || 'Failed to import LinkedIn profile');
+            }
+            
+            // Populate form fields with imported data
+            if (data.profile) {
+                setImportStatus('Populating your information...');
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                setName(data.profile.name || '');
+                setTitle(data.profile.title || '');
+                setLocation(data.profile.location || '');
+                setBio(data.profile.bio || '');
+                setSkills(data.profile.skills || '');
+                
+                if (data.profile.education && data.profile.education.length > 0) {
+                    setEducations(data.profile.education.map((edu: any) => ({
+                        school: edu.school || '',
+                        degree: edu.degree || '',
+                        year: edu.endYear || ''
+                    })));
+                }
+                
+                if (data.profile.experience && data.profile.experience.length > 0) {
+                    setExperiences(data.profile.experience);
+                }
+                
+                // Handle profile picture
+                if (data.profile.profilePicture) {
+                    try {
+                        setImportStatus('Downloading profile picture...');
+                        // Download the image from the URL
+                        const imageResponse = await fetch(data.profile.profilePicture);
+                        const blob = await imageResponse.blob();
+                        const file = new File([blob], 'profile-picture.jpg', { type: blob.type });
+                        setAvatarFile(file);
+                        // Create a preview URL for the image
+                        const previewUrl = URL.createObjectURL(blob);
+                        setAvatarPreviewUrl(previewUrl);
+                    } catch (err) {
+                        console.error('Failed to download profile picture:', err);
+                    }
+                }
+                
+                setImportStatus('Import complete!');
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            setShowLinkedInModal(false);
+            setLinkedinUrl('');
+            setImportStatus('');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to import LinkedIn profile');
+            setImportStatus('');
+        } finally {
+            setImporting(false);
+        }
+    };
 
     const handleProfileSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -295,14 +451,43 @@ export default function Onboarding() {
 
                 {currentStep === 1 && (
                     <div className="bg-surface-container rounded-2xl border border-border shadow-lg p-4 sm:p-6 lg:p-8">
+                        {/* LinkedIn Import Button */}
+                        <div className="mb-6 p-4 bg-surface-container-muted rounded-xl border border-border">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="text-center sm:text-left">
+                                    <h3 className="text-base font-medium text-onsurface-primary mb-1">Import from LinkedIn</h3>
+                                    <p className="text-sm text-onsurface-secondary">Save time by importing your profile</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowLinkedInModal(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-all"
+                                >
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                    </svg>
+                                    Import from LinkedIn
+                                </button>
+                            </div>
+                        </div>
+                        
                         <form className="space-y-5 sm:space-y-6" onSubmit={handleProfileSubmit}>
                             <div className="space-y-5 sm:space-y-6">
                                 <div className="flex justify-center mb-6 sm:mb-8">
                                     <div className="text-center">
                                         <ImageUploadWithCrop
-                                            currentImageUrl={null}
-                                            onImageSelected={setAvatarFile}
-                                            onImageRemoved={() => setAvatarFile(null)}
+                                            currentImageUrl={avatarPreviewUrl}
+                                            onImageSelected={(file) => {
+                                                setAvatarFile(file);
+                                                if (file) {
+                                                    const url = URL.createObjectURL(file);
+                                                    setAvatarPreviewUrl(url);
+                                                }
+                                            }}
+                                            onImageRemoved={() => {
+                                                setAvatarFile(null);
+                                                setAvatarPreviewUrl(null);
+                                            }}
                                             label="Upload Avatar"
                                             shape="circle"
                                         />
@@ -660,6 +845,146 @@ export default function Onboarding() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                )}
+
+                {/* LinkedIn Import Modal */}
+                {showLinkedInModal && (
+                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50 backdrop-blur-sm" style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}>
+                        <div className="bg-surface-container rounded-3xl shadow-lg p-6 w-full max-w-lg relative">
+                            {/* Loading overlay */}
+                            {importing && (
+                                <div className="absolute inset-0 bg-surface-container bg-opacity-95 rounded-3xl flex flex-col items-center justify-center z-10">
+                                    <div className="flex flex-col items-center gap-4">
+                                        {/* Animated LinkedIn logo or spinner */}
+                                        <div className="relative">
+                                            <div className="w-16 h-16 rounded-full bg-primary bg-opacity-20 animate-ping absolute" />
+                                            <div className="w-16 h-16 rounded-full bg-primary bg-opacity-30 animate-ping absolute" style={{ animationDelay: '200ms' }} />
+                                            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center relative">
+                                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Status message */}
+                                        <div className="text-center">
+                                            <p className="text-lg font-medium text-onsurface-primary mb-2">
+                                                {importStatus || 'Starting import...'}
+                                            </p>
+                                            <p className="text-sm text-onsurface-secondary">
+                                                This may take up to 30 seconds
+                                            </p>
+                                        </div>
+                                        
+                                        {/* Progress dots */}
+                                        <div className="flex gap-1">
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <h3 className="text-xl font-medium text-onsurface-primary mb-4">Import LinkedIn Profile</h3>
+                            
+                            {/* Import method tabs */}
+                            <div className="flex gap-2 mb-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setImportMethod('url')}
+                                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                                        importMethod === 'url' 
+                                            ? 'bg-primary text-white' 
+                                            : 'bg-surface-container-muted text-onsurface-secondary hover:bg-surface-container'
+                                    }`}
+                                >
+                                    Import from URL
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setImportMethod('paste')}
+                                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                                        importMethod === 'paste' 
+                                            ? 'bg-primary text-white' 
+                                            : 'bg-surface-container-muted text-onsurface-secondary hover:bg-surface-container'
+                                    }`}
+                                >
+                                    Copy & Paste
+                                </button>
+                            </div>
+                            
+                            {importMethod === 'url' ? (
+                                <>
+                                    <p className="text-sm text-onsurface-secondary mb-4">
+                                        Enter your LinkedIn profile URL to import your information
+                                    </p>
+                                    <input
+                                        type="url"
+                                        value={linkedinUrl}
+                                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                                        placeholder="https://www.linkedin.com/in/yourprofile"
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all mb-6"
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-onsurface-secondary mb-2">
+                                        Copy your LinkedIn profile information and paste it below
+                                    </p>
+                                    <ol className="text-xs text-onsurface-secondary mb-4 space-y-1">
+                                        <li>1. Go to your LinkedIn profile</li>
+                                        <li>2. Select and copy your profile sections (name, about, experience, etc.)</li>
+                                        <li>3. Paste the content below</li>
+                                    </ol>
+                                    <textarea
+                                        value={pastedText}
+                                        onChange={(e) => setPastedText(e.target.value)}
+                                        placeholder="Paste your LinkedIn profile content here..."
+                                        className="w-full px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all mb-6 min-h-[200px] resize-y"
+                                    />
+                                </>
+                            )}
+                            
+                            {error && (
+                                <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
+                                    <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                                </div>
+                            )}
+                            
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowLinkedInModal(false);
+                                        setLinkedinUrl('');
+                                        setPastedText('');
+                                        setError(null);
+                                        setImportMethod('url');
+                                        setImportStatus('');
+                                    }}
+                                    className="flex-1 py-3 px-4 border border-border rounded-xl text-sm font-medium text-onsurface-secondary bg-surface-container-muted hover:bg-surface-container transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={importMethod === 'url' ? handleLinkedInImport : handleManualPaste}
+                                    disabled={importing}
+                                    className="flex-1 flex justify-center items-center gap-2 py-3 px-4 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl transition-all disabled:opacity-50"
+                                >
+                                    {importing ? (
+                                        <>
+                                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                            <span>Importing...</span>
+                                        </>
+                                    ) : (
+                                        <span>{importMethod === 'url' ? 'Import Profile' : 'Parse & Import'}</span>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

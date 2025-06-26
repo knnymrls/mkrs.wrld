@@ -113,7 +113,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/35 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ zIndex: 10001 }}
       onClick={onClose}
     >

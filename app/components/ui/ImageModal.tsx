@@ -13,7 +13,7 @@ export default function ImageModal({ isOpen, imageUrl, onClose }: ImageModalProp
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-8 z-[100]"
+      className="fixed inset-0 flex items-center justify-center p-8 z-[100] backdrop-blur-sm"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onClick={onClose}
     >

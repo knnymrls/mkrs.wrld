@@ -538,7 +538,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center sm:p-4 z-50"
+      className="fixed inset-0 flex items-center justify-center sm:p-4 z-50 backdrop-blur-sm"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
       onClick={onClose}
     >
@@ -704,8 +704,8 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
           {/* Post Image */}
           {post.image_url && !isEditingPost && (
             <div 
-              className="mb-3 sm:mb-4 cursor-zoom-in" 
-              style={{ maxHeight: '60vh' }}
+              className="mb-3 sm:mb-4 cursor-zoom-in overflow-hidden" 
+              style={{ maxHeight: '400px' }}
               onClick={() => setIsImageModalOpen(true)}
             >
               <LazyImage
@@ -713,7 +713,7 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
                 alt="Post image"
                 width={post.image_width || undefined}
                 height={post.image_height || undefined}
-                className="rounded-lg hover:opacity-90 transition-opacity"
+                className="rounded-lg hover:opacity-90 transition-opacity w-full h-full object-contain"
                 placeholder="blur"
               />
             </div>
