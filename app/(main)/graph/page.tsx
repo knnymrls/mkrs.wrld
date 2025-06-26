@@ -83,10 +83,10 @@ export default function GraphPage() {
     });
     const [currentMode, setCurrentMode] = useState<GraphMode>('network');
     
-    // New visibility controls - hide posts from the start
+    // New visibility controls - show posts by default now
     const [showPeople, setShowPeople] = useState(true);
     const [showProjects, setShowProjects] = useState(true);
-    const [showPosts, setShowPosts] = useState(false);
+    const [showPosts, setShowPosts] = useState(true);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
 
     // Update dimensions on window resize
@@ -656,19 +656,19 @@ export default function GraphPage() {
                                         // These will be drawn with lower opacity
                                     }
                                     
-                                    // Node styling based on type - smaller sizes
+                                    // Node styling based on type - colored nodes
                                     let color = '#ffffff'; // Default white
-                                    let baseSize = 2;
+                                    let baseSize = 4;
                                     
                                     if (node.type === 'profile') {
-                                        color = '#ffffff'; // white
-                                        baseSize = 3;
+                                        color = '#3B82F6'; // blue
+                                        baseSize = 5;
                                     } else if (node.type === 'project') {
-                                        color = '#ffffff'; // white
-                                        baseSize = 3;
+                                        color = '#F59E0B'; // yellow/amber
+                                        baseSize = 5;
                                     } else if (node.type === 'post') {
                                         color = '#10B981'; // green for posts
-                                        baseSize = 2;
+                                        baseSize = 3;
                                     }
                                     
                                     // Size based on connections - smaller scaling
@@ -714,10 +714,10 @@ export default function GraphPage() {
                                         
                                         ctx.restore();
                                     } else if (node.type === 'profile') {
-                                        // Profile without image - draw gray circle
+                                        // Profile without image - draw blue circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.fillStyle = '#6B7280';
+                                        ctx.fillStyle = '#3B82F6';
                                         ctx.fill();
                                     } else {
                                         // Non-profile nodes (projects and posts)
@@ -757,10 +757,10 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    // Ultra minimal lines
-                                    ctx.strokeStyle = '#4B5563'; // Lighter gray
-                                    ctx.lineWidth = 0.5;
-                                    ctx.globalAlpha = isRelated ? 0.4 : 0.1;
+                                    // Better visibility for lines
+                                    ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
+                                    ctx.lineWidth = 1;
+                                    ctx.globalAlpha = isRelated ? 0.6 : 0.2;
                                     
                                     // Calculate arrow direction
                                     const dx = target.x - source.x;
