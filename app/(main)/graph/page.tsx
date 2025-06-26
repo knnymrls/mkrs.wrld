@@ -83,11 +83,11 @@ export default function GraphPage() {
     });
     const [currentMode, setCurrentMode] = useState<GraphMode>('network');
     
-    // New visibility controls - show people and projects by default
+    // New visibility controls - show only people by default for less clutter
     const [showPeople, setShowPeople] = useState(true);
-    const [showProjects, setShowProjects] = useState(true);
+    const [showProjects, setShowProjects] = useState(false);
     const [showPosts, setShowPosts] = useState(false);
-    const [connectionThreshold, setConnectionThreshold] = useState(0);
+    const [connectionThreshold, setConnectionThreshold] = useState(1);
 
     // Update dimensions on window resize
     useEffect(() => {
@@ -631,9 +631,9 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
-                                linkDistance={250}
-                                linkStrength={0.05}
-                                chargeStrength={-800}
+                                linkDistance={400}
+                                linkStrength={0.02}
+                                chargeStrength={-2000}
                                 nodeCanvasObjectMode={() => 'after'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
@@ -709,19 +709,19 @@ export default function GraphPage() {
                                         ctx.lineWidth = isHovered ? 3 : 2;
                                         ctx.stroke();
                                     } else {
+                                        // Skip rendering if node position is not initialized
+                                        if (!isFinite(node.x!) || !isFinite(node.y!)) return;
+                                        
                                         // Draw regular node with more visual appeal
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
                                         
-                                        // Add gradient for depth
-                                        const gradient = ctx.createRadialGradient(node.x!, node.y!, 0, node.x!, node.y!, size);
-                                        gradient.addColorStop(0, color);
-                                        gradient.addColorStop(1, color + '80');
-                                        ctx.fillStyle = gradient;
+                                        // Simple solid color instead of gradient to avoid errors
+                                        ctx.fillStyle = color;
                                         ctx.fill();
                                         
                                         // Border
-                                        ctx.strokeStyle = isHovered ? '#ffffff' : color;
+                                        ctx.strokeStyle = isHovered ? '#ffffff' : color + '40';
                                         ctx.lineWidth = isHovered ? 3 : 2;
                                         ctx.stroke();
                                         
@@ -735,7 +735,8 @@ export default function GraphPage() {
                                     }
                                     
                                     // Draw label for all nodes with better styling
-                                    if (node.type === 'profile' || node.type === 'project' || (isHovered && node.type === 'post')) {
+                                    if ((node.type === 'profile' || node.type === 'project' || (isHovered && node.type === 'post')) && 
+                                        isFinite(node.x!) && isFinite(node.y!)) {
                                         ctx.globalAlpha = isRelated ? 1 : 0.5;
                                         const label = node.label && node.label.length > 25 ? node.label.slice(0, 25) + '...' : node.label;
                                         const fontSize = node.type === 'profile' ? 14 : 12;
@@ -781,7 +782,8 @@ export default function GraphPage() {
                                     const source = link.source as any;
                                     const target = link.target as any;
                                     
-                                    if (!source.id || !target.id) return;
+                                    if (!source.id || !target.id || !isFinite(source.x) || !isFinite(source.y) || 
+                                        !isFinite(target.x) || !isFinite(target.y)) return;
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
@@ -848,9 +850,9 @@ export default function GraphPage() {
                                     ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
                                     ctx.fill();
                                 }}
-                                d3AlphaDecay={0.02}
-                                d3VelocityDecay={0.3}
-                                warmupTicks={100}
+                                d3AlphaDecay={0.01}
+                                d3VelocityDecay={0.2}
+                                warmupTicks={200}
                                 onEngineStop={() => {}}
                                 enablePanInteraction={true}
                                 enableZoomInteraction={true}
