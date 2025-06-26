@@ -627,6 +627,9 @@ export default function GraphPage() {
                                 height={dimensions.height - 73}
                                 backgroundColor="#111827"
                                 nodeLabel={() => ''}
+                                nodeRelSize={0}
+                                nodeVal={() => 0}
+                                nodeColor={() => 'transparent'}
                                 onNodeClick={handleNodeClick}
                                 onNodeHover={(node: any) => setHoveredNode(node?.id || null)}
                                 onBackgroundClick={() => {
@@ -643,12 +646,7 @@ export default function GraphPage() {
                                 linkDistance={150}
                                 linkStrength={0.1}
                                 chargeStrength={-300}
-                                nodeCanvasObjectMode={(node) => {
-                                    // Draw hovered and related nodes on top
-                                    const isHovered = node.id === hoveredNode;
-                                    const isRelated = hoveredNode && relatedNodes.has(node.id as string);
-                                    return (isHovered || isRelated) ? 'after' : 'before';
-                                }}
+                                nodeCanvasObjectMode={() => 'replace'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
                                     const isHovered = node.id === hoveredNode;
@@ -658,24 +656,24 @@ export default function GraphPage() {
                                         // These will be drawn with lower opacity
                                     }
                                     
-                                    // Node styling based on type - Obsidian style
+                                    // Node styling based on type - smaller sizes
                                     let color = '#ffffff'; // Default white
-                                    let baseSize = 3;
+                                    let baseSize = 2;
                                     
                                     if (node.type === 'profile') {
                                         color = '#ffffff'; // white
-                                        baseSize = 4;
+                                        baseSize = 3;
                                     } else if (node.type === 'project') {
                                         color = '#ffffff'; // white
-                                        baseSize = 5;
+                                        baseSize = 3;
                                     } else if (node.type === 'post') {
                                         color = '#10B981'; // green for posts
-                                        baseSize = 3;
+                                        baseSize = 2;
                                     }
                                     
-                                    // Size based on connections - make it more prominent
+                                    // Size based on connections - smaller scaling
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
-                                    const size = baseSize + Math.sqrt(connections) * 1.5;
+                                    const size = baseSize + Math.sqrt(connections) * 0.8;
                                     
                                     // Opacity for non-related nodes - very subtle
                                     ctx.globalAlpha = isRelated ? 1 : 0.3;
@@ -759,10 +757,10 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
-                                    // Basic onsurface-secondary lines
-                                    ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
-                                    ctx.lineWidth = 1;
-                                    ctx.globalAlpha = isRelated ? 0.8 : 0.2;
+                                    // Ultra minimal lines
+                                    ctx.strokeStyle = '#4B5563'; // Lighter gray
+                                    ctx.lineWidth = 0.5;
+                                    ctx.globalAlpha = isRelated ? 0.4 : 0.1;
                                     
                                     // Calculate arrow direction
                                     const dx = target.x - source.x;
@@ -771,38 +769,39 @@ export default function GraphPage() {
                                     const unitX = dx / distance;
                                     const unitY = dy / distance;
                                     
-                                    // Adjust for node radius
-                                    const baseSize = 5;
-                                    const sourceRadius = nodeConnectionCounts[source.id] ? baseSize + Math.sqrt(nodeConnectionCounts[source.id]) * 1.5 : baseSize;
-                                    const targetRadius = nodeConnectionCounts[target.id] ? baseSize + Math.sqrt(nodeConnectionCounts[target.id]) * 1.5 : baseSize;
+                                    // Adjust for node radius - smaller sizes
+                                    const baseSize = 3;
+                                    const sourceRadius = nodeConnectionCounts[source.id] ? baseSize + Math.sqrt(nodeConnectionCounts[source.id]) * 0.8 : baseSize;
+                                    const targetRadius = nodeConnectionCounts[target.id] ? baseSize + Math.sqrt(nodeConnectionCounts[target.id]) * 0.8 : baseSize;
                                     
                                     const startX = source.x + unitX * sourceRadius;
                                     const startY = source.y + unitY * sourceRadius;
-                                    const endX = target.x - unitX * (targetRadius + 5); // Leave space for arrow
-                                    const endY = target.y - unitY * (targetRadius + 5);
+                                    const endX = target.x - unitX * targetRadius;
+                                    const endY = target.y - unitY * targetRadius;
                                     
-                                    // Draw minimal line
+                                    // Draw ultra minimal line
                                     ctx.beginPath();
                                     ctx.moveTo(startX, startY);
                                     ctx.lineTo(endX, endY);
                                     ctx.stroke();
                                     
-                                    // Draw minimal arrow - smaller and cleaner
-                                    const arrowLength = 5;
-                                    const arrowAngle = Math.PI / 8;
-                                    
-                                    ctx.save();
-                                    ctx.translate(endX, endY);
-                                    ctx.rotate(Math.atan2(dy, dx));
-                                    
-                                    ctx.beginPath();
-                                    ctx.moveTo(0, 0);
-                                    ctx.lineTo(-arrowLength, -arrowLength * Math.tan(arrowAngle));
-                                    ctx.moveTo(0, 0);
-                                    ctx.lineTo(-arrowLength, arrowLength * Math.tan(arrowAngle));
-                                    ctx.stroke();
-                                    
-                                    ctx.restore();
+                                    // Tiny arrow - just a small triangle
+                                    if (isRelated && hoveredNode) {
+                                        const arrowSize = 3;
+                                        ctx.save();
+                                        ctx.translate(endX, endY);
+                                        ctx.rotate(Math.atan2(dy, dx));
+                                        
+                                        ctx.beginPath();
+                                        ctx.moveTo(0, 0);
+                                        ctx.lineTo(-arrowSize, -arrowSize/2);
+                                        ctx.lineTo(-arrowSize, arrowSize/2);
+                                        ctx.closePath();
+                                        ctx.fillStyle = ctx.strokeStyle;
+                                        ctx.fill();
+                                        
+                                        ctx.restore();
+                                    }
                                     
                                     ctx.globalAlpha = 1;
                                 }}
