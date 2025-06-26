@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '@/lib/supabase/client';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [userName, setUserName] = useState<string>('Anonymous');
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Focus input when modal opens
@@ -27,6 +29,25 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       }, 100);
     }
   }, [isOpen]);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .single();
+
+        if (data?.name) {
+          setUserName(data.name);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -54,7 +75,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           title,
           description,
           userEmail: user?.email,
-          userName: user?.user_metadata?.name || 'Anonymous',
+          userName: userName,
         }),
       });
 
