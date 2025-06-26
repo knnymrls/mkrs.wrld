@@ -768,7 +768,7 @@ export default function GraphPage() {
                                     
                                     // Lines - 50% normal, 100% for related, 10% for others when hovering
                                     ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
-                                    ctx.lineWidth = 1;
+                                    ctx.lineWidth = 0.5; // Thinner lines
                                     if (!hoveredNode) {
                                         ctx.globalAlpha = 0.5; // Normal state - 50% opacity for lines
                                     } else {
