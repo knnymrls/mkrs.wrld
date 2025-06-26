@@ -792,29 +792,11 @@ export default function GraphPage() {
                                     const endX = target.x - unitX * targetRadius;
                                     const endY = target.y - unitY * targetRadius;
                                     
-                                    // Draw ultra minimal line
+                                    // Draw ultra minimal line without arrows
                                     ctx.beginPath();
                                     ctx.moveTo(startX, startY);
                                     ctx.lineTo(endX, endY);
                                     ctx.stroke();
-                                    
-                                    // Tiny arrow - just a small triangle
-                                    if (isRelated && hoveredNode) {
-                                        const arrowSize = 3;
-                                        ctx.save();
-                                        ctx.translate(endX, endY);
-                                        ctx.rotate(Math.atan2(dy, dx));
-                                        
-                                        ctx.beginPath();
-                                        ctx.moveTo(0, 0);
-                                        ctx.lineTo(-arrowSize, -arrowSize/2);
-                                        ctx.lineTo(-arrowSize, arrowSize/2);
-                                        ctx.closePath();
-                                        ctx.fillStyle = ctx.strokeStyle;
-                                        ctx.fill();
-                                        
-                                        ctx.restore();
-                                    }
                                     
                                     ctx.globalAlpha = 1;
                                 }}
