@@ -314,13 +314,13 @@ export default function GraphPage() {
 
     const handleZoomIn = () => {
         if (graphRef.current) {
-            graphRef.current.zoom(1.5, 400);
+            graphRef.current.zoom(1.3, 300);
         }
     };
 
     const handleZoomOut = () => {
         if (graphRef.current) {
-            graphRef.current.zoom(0.7, 400);
+            graphRef.current.zoom(0.8, 300);
         }
     };
 
@@ -457,17 +457,24 @@ export default function GraphPage() {
                         <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1">
                             <button
                                 onClick={handleZoomIn}
-                                className="p-1.5 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50"
-                                title="Zoom In"
+                                className="p-2 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50 active:scale-95"
+                                title="Zoom In (Scroll or Pinch to zoom)"
                             >
-                                <ZoomIn className="w-4 h-4 text-onsurface-secondary" />
+                                <ZoomIn className="w-5 h-5 text-onsurface-secondary" />
                             </button>
                             <button
                                 onClick={handleZoomOut}
-                                className="p-1.5 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50"
-                                title="Zoom Out"
+                                className="p-2 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50 active:scale-95"
+                                title="Zoom Out (Scroll or Pinch to zoom)"
                             >
-                                <ZoomOut className="w-4 h-4 text-onsurface-secondary" />
+                                <ZoomOut className="w-5 h-5 text-onsurface-secondary" />
+                            </button>
+                            <button
+                                onClick={handleZoomReset}
+                                className="p-2 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50 active:scale-95"
+                                title="Fit to screen"
+                            >
+                                <Maximize2 className="w-5 h-5 text-onsurface-secondary" />
                             </button>
                         </div>
 
@@ -636,10 +643,20 @@ export default function GraphPage() {
                                 linkDistance={2000}
                                 linkStrength={0.001}
                                 chargeStrength={-30000}
-                                nodeCanvasObjectMode={() => 'after'}
+                                nodeCanvasObjectMode={(node) => {
+                                    // Draw hovered and related nodes on top
+                                    const isHovered = node.id === hoveredNode;
+                                    const isRelated = hoveredNode && relatedNodes.has(node.id as string);
+                                    return (isHovered || isRelated) ? 'after' : 'before';
+                                }}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
                                     const isHovered = node.id === hoveredNode;
+                                    
+                                    // Draw non-hovered nodes first (lower z-index)
+                                    if (hoveredNode && !isHovered && !isRelated) {
+                                        // These will be drawn with lower opacity
+                                    }
                                     
                                     // Node styling based on type with emojis
                                     let color = '#3B82F6'; // blue
@@ -866,6 +883,7 @@ export default function GraphPage() {
                                 }}
                                 enablePanInteraction={true}
                                 enableZoomInteraction={true}
+                                enableZoomPanInteraction={true}
                             />
                                 </div>
                             )}
