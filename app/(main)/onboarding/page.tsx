@@ -8,6 +8,7 @@ import { getEmbedding } from '@/lib/embeddings/index';
 import { uploadAvatar } from '@/lib/supabase/storage';
 import ImageUploadWithCrop from '../../components/ui/ImageUploadWithCrop';
 import { ManualLinkedInParser } from '@/lib/linkedin/manual-parser';
+import { NELNET_DIVISIONS } from '@/lib/constants/divisions';
 
 export default function Onboarding() {
     const { user, refreshProfile } = useAuth();
@@ -28,6 +29,9 @@ export default function Onboarding() {
     const [skills, setSkills] = useState('');
     const [location, setLocation] = useState('');
     const [title, setTitle] = useState('');
+    const [division, setDivision] = useState('');
+    const [department, setDepartment] = useState('');
+    const [team, setTeam] = useState('');
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
     
@@ -214,8 +218,8 @@ export default function Onboarding() {
                 avatarUrl = await uploadAvatar(user.id, avatarFile);
             }
             
-            // Generate embedding from bio, skills, title, and location
-            const embeddingInput = `${bio} ${skills} ${title} ${location}`;
+            // Generate embedding from bio, skills, title, location, and division info
+            const embeddingInput = `${bio} ${skills} ${title} ${location} ${division} ${department} ${team}`;
             const embedding = await getEmbedding(embeddingInput);
             
             const { error } = await supabase.from('profiles').update({
@@ -223,6 +227,9 @@ export default function Onboarding() {
                 bio,
                 location,
                 title,
+                division,
+                department,
+                team,
                 avatar_url: avatarUrl,
                 embedding,
             }).eq('id', user.id);
@@ -523,6 +530,53 @@ export default function Onboarding() {
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                     />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="division" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                        Division *
+                                    </label>
+                                    <select
+                                        id="division"
+                                        required
+                                        className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                        value={division}
+                                        onChange={(e) => setDivision(e.target.value)}
+                                    >
+                                        <option value="">Select your division</option>
+                                        {NELNET_DIVISIONS.map(div => (
+                                            <option key={div} value={div}>{div}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="department" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                            Department
+                                        </label>
+                                        <input
+                                            id="department"
+                                            type="text"
+                                            className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                            placeholder="e.g. Engineering, Product, Marketing"
+                                            value={department}
+                                            onChange={(e) => setDepartment(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="team" className="block text-sm font-medium text-onsurface-primary mb-2">
+                                            Team
+                                        </label>
+                                        <input
+                                            id="team"
+                                            type="text"
+                                            className="w-full min-h-[48px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                            placeholder="e.g. Platform Team, Mobile Team"
+                                            value={team}
+                                            onChange={(e) => setTeam(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>

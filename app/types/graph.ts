@@ -23,18 +23,27 @@ export interface ProfileNode extends BaseNode {
   label: string;
   bio?: string;
   avatar_url?: string;
+  title?: string;
+  location?: string;
+  skills?: string[];
+  division?: string;
+  department?: string;
+  team?: string;
 }
 
 export interface PostNode extends BaseNode {
   type: 'post';
   label: string;
-  author_id: string;
+  author_id?: string;
+  authorName?: string;
+  created_at?: string;
 }
 
 export interface ProjectNode extends BaseNode {
   type: 'project';
   label: string;
-  status: 'active' | 'paused' | 'complete';
+  status?: 'active' | 'paused' | 'complete';
+  description?: string;
 }
 
 export type GraphNode = ProfileNode | PostNode | ProjectNode;

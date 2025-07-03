@@ -8,37 +8,13 @@ import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X,
 import Image from 'next/image';
 import GraphModeSelector, { GraphMode } from '@/app/components/features/graph/GraphModeSelector';
 import SkillRadarVisualization from '@/app/components/features/graph/SkillRadarVisualization';
-import GraphControls from '@/app/components/features/graph/GraphControls';
+import EnhancedGraphControls from '@/app/components/features/graph/EnhancedGraphControls';
+import DivisionLegend from '@/app/components/features/graph/DivisionLegend';
+import { getDivisionColor, NELNET_DIVISIONS } from '@/lib/constants/divisions';
+import { calculateDivisionGroups } from '@/lib/graph/divisionGrouping';
+import { ProfileNode, PostNode, ProjectNode, GraphNode } from '@/app/types/graph';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
-
-interface ProfileNode {
-    id: string;
-    label: string;
-    type: 'profile';
-    title?: string;
-    location?: string;
-    avatar_url?: string;
-    skills?: string[];
-}
-
-interface PostNode {
-    id: string;
-    label: string;
-    type: 'post';
-    authorName?: string;
-    created_at?: string;
-}
-
-interface ProjectNode {
-    id: string;
-    label: string;
-    type: 'project';
-    status?: string;
-    description?: string;
-}
-
-type GraphNode = ProfileNode | PostNode | ProjectNode;
 
 interface Link {
     source: string;
@@ -88,6 +64,9 @@ export default function GraphPage() {
     const [showProjects, setShowProjects] = useState(true);
     const [showPosts, setShowPosts] = useState(true);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
+    const [selectedDivisions, setSelectedDivisions] = useState<string[]>([...NELNET_DIVISIONS]);
+    const [showLegend, setShowLegend] = useState(true);
+    const [showDivisionGroups, setShowDivisionGroups] = useState(false);
 
     // Update dimensions on window resize
     useEffect(() => {
@@ -139,6 +118,18 @@ export default function GraphPage() {
             if (node.type === 'post' && !filters.showPosts) return false;
             if (node.type === 'project' && !filters.showProjects) return false;
             
+            // Division filter for profiles
+            if (node.type === 'profile') {
+                const profileNode = node as ProfileNode;
+                // If no division is set, include if "Other" is selected
+                if (!profileNode.division) {
+                    if (!selectedDivisions.includes('Other')) return false;
+                } else {
+                    // Check if profile's division is selected
+                    if (!selectedDivisions.includes(profileNode.division)) return false;
+                }
+            }
+            
             // Connection count filter
             const connections = nodeConnectionCounts[node.id] || 0;
             if (connections < filters.minConnections) return false;
@@ -154,7 +145,7 @@ export default function GraphPage() {
         });
 
         setFilteredData({ nodes: filteredNodes, links: filteredLinks });
-    }, [graphData, filters, nodeConnectionCounts]);
+    }, [graphData, filters, nodeConnectionCounts, selectedDivisions]);
 
     // Calculate graph statistics
     useEffect(() => {
@@ -200,7 +191,7 @@ export default function GraphPage() {
                 { data: contributions, error: contributionsError },
                 { data: skills, error: skillsError }
             ] = await Promise.all([
-                supabase.from('profiles').select('id, name, title, location, avatar_url'),
+                supabase.from('profiles').select('id, name, title, location, avatar_url, division, department, team'),
                 supabase.from('posts').select('id, author_id, content, created_at'),
                 supabase.from('projects').select('id, title, description, status'),
                 supabase.from('post_mentions').select('post_id, profile_id'),
@@ -231,17 +222,24 @@ export default function GraphPage() {
             const profileNodes: ProfileNode[] = (profiles || []).map((p: any) => ({
                 id: p.id,
                 label: p.name || 'Unnamed',
-                type: 'profile',
+                type: 'profile' as const,
+                group: 1,
+                value: 1,
                 title: p.title,
                 location: p.location,
                 avatar_url: p.avatar_url,
-                skills: profileSkills.get(p.id) || []
+                skills: profileSkills.get(p.id) || [],
+                division: p.division,
+                department: p.department,
+                team: p.team
             }));
 
             const postNodes: PostNode[] = (posts || []).map((p: any) => ({
                 id: `post-${p.id}`,
                 label: p.content || 'Post',
-                type: 'post',
+                type: 'post' as const,
+                group: 2,
+                value: 1,
                 authorName: profileMap.get(p.author_id) || 'Unknown',
                 created_at: p.created_at
             }));
@@ -249,7 +247,9 @@ export default function GraphPage() {
             const projectNodes: ProjectNode[] = (projects || []).map((p: any) => ({
                 id: `project-${p.id}`,
                 label: p.title || 'Untitled Project',
-                type: 'project',
+                type: 'project' as const,
+                group: 3,
+                value: 1,
                 status: p.status,
                 description: p.description
             }));
@@ -441,7 +441,7 @@ export default function GraphPage() {
                     <>
                         {/* Graph Controls */}
                         {showFilters && (
-                            <GraphControls
+                            <EnhancedGraphControls
                                 showPeople={showPeople}
                                 showProjects={showProjects}
                                 showPosts={showPosts}
@@ -450,6 +450,18 @@ export default function GraphPage() {
                                 onTogglePosts={() => setShowPosts(!showPosts)}
                                 connectionThreshold={connectionThreshold}
                                 onConnectionThresholdChange={setConnectionThreshold}
+                                selectedDivisions={selectedDivisions}
+                                onDivisionToggle={(division) => {
+                                    setSelectedDivisions(prev => 
+                                        prev.includes(division) 
+                                            ? prev.filter(d => d !== division)
+                                            : [...prev, division]
+                                    );
+                                }}
+                                onClearDivisions={() => setSelectedDivisions([])}
+                                onSelectAllDivisions={() => setSelectedDivisions([...NELNET_DIVISIONS])}
+                                showDivisionGroups={showDivisionGroups}
+                                onToggleDivisionGroups={() => setShowDivisionGroups(!showDivisionGroups)}
                             />
                         )}
 
@@ -541,6 +553,22 @@ export default function GraphPage() {
                                                 {(nodeData as ProfileNode).location && (
                                                     <div className="text-onsurface-secondary">
                                                         📍 {(nodeData as ProfileNode).location}
+                                                    </div>
+                                                )}
+                                                {(nodeData as ProfileNode).division && (
+                                                    <div className="flex items-center gap-2">
+                                                        <div 
+                                                            className="w-3 h-3 rounded-full" 
+                                                            style={{ backgroundColor: getDivisionColor((nodeData as ProfileNode).division) }}
+                                                        />
+                                                        <span className="text-onsurface-secondary">
+                                                            {(nodeData as ProfileNode).division}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {(nodeData as ProfileNode).team && (
+                                                    <div className="text-onsurface-secondary text-xs">
+                                                        Team: {(nodeData as ProfileNode).team}
                                                     </div>
                                                 )}
                                                 {(nodeData as ProfileNode).skills && (nodeData as ProfileNode).skills!.length > 0 && (
@@ -643,6 +671,40 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
+                                onRenderFramePre={(ctx, globalScale) => {
+                                    if (!showDivisionGroups || !showPeople) return;
+                                    
+                                    // Draw division group bubbles
+                                    const groups = calculateDivisionGroups(filteredData.nodes, selectedDivisions);
+                                    
+                                    ctx.save();
+                                    groups.forEach(group => {
+                                        if (group.nodes.length < 2) return; // Don't draw bubble for single nodes
+                                        
+                                        const color = getDivisionColor(group.division);
+                                        
+                                        // Draw translucent circle
+                                        ctx.beginPath();
+                                        ctx.arc(group.center.x, group.center.y, group.radius, 0, 2 * Math.PI);
+                                        ctx.fillStyle = color + '10'; // 10% opacity
+                                        ctx.fill();
+                                        
+                                        // Draw border
+                                        ctx.strokeStyle = color + '30'; // 30% opacity
+                                        ctx.lineWidth = 2 / globalScale; // Adjust line width based on zoom
+                                        ctx.stroke();
+                                        
+                                        // Draw label if zoomed out enough
+                                        if (globalScale > 0.3) {
+                                            ctx.font = `${14 / globalScale}px Inter, sans-serif`;
+                                            ctx.fillStyle = color;
+                                            ctx.textAlign = 'center';
+                                            ctx.textBaseline = 'bottom';
+                                            ctx.fillText(group.division, group.center.x, group.center.y - group.radius - 5);
+                                        }
+                                    });
+                                    ctx.restore();
+                                }}
                                 nodeCanvasObjectMode={() => 'replace'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
@@ -655,10 +717,14 @@ export default function GraphPage() {
                                     
                                     // Node styling based on type - colored nodes
                                     let color = '#ffffff'; // Default white
+                                    let ringColor = null; // Division color for profiles
                                     let baseSize = 4;
                                     
                                     if (node.type === 'profile') {
-                                        color = '#3B82F6'; // blue
+                                        // Use division color for profiles
+                                        const profileNode = node as ProfileNode;
+                                        ringColor = getDivisionColor(profileNode.division);
+                                        color = '#ffffff'; // White center for profiles
                                         baseSize = 5;
                                     } else if (node.type === 'project') {
                                         color = '#F59E0B'; // yellow/amber
@@ -714,12 +780,37 @@ export default function GraphPage() {
                                         }
                                         
                                         ctx.restore();
+                                        
+                                        // Draw division ring for profile with image
+                                        if (ringColor) {
+                                            ctx.strokeStyle = ringColor;
+                                            ctx.lineWidth = 2;
+                                            ctx.beginPath();
+                                            ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI);
+                                            ctx.stroke();
+                                        }
                                     } else if (node.type === 'profile') {
-                                        // Profile without image - draw blue circle
+                                        // Profile without image - draw circle with division color
+                                        if (ringColor) {
+                                            // Draw outer ring
+                                            ctx.beginPath();
+                                            ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI);
+                                            ctx.fillStyle = ringColor;
+                                            ctx.fill();
+                                        }
+                                        
+                                        // Draw inner white circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.fillStyle = '#3B82F6';
+                                        ctx.fillStyle = '#ffffff';
                                         ctx.fill();
+                                        
+                                        // Draw profile icon
+                                        ctx.fillStyle = '#6B7280';
+                                        ctx.font = `${size * 1.2}px Arial`;
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'middle';
+                                        ctx.fillText('👤', node.x!, node.y!);
                                     } else {
                                         // Non-profile nodes (projects and posts)
                                         ctx.beginPath();
@@ -833,6 +924,14 @@ export default function GraphPage() {
                                 </div>
                             )}
                         </div>
+                        
+                        {/* Division Legend */}
+                        {showLegend && showPeople && (
+                            <DivisionLegend 
+                                visibleDivisions={selectedDivisions}
+                                onClose={() => setShowLegend(false)}
+                            />
+                        )}
                     </>
                 )}
             </div>
