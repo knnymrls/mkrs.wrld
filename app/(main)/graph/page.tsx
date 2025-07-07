@@ -390,7 +390,7 @@ export default function GraphPage() {
         <div className="relative w-full h-screen bg-[#0A0A0B] overflow-hidden">
             {/* Controls */}
             <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                <GraphModeSelector mode={currentMode} onModeChange={setCurrentMode} />
+                <GraphModeSelector currentMode={currentMode} onModeChange={setCurrentMode} />
                 
                 {currentMode === 'network' && (
                     <>
