@@ -46,8 +46,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Clean up the URL - remove backslashes and extra quotes
+    const cleanedUrl = linkedinUrl
+      .replace(/\\/g, '') // Remove all backslashes
+      .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+      .trim();
+
     // Validate LinkedIn URL
-    if (!LinkedInParser.isValidLinkedInUrl(linkedinUrl)) {
+    if (!LinkedInParser.isValidLinkedInUrl(cleanedUrl)) {
       return NextResponse.json(
         { error: 'Invalid LinkedIn URL' },
         { status: 400 }
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract username from URL
-    const username = LinkedInParser.extractUsername(linkedinUrl);
+    const username = LinkedInParser.extractUsername(cleanedUrl);
     if (!username) {
       return NextResponse.json(
         { error: 'Could not extract username from LinkedIn URL' },
@@ -91,8 +97,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Use Bright Data's exact format
-      const data = JSON.stringify([{ url: linkedinUrl }]);
+      // Use Bright Data's exact format with cleaned URL
+      const data = JSON.stringify([{ url: cleanedUrl }]);
 
       const options = {
         hostname: 'api.brightdata.com',
