@@ -53,6 +53,15 @@ const VisxGraphContainer: React.FC<VisxGraphContainerProps> = ({
   // Transform data to graph nodes
   const nodes = useMemo(() => {
     const allNodes: (ProfileNode | ProjectNode | PostNode)[] = [];
+    
+    console.log('Building nodes:', {
+      showPeople,
+      showProjects,
+      showPosts,
+      profileCount: profiles.length,
+      projectCount: projects.length,
+      postCount: posts.length
+    });
 
     // Add profile nodes
     if (showPeople) {

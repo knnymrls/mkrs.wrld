@@ -86,6 +86,7 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
 
   // Convert raw nodes to simulation nodes with positions
   const nodes = useMemo(() => {
+    console.log('VisxNetworkGraph received nodes:', rawNodes.length);
     return rawNodes.map(node => ({
       ...node,
       x: node.x || Math.random() * width,
@@ -120,6 +121,7 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
 
   // Initialize force simulation
   useEffect(() => {
+    console.log('Initializing simulation with', nodes.length, 'nodes and', links.length, 'links');
     const sim = forceSimulation<SimulationNode>(nodes)
       .force('link', forceLink<SimulationNode, SimulationLink>(links)
         .id(d => d.id)
@@ -319,11 +321,21 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
               {animatedNodes.map((node) => {
                 if (!matchesSearch(node)) return null;
                 if (node.connectionCount! < minConnections) return null;
-                if (node.type === 'profile' && selectedDivisions.length > 0 && 
-                    !selectedDivisions.includes(node.division || '')) return null;
+                // Only filter by division if divisions are actually selected and the node has a division
+                if (node.type === 'profile' && selectedDivisions.length > 0 && node.division &&
+                    !selectedDivisions.includes(node.division)) {
+                  console.log('Filtering out profile:', node.name, 'division:', node.division, 'selected:', selectedDivisions);
+                  return null;
+                }
                 
                 const radius = getNodeRadius(node);
                 const isDimmed = shouldDimNode(node);
+                
+                // Skip nodes without valid positions
+                if (!node.x || !node.y || !isFinite(node.x) || !isFinite(node.y)) {
+                  console.log('Skipping node without position:', node.id);
+                  return null;
+                }
                 
                 return (
                   <Group key={node.id}>
