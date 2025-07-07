@@ -11,8 +11,11 @@ export type NelnetDivision = typeof NELNET_DIVISIONS[number];
 // Division color mapping for graph visualization
 export const DIVISION_COLORS: Record<string, string> = {
   'Catalyst': '#3B82F6',          // Blue
+  'Catalyst Team': '#3B82F6',     // Blue (legacy name)
   'NBS': '#10B981',               // Green
+  'Nelnet Business Services': '#10B981', // Green (legacy name)
   'NDS': '#8B5CF6',               // Purple
+  'Nelnet Diversified Services': '#8B5CF6', // Purple (legacy name)
   'Corporate': '#0EA5E9',         // Sky Blue
   // Default color for unknown divisions
   'default': '#6B7280'
