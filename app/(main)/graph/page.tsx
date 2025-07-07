@@ -22,12 +22,6 @@ interface Link {
     type: 'authored' | 'mentions_profile' | 'mentions_project' | 'contributes';
 }
 
-interface FilterState {
-    showProfiles: boolean;
-    showPosts: boolean;
-    showProjects: boolean;
-    minConnections: number;
-}
 
 export default function GraphPage() {
     const router = useRouter();
@@ -42,12 +36,6 @@ export default function GraphPage() {
     const graphRef = useRef<any>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [showFilters, setShowFilters] = useState(false);
-    const [filters, setFilters] = useState<FilterState>({
-        showProfiles: true,
-        showPosts: false,
-        showProjects: false,
-        minConnections: 0
-    });
     const [graphStats, setGraphStats] = useState({
         totalNodes: 0,
         totalEdges: 0,
@@ -82,15 +70,6 @@ export default function GraphPage() {
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
 
-    // Sync filters with visibility controls
-    useEffect(() => {
-        setFilters({
-            showProfiles: showPeople,
-            showPosts: showPosts,
-            showProjects: showProjects,
-            minConnections: connectionThreshold
-        });
-    }, [showPeople, showPosts, showProjects, connectionThreshold]);
 
     // Compute related nodes for highlighting
     const relatedNodes = useMemo(() => {
@@ -114,9 +93,9 @@ export default function GraphPage() {
 
         const filteredNodes = graphData.nodes.filter(node => {
             // Type filter
-            if (node.type === 'profile' && !filters.showProfiles) return false;
-            if (node.type === 'post' && !filters.showPosts) return false;
-            if (node.type === 'project' && !filters.showProjects) return false;
+            if (node.type === 'profile' && !showPeople) return false;
+            if (node.type === 'post' && !showPosts) return false;
+            if (node.type === 'project' && !showProjects) return false;
             
             // Division filter for profiles
             if (node.type === 'profile') {
@@ -132,7 +111,7 @@ export default function GraphPage() {
             
             // Connection count filter
             const connections = nodeConnectionCounts[node.id] || 0;
-            if (connections < filters.minConnections) return false;
+            if (connections < connectionThreshold) return false;
             
             return true;
         });
@@ -145,7 +124,7 @@ export default function GraphPage() {
         });
 
         setFilteredData({ nodes: filteredNodes, links: filteredLinks });
-    }, [graphData, filters, nodeConnectionCounts, selectedDivisions]);
+    }, [graphData, showPeople, showPosts, showProjects, connectionThreshold, nodeConnectionCounts, selectedDivisions]);
 
     // Calculate graph statistics
     useEffect(() => {
