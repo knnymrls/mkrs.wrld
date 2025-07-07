@@ -34,8 +34,8 @@ export default function GraphPage() {
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<FilterState>({
         showProfiles: true,
-        showPosts: false,
-        showProjects: false,
+        showPosts: true,
+        showProjects: true,
         minConnections: 0
     });
     const [graphMode, setGraphMode] = useState<GraphMode>('network');

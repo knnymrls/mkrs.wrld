@@ -164,14 +164,17 @@ const VisxGraphContainer: React.FC<VisxGraphContainerProps> = ({
 
   // Handle node click
   const handleNodeClick = (node: SimulationNode) => {
+    console.log('Container handleNodeClick called with:', node);
     setSelectedNode(node);
     
     // Navigate to appropriate page
     if (node.type === 'profile') {
       const profileId = node.id.replace('profile-', '');
+      console.log('Navigating to profile:', profileId);
       router.push(`/profile/${profileId}`);
     } else if (node.type === 'project') {
       const projectId = node.id.replace('project-', '');
+      console.log('Navigating to project:', projectId);
       router.push(`/projects/${projectId}`);
     }
   };

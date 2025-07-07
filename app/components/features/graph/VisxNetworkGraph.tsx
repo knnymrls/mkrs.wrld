@@ -347,7 +347,7 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
                         r={radius + 3}
                         fill={getDivisionColor(node.division)}
                         opacity={isDimmed ? 0.1 : 0.8}
-                        style={{ transition: 'opacity 0.3s' }}
+                        style={{ transition: 'opacity 0.3s', pointerEvents: 'none' }}
                       />
                     )}
                     
@@ -361,12 +361,9 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
                       strokeWidth={2}
                       opacity={isDimmed ? 0.3 : 1}
                       style={{ 
-                        cursor: 'pointer',
-                        transition: 'all 0.3s'
+                        transition: 'all 0.3s',
+                        pointerEvents: 'none'
                       }}
-                      onMouseEnter={() => handleNodeHover(node)}
-                      onMouseLeave={() => handleNodeHover(null)}
-                      onClick={() => onNodeClick?.(node)}
                     />
                     
                     {/* Node content (emoji/avatar for profiles) */}
@@ -422,6 +419,21 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
                         {node.name || node.title || 'Post'}
                       </text>
                     )}
+                    
+                    {/* Invisible click/hover area */}
+                    <circle
+                      cx={node.x}
+                      cy={node.y}
+                      r={radius + 3}
+                      fill="transparent"
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => handleNodeHover(node)}
+                      onMouseLeave={() => handleNodeHover(null)}
+                      onClick={() => {
+                        console.log('Node clicked:', node);
+                        onNodeClick?.(node);
+                      }}
+                    />
                   </Group>
                 );
               })}
