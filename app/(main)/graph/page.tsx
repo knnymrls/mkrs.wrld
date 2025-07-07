@@ -105,22 +105,23 @@ export default function GraphPage() {
             if (node.type === 'post' && !showPosts) return false;
             if (node.type === 'project' && !showProjects) return false;
             
-            // Division filter for profiles
+            // Division filter for profiles - TEMPORARILY DISABLED
+            // TODO: Update profile divisions in database to match new division names
             if (node.type === 'profile') {
                 const profileNode = node as ProfileNode;
                 console.log('Profile division check:', {
                     name: profileNode.label,
                     division: profileNode.division,
                     selectedDivisions,
-                    isIncluded: profileNode.division ? selectedDivisions.includes(profileNode.division) : false
+                    wouldBeFiltered: profileNode.division ? !selectedDivisions.includes(profileNode.division) : true
                 });
-                // If no division is set, include if "Other" is selected
-                if (!profileNode.division) {
-                    if (!selectedDivisions.includes('Other')) return false;
-                } else {
-                    // Check if profile's division is selected
-                    if (!selectedDivisions.includes(profileNode.division)) return false;
-                }
+                // TEMPORARY: Show all profiles regardless of division
+                // if (!profileNode.division) {
+                //     if (!selectedDivisions.includes('Other')) return false;
+                // } else {
+                //     // Check if profile's division is selected
+                //     if (!selectedDivisions.includes(profileNode.division)) return false;
+                // }
             }
             
             // Connection count filter
