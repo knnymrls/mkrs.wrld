@@ -91,6 +91,14 @@ export default function GraphPage() {
     useEffect(() => {
         if (!graphData.nodes.length) return;
 
+        console.log('Filtering nodes:', {
+            totalNodes: graphData.nodes.length,
+            showPeople,
+            showPosts,
+            showProjects,
+            selectedDivisions
+        });
+
         const filteredNodes = graphData.nodes.filter(node => {
             // Type filter
             if (node.type === 'profile' && !showPeople) return false;
@@ -121,6 +129,13 @@ export default function GraphPage() {
             const sourceId = typeof link.source === 'object' ? (link.source as any).id : link.source;
             const targetId = typeof link.target === 'object' ? (link.target as any).id : link.target;
             return nodeIds.has(sourceId) && nodeIds.has(targetId);
+        });
+
+        console.log('Filtered results:', {
+            filteredNodes: filteredNodes.length,
+            filteredProfiles: filteredNodes.filter(n => n.type === 'profile').length,
+            filteredPosts: filteredNodes.filter(n => n.type === 'post').length,
+            filteredProjects: filteredNodes.filter(n => n.type === 'project').length
         });
 
         setFilteredData({ nodes: filteredNodes, links: filteredLinks });
@@ -277,6 +292,18 @@ export default function GraphPage() {
             });
             
             setNodeConnectionCounts(connectionCounts);
+            
+            console.log('Graph data loaded:', {
+                profiles: profileNodes.length,
+                posts: postNodes.length,
+                projects: projectNodes.length,
+                totalNodes: allNodes.length,
+                totalLinks: allLinks.length,
+                showPeople,
+                showPosts,
+                showProjects
+            });
+            
             setGraphData({
                 nodes: allNodes,
                 links: allLinks,
