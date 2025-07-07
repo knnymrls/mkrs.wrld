@@ -10,6 +10,8 @@ import {
   forceManyBody,
   forceCenter,
   forceCollide,
+  forceX,
+  forceY,
   SimulationNodeDatum,
   SimulationLinkDatum,
   Simulation
@@ -97,11 +99,14 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
 
   // Convert raw links to simulation links
   const links = useMemo(() => {
-    return rawLinks.map(link => ({
+    console.log('Raw links:', rawLinks);
+    const simLinks = rawLinks.map(link => ({
       ...link,
       source: link.source,
       target: link.target
     })) as SimulationLink[];
+    console.log('Simulation links:', simLinks);
+    return simLinks;
   }, [rawLinks]);
 
   // Calculate connection counts
@@ -121,18 +126,34 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
 
   // Initialize force simulation
   useEffect(() => {
+    if (nodes.length === 0) return;
+    
     console.log('Initializing simulation with', nodes.length, 'nodes and', links.length, 'links');
-    const sim = forceSimulation<SimulationNode>(nodes)
-      .force('link', forceLink<SimulationNode, SimulationLink>(links)
+    
+    // Create copies of nodes and links for simulation
+    const simNodes = nodes.map(n => ({ ...n }));
+    const simLinks = links.map(l => ({ ...l }));
+    
+    // Create simulation
+    const sim = forceSimulation<SimulationNode>(simNodes)
+      .force('link', forceLink<SimulationNode, SimulationLink>(simLinks)
         .id(d => d.id)
-        .distance(50))
-      .force('charge', forceManyBody().strength(-300))
+        .distance(100)
+        .strength(1))
+      .force('charge', forceManyBody().strength(-800))
       .force('center', forceCenter(width / 2, height / 2))
-      .force('collide', forceCollide(30))
-      .on('tick', () => {
-        setAnimatedNodes([...nodes]);
-        setAnimatedLinks([...links]);
-      });
+      .force('x', forceX(width / 2).strength(0.1))
+      .force('y', forceY(height / 2).strength(0.1))
+      .force('collide', forceCollide(50))
+      .alpha(1)
+      .alphaDecay(0.01)
+      .velocityDecay(0.2);
+
+    // Setup tick handler
+    sim.on('tick', () => {
+      setAnimatedNodes([...simNodes]);
+      setAnimatedLinks([...simLinks]);
+    });
 
     // Add division forces if enabled
     if (showDivisionGroups && selectedDivisions.length > 0) {
@@ -291,10 +312,13 @@ const VisxNetworkGraph: React.FC<VisxNetworkGraphProps> = ({
             {/* Render links */}
             <Group>
               {animatedLinks.map((link, i) => {
-                const sourceNode = typeof link.source === 'object' ? link.source : null;
-                const targetNode = typeof link.target === 'object' ? link.target : null;
+                const sourceNode = typeof link.source === 'object' ? link.source : 
+                  animatedNodes.find(n => n.id === link.source);
+                const targetNode = typeof link.target === 'object' ? link.target : 
+                  animatedNodes.find(n => n.id === link.target);
                 
                 if (!sourceNode || !targetNode) return null;
+                if (!sourceNode.x || !sourceNode.y || !targetNode.x || !targetNode.y) return null;
                 
                 const isDimmed = hoveredNode && 
                   sourceNode.id !== hoveredNode && 

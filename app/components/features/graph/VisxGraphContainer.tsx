@@ -108,6 +108,7 @@ const VisxGraphContainer: React.FC<VisxGraphContainerProps> = ({
       });
     }
 
+    console.log('Created nodes:', allNodes);
     return allNodes;
   }, [profiles, projects, posts, showPeople, showProjects, showPosts]);
 
@@ -159,6 +160,8 @@ const VisxGraphContainer: React.FC<VisxGraphContainerProps> = ({
       });
     }
 
+    console.log('Created links:', allLinks);
+    console.log('Sample link source/targets:', allLinks.slice(0, 5).map(l => ({ source: l.source, target: l.target })));
     return allLinks;
   }, [posts, postMentions, postProjects, contributions, showPeople, showProjects, showPosts]);
 
