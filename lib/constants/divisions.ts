@@ -1,31 +1,17 @@
 // Predefined Nelnet divisions
 export const NELNET_DIVISIONS = [
-  'Catalyst Team',
-  'NBS',
-  'NDS', 
-  'Payment Services',
-  'Great Lakes',
-  'Nelnet Bank',
-  'Nelnet Business Services',
-  'Nelnet Diversified Services',
-  'Corporate',
-  'Other'
+  'Catalyst NBS',
+  'NDS',
+  'Corporate'
 ] as const;
 
 export type NelnetDivision = typeof NELNET_DIVISIONS[number];
 
 // Division color mapping for graph visualization
 export const DIVISION_COLORS: Record<string, string> = {
-  'Catalyst Team': '#3B82F6',     // Blue
-  'NBS': '#10B981',               // Green
+  'Catalyst NBS': '#3B82F6',      // Blue
   'NDS': '#8B5CF6',               // Purple
-  'Payment Services': '#F59E0B',   // Orange
-  'Great Lakes': '#EF4444',        // Red
-  'Nelnet Bank': '#EC4899',        // Pink
-  'Nelnet Business Services': '#14B8A6', // Teal
-  'Nelnet Diversified Services': '#6366F1', // Indigo
-  'Corporate': '#0EA5E9',          // Sky Blue
-  'Other': '#9CA3AF',              // Light Gray
+  'Corporate': '#0EA5E9',         // Sky Blue
   // Default color for unknown divisions
   'default': '#6B7280'
 };
