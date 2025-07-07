@@ -108,6 +108,12 @@ export default function GraphPage() {
             // Division filter for profiles
             if (node.type === 'profile') {
                 const profileNode = node as ProfileNode;
+                console.log('Profile division check:', {
+                    name: profileNode.label,
+                    division: profileNode.division,
+                    selectedDivisions,
+                    isIncluded: profileNode.division ? selectedDivisions.includes(profileNode.division) : false
+                });
                 // If no division is set, include if "Other" is selected
                 if (!profileNode.division) {
                     if (!selectedDivisions.includes('Other')) return false;
