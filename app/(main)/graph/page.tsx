@@ -374,55 +374,64 @@ export default function GraphPage() {
 
 
     return (
-        <div className="relative w-full h-screen bg-background overflow-hidden">
-            {/* Clean Header */}
-            <div className="absolute top-0 left-0 right-0 z-30 bg-background border-b border-border">
-                <div className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-xl font-semibold text-onsurface-primary">Knowledge Graph</h1>
-                            <GraphModeSelector 
-                                currentMode={currentMode}
-                                onModeChange={setCurrentMode}
-                            />
+        <div className="relative w-full h-screen bg-[#0A0A0B] overflow-hidden">
+            {/* Controls */}
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                <GraphModeSelector mode={currentMode} onModeChange={setCurrentMode} />
+                
+                {currentMode === 'network' && (
+                    <>
+                        {/* Search */}
+                        <div className="bg-gray-900/90 backdrop-blur rounded-lg p-2">
+                            <div className="relative">
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search nodes..."
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        handleSearch(e.target.value);
+                                    }}
+                                    className="w-full pl-8 pr-3 py-1.5 bg-gray-800/50 text-white text-sm rounded border border-gray-700 focus:border-blue-500 focus:outline-none"
+                                />
+                            </div>
                         </div>
-                        
-                        {/* Simple Search */}
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-onsurface-secondary" />
-                            <input
-                                type="text"
-                                placeholder="Find person..."
-                                value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    handleSearch(e.target.value);
-                                }}
-                                className="pl-9 pr-4 py-1.5 text-sm bg-surface-container rounded-lg border border-border focus:outline-none focus:border-primary w-48"
-                            />
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`p-2 rounded-lg transition-colors ${
-                                    showFilters 
-                                        ? 'bg-primary/10 text-primary' 
-                                        : 'text-onsurface-secondary hover:bg-surface-container-muted'
-                                }`}
-                            >
-                                <Filter size={20} />
-                            </button>
-                            <button
-                                onClick={handleZoomReset}
-                                className="p-2 rounded-lg text-onsurface-secondary hover:bg-surface-container-muted transition-colors"
-                                title="Reset view"
-                            >
-                                <Maximize2 size={20} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
+
+                        {/* Filter Button */}
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors flex items-center gap-2"
+                        >
+                            <Filter className="w-4 h-4" />
+                            <span className="text-sm">Filters</span>
+                        </button>
+                    </>
+                )}
+            </div>
+            {/* Zoom Controls */}
+            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                <button
+                    onClick={handleZoomIn}
+                    className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors"
+                    title="Zoom In"
+                >
+                    <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={handleZoomOut}
+                    className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors"
+                    title="Zoom Out"
+                >
+                    <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={handleZoomReset}
+                    className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors"
+                    title="Reset Zoom"
+                >
+                    <Maximize2 className="w-4 h-4" />
+                </button>
             </div>
 
             {/* Legacy Search Bar - Hidden but kept for compatibility */}
@@ -924,17 +933,16 @@ export default function GraphPage() {
                                 </div>
                             )}
                         </div>
-                        
-                        {/* Division Legend */}
-                        {showLegend && showPeople && (
-                            <DivisionLegend 
-                                visibleDivisions={selectedDivisions}
-                                onClose={() => setShowLegend(false)}
-                            />
-                        )}
                     </>
                 )}
             </div>
+
+            {/* Division Legend */}
+            {currentMode === 'network' && selectedDivisions.length > 0 && (
+                <div className="absolute bottom-4 right-4 z-10">
+                    <DivisionLegend visibleDivisions={selectedDivisions} />
+                </div>
+            )}
 
         </div>
     );
