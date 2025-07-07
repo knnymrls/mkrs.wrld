@@ -176,7 +176,7 @@ export default function GraphPage() {
             {/* Division Legend */}
             {graphMode === 'network' && selectedDivisions.length > 0 && (
                 <div className="absolute bottom-4 right-4 z-10">
-                    <DivisionLegend selectedDivisions={selectedDivisions} />
+                    <DivisionLegend visibleDivisions={selectedDivisions} />
                 </div>
             )}
 
