@@ -1,9 +1,9 @@
 import { OpenAI } from 'openai';
 
 function getOpenAIClient() {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('NEXT_PUBLIC_OPENAI_API_KEY environment variable is required');
+    throw new Error('OPENAI_API_KEY environment variable is required');
   }
   return new OpenAI({ apiKey });
 }
@@ -18,14 +18,14 @@ export interface ExpandedTerms {
 export class EntityExpander {
   // Cache AI-generated expansions to avoid repeated API calls
   private expansionCache = new Map<string, string[]>();
-  
+
   // Removed AI expansion method - using pattern-based only
-  
+
   // Basic fallback expansion using patterns only
   private basicPatternExpansion(term: string): string[] {
     const expansions = new Set<string>();
     const lowerTerm = term.toLowerCase();
-    
+
     // Handle common patterns
     if (lowerTerm.includes('-')) {
       expansions.add(lowerTerm.replace(/-/g, ' '));
@@ -35,19 +35,19 @@ export class EntityExpander {
       expansions.add(lowerTerm.replace(/ /g, '-'));
       expansions.add(lowerTerm.replace(/ /g, ''));
     }
-    
+
     return Array.from(expansions);
   }
   // All expansions now handled by AI
 
   async expandTerm(term: string): Promise<ExpandedTerms> {
     const lowerTerm = term.toLowerCase();
-    
+
     // Use fast pattern-based expansion instead of AI
     const expansions = this.basicPatternExpansion(lowerTerm);
     const related: string[] = [];
     const synonyms: string[] = [];
-    
+
     // Add common variations
     if (lowerTerm === 'ai') {
       related.push('ml', 'machine learning', 'artificial intelligence');
@@ -56,7 +56,7 @@ export class EntityExpander {
     } else if (lowerTerm.includes('develop')) {
       synonyms.push('engineer', 'build', 'create');
     }
-    
+
     return {
       original: term,
       expansions,
@@ -87,7 +87,7 @@ export class EntityExpander {
     // Simple word extraction for speed
     const words = query.toLowerCase().split(/\s+/).filter(word => word.length > 2);
     const expanded = new Set<string>();
-    
+
     // Add basic variations
     words.forEach(word => {
       expanded.add(word);
@@ -101,7 +101,7 @@ export class EntityExpander {
         expanded.add(word.slice(0, -2)); // Remove -ed
       }
     });
-    
+
     return Array.from(expanded);
   }
 }

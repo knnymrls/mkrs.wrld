@@ -4,9 +4,9 @@ import { OpenAI } from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
 function getOpenAIClient() {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('NEXT_PUBLIC_OPENAI_API_KEY environment variable is required');
+    throw new Error('OPENAI_API_KEY environment variable is required');
   }
   return new OpenAI({ apiKey });
 }
@@ -26,24 +26,24 @@ export class SemanticSearchStrategy implements SearchStrategy {
 
   async execute(query: string, params?: { limit?: number; searchAll?: boolean }): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
-    
+
     // Generate embedding for the query
     const openai = getOpenAIClient();
     const embeddingRes = await openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: query,
     });
-    
+
     const embedding = embeddingRes.data[0].embedding;
     const limit = params?.limit || 20;
-    
+
     // Search profiles
     const { data: profiles } = await this.supabase.rpc('match_profiles', {
       query_embedding: embedding,
       match_threshold: -1, // Due to pgvector issue
       match_count: limit,
     });
-    
+
     if (profiles) {
       for (const profile of profiles) {
         // Fetch additional data
@@ -51,17 +51,17 @@ export class SemanticSearchStrategy implements SearchStrategy {
           .from('skills')
           .select('skill')
           .eq('profile_id', profile.id);
-        
+
         const { data: experiences } = await this.supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profile.id);
-        
+
         const { data: educations } = await this.supabase
           .from('educations')
           .select('*')
           .eq('profile_id', profile.id);
-        
+
         results.push({
           type: 'profile',
           id: profile.id,
@@ -76,14 +76,14 @@ export class SemanticSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     // Search posts
     const { data: posts } = await this.supabase.rpc('match_posts', {
       query_embedding: embedding,
       match_threshold: -1,
       match_count: limit,
     });
-    
+
     if (posts) {
       for (const post of posts) {
         results.push({
@@ -95,14 +95,14 @@ export class SemanticSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     // Search projects
     const { data: projects } = await this.supabase.rpc('match_projects', {
       query_embedding: embedding,
       match_threshold: -1,
       match_count: limit,
     });
-    
+
     if (projects) {
       for (const project of projects) {
         // Fetch contributors
@@ -110,7 +110,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
           .from('contributions')
           .select('person_id, role, description')
           .eq('project_id', project.id);
-        
+
         results.push({
           type: 'project',
           id: project.id,
@@ -123,7 +123,7 @@ export class SemanticSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     return results;
   }
 }

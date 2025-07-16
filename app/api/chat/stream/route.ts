@@ -13,7 +13,7 @@ interface TrackedMention {
 }
 
 function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required');
   }
@@ -22,7 +22,7 @@ function getOpenAIClient() {
 
 export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
-  
+
   // Create a custom readable stream
   const stream = new ReadableStream({
     async start(controller) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
           controller.close();
           return;
         }
-        
+
         if (!userId) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'User ID is required' })}\n\n`));
           controller.close();
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
         // Get the authorization header to pass to Supabase
         const authHeader = req.headers.get('authorization');
-        
+
         // Create Supabase client with the user's auth token
         const supabase = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         // Initialize agents
         const queryParser = new QueryParser();
         const retrievalAgent = new RetrievalAgent();
-        
+
         // Pass the authenticated supabase client to the retrieval agent
         retrievalAgent.setSupabaseClient(supabase);
 
@@ -91,9 +91,9 @@ export async function POST(req: NextRequest) {
         }
 
         // Send detailed status update about query analysis
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          type: 'status', 
-          message: `🔍 Analyzing: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"` 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          type: 'status',
+          message: `🔍 Analyzing: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`
         })}\n\n`));
 
         // Wait a bit to show the analysis
@@ -101,12 +101,12 @@ export async function POST(req: NextRequest) {
 
         // Send status about what we're searching for
         const searchTargets = [];
-        
+
         // Group entities by type
         const peopleEntities = parsedQuery.entities?.filter(e => e.type === 'person').map(e => e.value) || [];
         const skillEntities = parsedQuery.entities?.filter(e => e.type === 'skill' || e.type === 'technology').map(e => e.value) || [];
         const projectEntities = parsedQuery.entities?.filter(e => e.type === 'project').map(e => e.value) || [];
-        
+
         if (peopleEntities.length > 0) {
           searchTargets.push(`people (${peopleEntities.join(', ')})`);
         }
@@ -123,12 +123,12 @@ export async function POST(req: NextRequest) {
           searchTargets.push(`@${parsedQuery.mentions.projects.join(', @')}`);
         }
 
-        const searchMessage = searchTargets.length > 0 
+        const searchMessage = searchTargets.length > 0
           ? `🎯 Looking for: ${searchTargets.join(', ')}`
           : '📊 Performing semantic search across all content';
 
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          type: 'status', 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          type: 'status',
           message: searchMessage
         })}\n\n`));
 
@@ -136,9 +136,9 @@ export async function POST(req: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Phase 1: Initial retrieval
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          type: 'status', 
-          message: '🔄 Searching profiles, posts, and projects...' 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          type: 'status',
+          message: '🔄 Searching profiles, posts, and projects...'
         })}\n\n`));
 
         let searchResults = await retrievalAgent.retrieveInformation(message);
@@ -159,8 +159,8 @@ export async function POST(req: NextRequest) {
           ? `✅ Found: ${foundItems.join(', ')}`
           : '🔍 No exact matches found, generating helpful response...';
 
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          type: 'status', 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          type: 'status',
           message: foundMessage
         })}\n\n`));
 
@@ -206,25 +206,25 @@ Guidelines:
           const content = chunk.choices[0]?.delta?.content || '';
           if (content) {
             fullResponse += content;
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-              type: 'token', 
-              content 
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              type: 'token',
+              content
             })}\n\n`));
           }
         }
 
         // Send sources
         const sources = extractSources(searchResults);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          type: 'sources', 
-          sources 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          type: 'sources',
+          sources
         })}\n\n`));
 
         // Save to database (in background, don't await)
         saveToDatabase(supabase, currentSessionId!, userId, message, fullResponse, mentions, sources);
 
         // Send done signal
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
           type: 'done',
           sessionId: currentSessionId
         })}\n\n`));
@@ -232,8 +232,8 @@ Guidelines:
         controller.close();
       } catch (error: any) {
         console.error('Stream error:', error);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          error: error.message || 'Stream error' 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          error: error.message || 'Stream error'
         })}\n\n`));
         controller.close();
       }
@@ -251,7 +251,7 @@ Guidelines:
 
 function extractSources(searchResults: any): any[] {
   const sources: any[] = [];
-  
+
   if (searchResults.profiles?.length > 0) {
     searchResults.profiles.slice(0, 3).forEach((profile: any) => {
       sources.push({
@@ -263,7 +263,7 @@ function extractSources(searchResults: any): any[] {
       });
     });
   }
-  
+
   if (searchResults.posts?.length > 0) {
     searchResults.posts.slice(0, 3).forEach((post: any) => {
       sources.push({
@@ -276,7 +276,7 @@ function extractSources(searchResults: any): any[] {
       });
     });
   }
-  
+
   if (searchResults.projects?.length > 0) {
     searchResults.projects.slice(0, 3).forEach((project: any) => {
       sources.push({
@@ -288,16 +288,16 @@ function extractSources(searchResults: any): any[] {
       });
     });
   }
-  
+
   return sources;
 }
 
 async function saveToDatabase(
-  supabase: any, 
-  sessionId: string, 
-  userId: string, 
-  message: string, 
-  response: string, 
+  supabase: any,
+  sessionId: string,
+  userId: string,
+  message: string,
+  response: string,
   mentions: TrackedMention[],
   sources: any[]
 ) {

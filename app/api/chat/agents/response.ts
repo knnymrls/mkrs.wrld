@@ -6,9 +6,9 @@ import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { createClient } from '@supabase/supabase-js';
 
 function getOpenAIClient() {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('NEXT_PUBLIC_OPENAI_API_KEY environment variable is required');
+    throw new Error('OPENAI_API_KEY environment variable is required');
   }
   return new OpenAI({ apiKey });
 }
@@ -20,7 +20,7 @@ const supabase = createClient(
 
 export class ResponseAgent {
   private progressCallback?: (update: ProgressUpdate) => void | Promise<void>;
-  
+
   constructor(progressCallback?: (update: ProgressUpdate) => void | Promise<void>) {
     this.progressCallback = progressCallback;
   }
@@ -32,19 +32,19 @@ export class ResponseAgent {
   ): Promise<{ answer: string; needsMoreData: boolean; dataRequests?: DataRequest[]; sources?: Source[] }> {
     // First, evaluate if we have enough data
     const evaluation = this.evaluateResults(results, query);
-    
+
     if (evaluation.score < 0.3) {
       // Very poor results, might need more data
       const gaps = this.identifyGaps(results, query);
       const dataRequests = this.createDataRequests(gaps);
-      
+
       if (dataRequests.length > 0) {
         await this.emitProgress({
           type: 'requesting_more',
           message: 'Gathering additional details...',
           emoji: '🔄',
         });
-        
+
         return {
           answer: '',
           needsMoreData: true,
@@ -52,23 +52,23 @@ export class ResponseAgent {
         };
       }
     }
-    
+
     // Build context from results
     const context = this.buildContext(results, query);
-    
+
     if (!context || context.trim() === '') {
       // Use AI to generate a helpful response even with no results
       const answer = await this.generateIntelligentNoResultsResponse(query, results);
-      
+
       return {
         answer,
         needsMoreData: false,
       };
     }
-    
+
     // Extract top sources before generating response
     const sources = this.extractTopSources(results, query);
-    
+
     // Generate response using LLM
     const messages: ChatCompletionMessageParam[] = [
       {
@@ -81,7 +81,7 @@ export class ResponseAgent {
         content: `Context:\n${context}\n\nQuestion: ${query.originalQuery}`,
       },
     ];
-    
+
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -89,10 +89,10 @@ export class ResponseAgent {
       temperature: 0.7,
       max_tokens: 1000,
     });
-    
-    const answer = completion.choices[0].message.content || 
+
+    const answer = completion.choices[0].message.content ||
       "I apologize, but I couldn't generate a response.";
-    
+
     return {
       answer,
       needsMoreData: false,
@@ -103,84 +103,84 @@ export class ResponseAgent {
   private evaluateResults(results: SearchResults, query: ParsedQuery): { score: number; reason: string } {
     let score = 0;
     const reasons: string[] = [];
-    
+
     // Check if we have any results
-    const totalResults = 
-      results.profiles.length + 
-      results.posts.length + 
+    const totalResults =
+      results.profiles.length +
+      results.posts.length +
       results.projects.length +
       results.experiences.length;
-    
+
     if (totalResults === 0) {
       return { score: 0, reason: 'No results found' };
     }
-    
+
     // Evaluate based on query intent
     switch (query.intent) {
       case 'find_people':
         if (results.profiles.length > 0) {
           score += 0.5;
-          
+
           // Check if profiles have relevant skills/experience
           const relevantProfiles = results.profiles.filter(p => {
             const profileWithSkills = p as any;
             const hasRelevantSkills = query.entities
               .filter(e => e.type === 'skill')
-              .some(skill => 
-                profileWithSkills.skills?.some((s: string) => 
+              .some(skill =>
+                profileWithSkills.skills?.some((s: string) =>
                   s.toLowerCase().includes(skill.value.toLowerCase())
                 )
               );
-            
+
             const hasRelevantExperience = profileWithSkills.experiences?.length > 0;
-            
+
             return hasRelevantSkills || hasRelevantExperience;
           });
-          
+
           if (relevantProfiles.length > 0) {
             score += 0.3;
             reasons.push(`Found ${relevantProfiles.length} people with relevant skills`);
           }
         }
-        
+
         // Bonus for finding experiences
         if (results.experiences.length > 0) {
           score += 0.2;
           reasons.push('Found relevant work experience');
         }
         break;
-        
+
       case 'find_projects':
         if (results.projects.length > 0) {
           score += 0.7;
           reasons.push(`Found ${results.projects.length} projects`);
         }
-        
+
         // Bonus for finding related posts
         if (results.posts.length > 0) {
           score += 0.2;
           reasons.push('Found related discussions');
         }
         break;
-        
+
       case 'find_activity':
         if (results.posts.length > 0) {
           score += 0.6;
-          
+
           // Check recency
           const recentPosts = results.posts.filter(p => {
             const postDate = new Date(p.created_at);
             const daysSince = (Date.now() - postDate.getTime()) / (1000 * 60 * 60 * 24);
             return daysSince < 30;
           });
-          
+
           if (recentPosts.length > 0) {
             score += 0.3;
             reasons.push(`Found ${recentPosts.length} recent posts`);
           }
         }
         break;
-        
+
       default:
         // General query - any results are good
         if (totalResults > 5) {
@@ -191,16 +191,16 @@ export class ResponseAgent {
           reasons.push(`Found only ${totalResults} items`);
         }
     }
-    
-    return { 
-      score: Math.min(score, 1), 
+
+    return {
+      score: Math.min(score, 1),
       reason: reasons.join(', ') || 'Evaluation complete',
     };
   }
 
   private identifyGaps(results: SearchResults, query: ParsedQuery): DataGap[] {
     const gaps: DataGap[] = [];
-    
+
     switch (query.intent) {
       case 'find_people':
         // Check if we found people but missing their recent activity
@@ -211,13 +211,13 @@ export class ResponseAgent {
             importance: 'medium',
           });
         }
-        
+
         // Check if we need experience details
         const profilesWithoutExperience = results.profiles.filter(p => {
           const profileWithExp = p as any;
           return !profileWithExp.experiences || profileWithExp.experiences.length === 0;
         });
-        
+
         if (profilesWithoutExperience.length > 0) {
           gaps.push({
             type: 'experience_details',
@@ -226,14 +226,14 @@ export class ResponseAgent {
           });
         }
         break;
-        
+
       case 'find_projects':
         // Check if we need contributor details
         const projectsWithoutContributors = results.projects.filter(p => {
           const projectWithContribs = p as any;
           return !projectWithContribs.contributions || projectWithContribs.contributions.length === 0;
         });
-        
+
         if (projectsWithoutContributors.length > 0) {
           gaps.push({
             type: 'project_details',
@@ -243,7 +243,7 @@ export class ResponseAgent {
         }
         break;
     }
-    
+
     return gaps;
   }
 
@@ -255,7 +255,7 @@ export class ResponseAgent {
           case 'recent_activity':
             return {
               type: 'recent_activity' as const,
-              parameters: { 
+              parameters: {
                 timeRange: {
                   start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
                   end: new Date().toISOString()
@@ -263,21 +263,21 @@ export class ResponseAgent {
               },
               reason: 'To show recent work and contributions',
             };
-            
+
           case 'experience_details':
             return {
               type: 'experience_details' as const,
               parameters: {},
               reason: 'To provide complete work history',
             };
-            
+
           case 'project_details':
             return {
               type: 'project_details' as const,
               parameters: {},
               reason: 'To show who is working on these projects',
             };
-            
+
           default:
             return {
               type: 'skill_verification' as const,
@@ -290,7 +290,7 @@ export class ResponseAgent {
 
   private buildContext(results: SearchResults, query: ParsedQuery): string {
     const sections: string[] = [];
-    
+
     // Build profile context with full details
     if (results.profiles.length > 0) {
       const profileContext = results.profiles
@@ -298,15 +298,15 @@ export class ResponseAgent {
         .map(p => {
           const profileWithDetails = p as any;
           let context = `Profile: ${p.name || 'Unnamed'} - ${p.title || 'No title'} - ${p.location || 'No location'}`;
-          
+
           if (p.bio) {
             context += ` - Bio: ${p.bio}`;
           }
-          
+
           if (profileWithDetails.skills && profileWithDetails.skills.length > 0) {
             context += ` - Skills: ${profileWithDetails.skills.join(', ')}`;
           }
-          
+
           if (profileWithDetails.experiences && profileWithDetails.experiences.length > 0) {
             const expText = profileWithDetails.experiences
               .map((exp: any) => {
@@ -319,18 +319,18 @@ export class ResponseAgent {
               .join('; ');
             context += ` - Experience: ${expText}`;
           }
-          
+
           if (profileWithDetails._reason) {
             context += ` (Match: ${profileWithDetails._reason})`;
           }
-          
+
           return context;
         })
         .join('\n\n');
-      
+
       sections.push('=== PEOPLE ===\n' + profileContext);
     }
-    
+
     // Build project context
     if (results.projects.length > 0) {
       const projectContext = results.projects
@@ -338,25 +338,25 @@ export class ResponseAgent {
         .map(p => {
           const projectWithContribs = p as any;
           let context = `Project: "${p.title}" - Status: ${p.status} - ${p.description}`;
-          
+
           if (projectWithContribs.contributions && projectWithContribs.contributions.length > 0) {
             const contribNames = projectWithContribs.contributions
               .map((c: any) => c.role)
               .join(', ');
             context += ` - Contributors: ${contribNames}`;
           }
-          
+
           if (projectWithContribs._reason) {
             context += ` (Match: ${projectWithContribs._reason})`;
           }
-          
+
           return context;
         })
         .join('\n\n');
-      
+
       sections.push('=== PROJECTS ===\n' + projectContext);
     }
-    
+
     // Build posts context
     if (results.posts.length > 0) {
       const postContext = results.posts
@@ -366,10 +366,10 @@ export class ResponseAgent {
           return `Post (${date}): ${p.content}`;
         })
         .join('\n\n');
-      
+
       sections.push('=== RECENT ACTIVITY ===\n' + postContext);
     }
-    
+
     // Build experience context if standalone experiences
     if (results.experiences.length > 0) {
       const expContext = results.experiences
@@ -386,10 +386,10 @@ export class ResponseAgent {
           return context;
         })
         .join('\n\n');
-      
+
       sections.push('=== WORK EXPERIENCE ===\n' + expContext);
     }
-    
+
     return sections.join('\n\n');
   }
 
@@ -432,52 +432,52 @@ When recommending people for a specific need:
 - Give the TOP recommendation with 2-3 bullet points max
 - Example: "Kenny Morales - React/Node.js developer, currently working on AI projects"
 - Follow-up examples: "Would you like to see other candidates?" or "What specific skills are most important for this project?"`,
-      
+
       find_projects: `
 When describing projects:
 - Name the project and its main purpose
 - List 1-2 key contributors
 - Follow-up examples: "Want to know more about the timeline?" or "Interested in similar projects?"`,
-      
+
       find_activity: `
 When summarizing activity:
 - Give the most relevant 2-3 updates
 - Follow-up examples: "Want to see activity from a specific time period?" or "Looking for updates on a particular topic?"`,
-      
+
       find_knowledge: `
 When sharing knowledge:
 - Name the expert and their specific experience
 - Follow-up examples: "Need more technical details?" or "Want to see who else has this expertise?"`,
-      
+
       find_relationships: `
 When explaining connections:
 - State the connection clearly
 - Follow-up examples: "Want to explore their shared projects?" or "Interested in finding more connections?"`,
-      
+
       analytical: `
 When providing analytics:
 - Present numbers and trends clearly
 - Summarize key insights
 - Follow-up examples: "Want to see a breakdown by department?" or "Interested in historical trends?"`,
-      
+
       temporal: `
 When answering time-based queries:
 - Clearly state the time period covered
 - Highlight the most important events/changes
 - Follow-up examples: "Want to see earlier activity?" or "Need more detail on any specific event?"`,
-      
+
       exploratory: `
 When handling exploratory queries:
 - Provide a comprehensive overview
 - Organize information by relevance
 - Follow-up examples: "What aspect interests you most?" or "Should I dive deeper into any area?"`,
-      
+
       specific: `
 When answering about specific entities:
 - Provide complete information about the entity
 - Include relevant connections and context
 - Follow-up examples: "Want to know about their recent work?" or "Interested in similar profiles?"`,
-      
+
       general: `
 Provide a helpful answer based on all available information.
 Organize the response by relevance and type.
@@ -489,7 +489,7 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
 
   private extractTopSources(results: SearchResults, query: ParsedQuery): Source[] {
     const sources: Source[] = [];
-    
+
     // Extract sources from profiles with higher base score for people
     for (const profile of results.profiles.slice(0, 10)) {
       if (profile.id && profile.name) {
@@ -502,7 +502,7 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         });
       }
     }
-    
+
     // Extract sources from projects
     for (const project of results.projects.slice(0, 10)) {
       sources.push({
@@ -513,16 +513,16 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         relevanceScore: (project as any)._score || 0.6, // Lower base score for projects
       });
     }
-    
+
     // Extract sources from posts
     for (const post of results.posts.slice(0, 10)) {
-      const preview = post.content.length > 100 
-        ? post.content.substring(0, 100) + '...' 
+      const preview = post.content.length > 100
+        ? post.content.substring(0, 100) + '...'
         : post.content;
-      
+
       // Find author name from profiles
       const author = results.profiles.find(p => p.id === post.author.id);
-      
+
       sources.push({
         type: 'post',
         id: post.id,
@@ -531,10 +531,10 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         relevanceScore: (post as any)._score || 0.4,
       });
     }
-    
+
     // Sort by relevance score
     sources.sort((a, b) => b.relevanceScore - a.relevanceScore);
-    
+
     return sources;
   }
 
@@ -544,51 +544,51 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
     }
     // Progress is emitted only if callback is provided
   }
-  
+
   private async generateIntelligentNoResultsResponse(
     query: ParsedQuery,
     results: SearchResults
   ): Promise<string> {
     // Skip expensive AI call and database summary for speed
     const followUpQuestions = this.generateFollowUpQuestions(query, results);
-    
+
     // Generate a simple but helpful response
     let response = `I searched for ${this.describeSearch(query)} but didn't find exact matches.`;
-    
+
     // Add context based on query type
     if (query.intent === 'temporal') {
       response += ` The data might exist outside the specified timeframe.`;
     } else if (query.intent === 'find_people') {
       response += ` The skills or expertise you're looking for might be available under different terms.`;
     }
-    
+
     // Add follow-up questions
     if (followUpQuestions.length > 0) {
       response += '\n\n' + followUpQuestions.join('\n\n');
     }
-    
+
     return response;
   }
-  
+
   // Removed expensive database summary method
 
   private generateFollowUpQuestions(query: ParsedQuery, results: SearchResults): string[] {
     const questions: string[] = [];
-    
+
     // Generate follow-ups based on query structure, not hardcoded content
-    
+
     // If there was a time constraint, suggest removing it
     if (query.timeConstraints) {
       questions.push(`Would you like to search without the time constraint?`);
     }
-    
+
     // If searching for specific skills/technologies, suggest related searches
     const skills = query.entities.filter(e => e.type === 'skill' || e.type === 'technology');
     if (skills.length > 0) {
       questions.push(`Should I search for related skills or technologies?`);
       questions.push(`Would you like to see people with transferable skills?`);
     }
-    
+
     // Based on intent, suggest different search strategies
     switch (query.intent) {
       case 'find_people':
@@ -608,45 +608,45 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         questions.push(`Should I analyze different metrics?`);
         break;
     }
-    
+
     // Always offer to broaden or clarify
     questions.push(`Can you tell me more about what you're looking for?`);
     questions.push(`Would you like me to search more broadly?`);
-    
+
     return [...new Set(questions)].slice(0, 3); // Remove duplicates and limit to 3
   }
 
   private generateNoResultsResponse(query: ParsedQuery, followUpQuestions: string[]): string {
     // Use AI to generate a contextual response
     let response = `I searched for ${this.describeSearch(query)} but didn't find exact matches.`;
-    
+
     // Add follow-up questions
     if (followUpQuestions.length > 0) {
       response += "\n\n" + followUpQuestions.join("\n\n");
     }
-    
+
     return response;
   }
-  
+
   private describeSearch(query: ParsedQuery): string {
     const parts: string[] = [];
-    
+
     // Describe what was searched based on entities
     if (query.entities.length > 0) {
       const skills = query.entities.filter(e => e.type === 'skill' || e.type === 'technology').map(e => e.value);
       const people = query.entities.filter(e => e.type === 'person').map(e => e.value);
       const concepts = query.entities.filter(e => e.type === 'concept').map(e => e.value);
-      
+
       if (skills.length > 0) parts.push(`${skills.join(', ')} skills`);
       if (people.length > 0) parts.push(`people named ${people.join(', ')}`);
       if (concepts.length > 0) parts.push(`${concepts.join(', ')}`);
     }
-    
+
     // Add time context if present
     if (query.timeConstraints?.relative) {
       parts.push(`from ${query.timeConstraints.relative}`);
     }
-    
+
     // Add intent context
     switch (query.intent) {
       case 'find_people':
@@ -662,10 +662,10 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         if (!query.timeConstraints) parts.push('in the specified timeframe');
         break;
     }
-    
+
     return parts.join(' ') || 'the requested information';
   }
-  
+
   // Removed hardcoded methods - now handled dynamically in synthesizeResponse
 
   private hasAnyData(results: SearchResults): boolean {
