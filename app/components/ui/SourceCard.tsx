@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 interface Source {
-  type: 'profile' | 'project' | 'post';
+  type: 'profile' | 'project' | 'post' | 'project_request';
   id: string;
   name?: string;
   title?: string;
@@ -24,6 +24,8 @@ export default function SourceCard({ source }: SourceCardProps) {
         return '📁';
       case 'post':
         return '📝';
+      case 'project_request':
+        return '💼';
     }
   };
 
@@ -36,6 +38,8 @@ export default function SourceCard({ source }: SourceCardProps) {
       case 'post':
         // For now, posts don't have individual pages
         return '#';
+      case 'project_request':
+        return `/project-requests/${source.id}`;
     }
   };
 
@@ -47,6 +51,8 @@ export default function SourceCard({ source }: SourceCardProps) {
         return <span>{source.name}</span>;
       case 'post':
         return <span>Post by {source.author}</span>;
+      case 'project_request':
+        return <span>{source.title || source.name}</span>;
     }
   };
 

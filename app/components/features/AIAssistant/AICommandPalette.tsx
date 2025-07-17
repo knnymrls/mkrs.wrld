@@ -444,14 +444,16 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
 
   return (
     <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-32 px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        style={{ zIndex: 10000 }}
-      >
+      {isOpen && (
+        <motion.div
+          key="ai-command-palette"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-32 px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          style={{ zIndex: 10000 }}
+        >
         <motion.div
           className="bg-surface-container rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
           initial={{ scale: 0.95, y: -20 }}
@@ -712,7 +714,8 @@ export default function AICommandPalette({ isOpen, onClose }: AICommandPalettePr
             </div>
           </div>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      )}
       
       {/* Feedback Modal */}
       <FeedbackModal

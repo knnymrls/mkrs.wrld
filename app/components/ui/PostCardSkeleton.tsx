@@ -41,7 +41,7 @@ const PostCardSkeleton = React.memo(function PostCardSkeleton({
     }
   };
 
-  const shouldShowImage = withImage ?? Math.random() > 0.6;
+  const shouldShowImage = withImage ?? false;
 
   return (
     <>

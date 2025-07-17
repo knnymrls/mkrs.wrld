@@ -390,6 +390,28 @@ export class ResponseAgent {
       sections.push('=== WORK EXPERIENCE ===\n' + expContext);
     }
 
+    // Build project requests context
+    if (results.projectRequests && results.projectRequests.length > 0) {
+      const requestContext = results.projectRequests
+        .slice(0, 10)
+        .map(r => {
+          const request = r as any;
+          let context = `Project Request: "${request.title}" - ${request.description}`;
+          context += ` - Skills needed: ${request.skills_needed.join(', ')}`;
+          context += ` - Time: ${request.time_commitment} - Urgency: ${request.urgency}`;
+          if (request.creator) {
+            context += ` - Posted by: ${request.creator.name}`;
+          }
+          if (request._reason) {
+            context += ` (Match: ${request._reason})`;
+          }
+          return context;
+        })
+        .join('\n\n');
+
+      sections.push('=== PROJECT OPPORTUNITIES ===\n' + requestContext);
+    }
+
     return sections.join('\n\n');
   }
 
@@ -530,6 +552,19 @@ Ask how you can help further or what specific aspect they'd like to explore.`,
         author: author?.name || 'Unknown',
         relevanceScore: (post as any)._score || 0.4,
       });
+    }
+
+    // Extract sources from project requests
+    if (results.projectRequests) {
+      for (const request of results.projectRequests.slice(0, 10)) {
+        sources.push({
+          type: 'project_request',
+          id: request.id,
+          title: request.title,
+          description: request.description || undefined,
+          relevanceScore: (request as any)._score || 0.7, // Good relevance for opportunities
+        });
+      }
     }
 
     // Sort by relevance score

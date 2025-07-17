@@ -4,11 +4,12 @@ import React, { useCallback } from 'react';
 import PostCard from './PostCard';
 import ProfileCard from './ProfileCard';
 import ProjectCard from './ProjectCard';
+import ProjectRequestCardGrid from './ProjectRequestCardGrid';
 import PostCardSkeleton from '../ui/PostCardSkeleton';
 import { TrackedMention } from '@/app/types/mention';
 import { useInfiniteScroll } from '../../(main)/hooks/useInfiniteScroll';
 
-type ActivityItemType = 'post' | 'profile' | 'project';
+type ActivityItemType = 'post' | 'profile' | 'project' | 'project_request';
 
 interface BaseActivity {
   id: string;
@@ -65,7 +66,27 @@ interface ProjectActivity extends BaseActivity {
   }>;
 }
 
-export type ActivityItem = PostActivity | ProfileActivity | ProjectActivity;
+interface ProjectRequestActivity extends BaseActivity {
+  type: 'project_request';
+  title: string;
+  description?: string;
+  skills_needed: string[];
+  time_commitment: 'few_hours' | 'few_days' | 'week' | 'few_weeks' | 'month' | 'months';
+  urgency: 'low' | 'medium' | 'high';
+  department?: string;
+  division?: string;
+  status: 'open' | 'in_review' | 'filled' | 'cancelled';
+  max_participants: number;
+  created_by: string;
+  creator?: {
+    id: string;
+    name: string;
+    title?: string;
+    avatar_url?: string;
+  };
+}
+
+export type ActivityItem = PostActivity | ProfileActivity | ProjectActivity | ProjectRequestActivity;
 
 interface ActivityGridProps {
   items: ActivityItem[];
@@ -168,6 +189,8 @@ const ActivityGrid = React.memo(function ActivityGrid({
               return <ProfileCard key={item.id} profile={item} />;
             case 'project':
               return <ProjectCard key={item.id} project={item} />;
+            case 'project_request':
+              return <ProjectRequestCardGrid key={item.id} request={item} />;
             default:
               return null;
           }

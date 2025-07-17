@@ -124,6 +124,35 @@ export class SemanticSearchStrategy implements SearchStrategy {
       }
     }
 
+    // Search project requests
+    const { data: projectRequests } = await this.supabase.rpc('match_project_requests', {
+      query_embedding: embedding,
+      match_threshold: -1,
+      match_count: limit,
+    });
+
+    if (projectRequests) {
+      for (const request of projectRequests) {
+        // Fetch creator info
+        const { data: creator } = await this.supabase
+          .from('profiles')
+          .select('id, name, title')
+          .eq('id', request.created_by)
+          .single();
+
+        results.push({
+          type: 'project_request',
+          id: request.id,
+          data: {
+            ...request,
+            creator,
+          },
+          relevanceScore: request.similarity || 0,
+          matchReason: 'Project request matches query',
+        });
+      }
+    }
+
     return results;
   }
 }

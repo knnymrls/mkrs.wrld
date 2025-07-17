@@ -397,6 +397,7 @@ export class RetrievalAgent {
       projects: [],
       educations: [],
       experiences: [],
+      projectRequests: [],
       relationships: [],
     };
     
@@ -432,6 +433,13 @@ export class RetrievalAgent {
           break;
         case 'education':
           organized.educations.push({
+            ...result.data,
+            _score: result.relevanceScore,
+            _reason: result.matchReason,
+          } as any);
+          break;
+        case 'project_request':
+          organized.projectRequests.push({
             ...result.data,
             _score: result.relevanceScore,
             _reason: result.matchReason,

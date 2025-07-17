@@ -3,11 +3,12 @@ import { Post } from './Post';
 import { Project } from './Project';
 import { Education } from './Education';
 import { Experience } from './Experience';
+import { ProjectRequest } from './ProjectRequest';
 
-export type SearchResultData = Profile | Post | Project | Education | Experience;
+export type SearchResultData = Profile | Post | Project | Education | Experience | ProjectRequest;
 
 export interface SearchResult {
-  type: 'profile' | 'post' | 'project' | 'education' | 'experience';
+  type: 'profile' | 'post' | 'project' | 'education' | 'experience' | 'project_request';
   id: string;
   data: SearchResultData;
   relevanceScore: number;
@@ -20,6 +21,7 @@ export interface SearchResults {
   projects: Project[];
   educations: Education[];
   experiences: Experience[];
+  projectRequests: ProjectRequest[];
   relationships: {
     source: string;
     target: string;
@@ -28,7 +30,7 @@ export interface SearchResults {
 }
 
 export interface Source {
-  type: 'profile' | 'project' | 'post';
+  type: 'profile' | 'project' | 'post' | 'project_request';
   id: string;
   name?: string;
   title?: string;
