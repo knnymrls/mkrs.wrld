@@ -126,18 +126,20 @@ export function drawIcon(ctx: CanvasRenderingContext2D, iconName: string, x: num
 
   ctx.save();
   
-  // Scale and translate to center the icon
-  const scale = size / 12; // Icons are designed for 24x24, we use half size for better fit
-  ctx.translate(x - size, y - size);
+  // Icons are designed on a 24x24 viewBox
+  const iconSize = 24;
+  const scale = (size * 2) / iconSize; // size is radius, we want diameter
+  
+  // Translate to center the icon at x, y
+  ctx.translate(x, y);
   ctx.scale(scale, scale);
+  ctx.translate(-iconSize / 2, -iconSize / 2);
   
   // Create path from SVG data
   const path = new Path2D(pathData);
   
   // Draw the icon
   ctx.fillStyle = color;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 0.5;
   ctx.fill(path);
   
   ctx.restore();

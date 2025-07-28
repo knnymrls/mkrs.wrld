@@ -954,19 +954,19 @@ export default function GraphPage() {
                                         
                                         // Draw icon
                                         if (projectNode.icon) {
-                                            // Check if it's an emoji (single character or emoji sequence)
-                                            const isEmoji = projectNode.icon.length <= 2 || /\p{Emoji}/u.test(projectNode.icon);
+                                            // Check if it's a Lucide icon name by checking if it exists in LucideIcons
+                                            const IconComponent = (LucideIcons as any)[projectNode.icon];
                                             
-                                            if (isEmoji) {
-                                                // Draw emoji
+                                            if (IconComponent) {
+                                                // It's a Lucide icon - use drawIcon
+                                                drawIcon(ctx, projectNode.icon, node.x!, node.y!, size * 0.7, '#ffffff');
+                                            } else {
+                                                // It's probably an emoji or unknown icon
                                                 ctx.fillStyle = '#ffffff';
                                                 ctx.font = `${size * 1.5}px Arial`;
                                                 ctx.textAlign = 'center';
                                                 ctx.textBaseline = 'middle';
                                                 ctx.fillText(projectNode.icon, node.x!, node.y!);
-                                            } else {
-                                                // Try to draw Lucide icon
-                                                drawIcon(ctx, projectNode.icon, node.x!, node.y!, size * 0.8, '#ffffff');
                                             }
                                         } else {
                                             // Fallback emoji
