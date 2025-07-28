@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase/client';
 import { Project, Contribution } from '../../../models/Project';
 import { Profile } from '../../../models/Profile';
 import { updateProjectEmbedding } from '@/lib/embeddings/index';
+import IconPicker from '@/app/components/ui/IconPicker';
+import * as LucideIcons from 'lucide-react';
 
 interface ProjectWithDetails extends Project {
     creator?: Profile;
@@ -139,6 +141,7 @@ export default function ProjectPage() {
                     title: editedProject.title,
                     description: editedProject.description,
                     status: editedProject.status,
+                    icon: editedProject.icon,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', projectId);
@@ -308,46 +311,55 @@ export default function ProjectPage() {
     const isCreator = user?.id === project.created_by;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
                 <button
                     onClick={() => router.push('/projects')}
-                    className="mb-6 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    className="mb-6 text-sm text-onsurface-secondary hover:text-onsurface-primary"
                 >
                     ← Back to Projects
                 </button>
 
                 {/* Project Header */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                <div className="bg-surface-container rounded-lg shadow-md p-6 mb-6">
                     {isEditing ? (
                         <div className="space-y-4">
                             <input
                                 type="text"
                                 value={editedProject.title || ''}
                                 onChange={(e) => setEditedProject({ ...editedProject, title: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"
+                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted"
                                 placeholder="Project title"
                             />
                             <textarea
                                 value={editedProject.description || ''}
                                 onChange={(e) => setEditedProject({ ...editedProject, description: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"
+                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted"
                                 rows={4}
                                 placeholder="Project description"
                             />
-                            <select
-                                value={editedProject.status || 'active'}
-                                onChange={(e) => setEditedProject({ ...editedProject, status: e.target.value as Project['status'] })}
-                                className="px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600"
-                            >
-                                <option value="active">Active</option>
-                                <option value="paused">Paused</option>
-                                <option value="complete">Complete</option>
-                            </select>
+                            <div className="flex items-center gap-4">
+                                <select
+                                    value={editedProject.status || 'active'}
+                                    onChange={(e) => setEditedProject({ ...editedProject, status: e.target.value as Project['status'] })}
+                                    className="px-3 py-2 border border-border rounded-md bg-surface-container-muted"
+                                >
+                                    <option value="active">Active</option>
+                                    <option value="paused">Paused</option>
+                                    <option value="complete">Complete</option>
+                                </select>
+                                <div>
+                                    <label className="block text-sm font-medium text-onsurface-primary mb-1">Project Icon</label>
+                                    <IconPicker
+                                        value={editedProject.icon || 'Folder'}
+                                        onChange={(icon) => setEditedProject({ ...editedProject, icon })}
+                                    />
+                                </div>
+                            </div>
                             <div className="flex space-x-2">
                                 <button
                                     onClick={handleUpdateProject}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover"
                                 >
                                     Save Changes
                                 </button>
@@ -356,7 +368,7 @@ export default function ProjectPage() {
                                         setIsEditing(false);
                                         setEditedProject(project);
                                     }}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                                    className="px-4 py-2 text-sm font-medium text-onsurface-primary bg-surface-container-muted rounded-md hover:bg-surface-container"
                                 >
                                     Cancel
                                 </button>
@@ -365,7 +377,17 @@ export default function ProjectPage() {
                     ) : (
                         <div>
                             <div className="flex justify-between items-start mb-4">
-                                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{project.title}</h1>
+                                <div className="flex items-center gap-3">
+                                    {project.icon && (() => {
+                                        const IconComponent = (LucideIcons as any)[project.icon];
+                                        return IconComponent ? (
+                                            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                <IconComponent className="w-7 h-7 text-primary" />
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                    <h1 className="text-2xl font-bold text-onsurface-primary">{project.title}</h1>
+                                </div>
                                 <div className="flex items-center space-x-2">
                                     <span className={`px-3 py-1 text-sm font-medium rounded ${getStatusColor(project.status)}`}>
                                         {project.status}
@@ -374,7 +396,7 @@ export default function ProjectPage() {
                                         <>
                                             <button
                                                 onClick={() => setIsEditing(true)}
-                                                className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                                                className="px-3 py-1 text-sm font-medium text-onsurface-primary bg-surface-container-muted rounded-md hover:bg-surface-container"
                                             >
                                                 Edit
                                             </button>
@@ -390,10 +412,10 @@ export default function ProjectPage() {
                             </div>
                             
                             {project.description && (
-                                <p className="text-gray-600 dark:text-gray-300 mb-4">{project.description}</p>
+                                <p className="text-onsurface-secondary mb-4">{project.description}</p>
                             )}
 
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                            <div className="text-sm text-onsurface-secondary">
                                 Created by {project.creator?.name || 'Unknown'} on {new Date(project.created_at).toLocaleDateString()}
                             </div>
                         </div>
@@ -401,7 +423,7 @@ export default function ProjectPage() {
                 </div>
 
                 {/* Contributors Section */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                <div className="bg-surface-container rounded-lg shadow-md p-6 mb-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Contributors</h2>
                         {isCreator && (
