@@ -952,13 +952,26 @@ export default function GraphPage() {
                                         ctx.fillStyle = canvasColors.nodeProject;
                                         ctx.fill();
                                         
-                                        // Draw icon if available
+                                        // Draw icon
                                         if (projectNode.icon) {
-                                            drawIcon(ctx, projectNode.icon, node.x!, node.y!, size * 0.6, '#ffffff');
+                                            // Check if it's an emoji (single character or emoji sequence)
+                                            const isEmoji = projectNode.icon.length <= 2 || /\p{Emoji}/u.test(projectNode.icon);
+                                            
+                                            if (isEmoji) {
+                                                // Draw emoji
+                                                ctx.fillStyle = '#ffffff';
+                                                ctx.font = `${size * 1.5}px Arial`;
+                                                ctx.textAlign = 'center';
+                                                ctx.textBaseline = 'middle';
+                                                ctx.fillText(projectNode.icon, node.x!, node.y!);
+                                            } else {
+                                                // Try to draw Lucide icon
+                                                drawIcon(ctx, projectNode.icon, node.x!, node.y!, size * 0.8, '#ffffff');
+                                            }
                                         } else {
-                                            // Fallback emoji for projects without icons
+                                            // Fallback emoji
                                             ctx.fillStyle = '#ffffff';
-                                            ctx.font = `${size * 1.2}px Arial`;
+                                            ctx.font = `${size * 1.5}px Arial`;
                                             ctx.textAlign = 'center';
                                             ctx.textBaseline = 'middle';
                                             ctx.fillText('🚀', node.x!, node.y!);
