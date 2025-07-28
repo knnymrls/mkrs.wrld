@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Search } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Search, Sun, Moon, Monitor } from 'lucide-react';
 import Image from 'next/image';
 import GraphModeSelector, { GraphMode } from '@/app/components/features/graph/GraphModeSelector';
 import SkillRadarVisualization from '@/app/components/features/graph/SkillRadarVisualization';
@@ -13,6 +13,7 @@ import DivisionLegend from '@/app/components/features/graph/DivisionLegend';
 import { getDivisionColor, NELNET_DIVISIONS } from '@/lib/constants/divisions';
 import { calculateDivisionGroups } from '@/lib/graph/divisionGrouping';
 import { ProfileNode, PostNode, ProjectNode, GraphNode } from '@/app/types/graph';
+import { useTheme } from '@/app/context/ThemeContext';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -25,6 +26,7 @@ interface Link {
 
 export default function GraphPage() {
     const router = useRouter();
+    const { theme, setTheme, resolvedTheme } = useTheme();
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: Link[] }>({ nodes: [], links: [] });
     const [filteredData, setFilteredData] = useState<{ nodes: GraphNode[]; links: Link[] }>({ nodes: [], links: [] });
     const [loading, setLoading] = useState(true);
@@ -55,6 +57,24 @@ export default function GraphPage() {
     const [selectedDivisions, setSelectedDivisions] = useState<string[]>([...NELNET_DIVISIONS]);
     const [showLegend, setShowLegend] = useState(true);
     const [showDivisionGroups, setShowDivisionGroups] = useState(false);
+
+    // Theme-aware colors for canvas rendering
+    const canvasColors = useMemo(() => {
+        const isDark = resolvedTheme === 'dark';
+        return {
+            nodeDefault: isDark ? '#ffffff' : '#171717',
+            nodeProfile: '#ffffff', // Always white center for profiles
+            nodeProject: isDark ? '#F59E0B' : '#D97706', // Amber
+            nodePost: isDark ? '#10B981' : '#059669', // Green
+            placeholder: isDark ? '#6B7280' : '#9CA3AF', // Gray
+            label: isDark ? '#9CA3AF' : '#6B7280', // Gray labels
+            link: isDark ? '#6B7280' : '#9CA3AF', // Gray links
+            background: 'transparent',
+            statusActive: '#10B981',
+            statusPaused: '#F59E0B',
+            statusInactive: isDark ? '#6B7280' : '#9CA3AF'
+        };
+    }, [resolvedTheme]);
 
     // Update dimensions on window resize
     useEffect(() => {
@@ -387,7 +407,7 @@ export default function GraphPage() {
 
 
     return (
-        <div className="relative w-full h-screen bg-[#0A0A0B] overflow-hidden">
+        <div className="relative w-full h-screen bg-background overflow-hidden">
             {/* Controls */}
             <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                 <GraphModeSelector currentMode={currentMode} onModeChange={setCurrentMode} />
@@ -395,9 +415,9 @@ export default function GraphPage() {
                 {currentMode === 'network' && (
                     <>
                         {/* Search */}
-                        <div className="bg-gray-900/90 backdrop-blur rounded-lg p-2">
+                        <div className="bg-surface-container/90 backdrop-blur rounded-lg p-2 border border-border/50">
                             <div className="relative">
-                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-onsurface-secondary w-4 h-4" />
                                 <input
                                     type="text"
                                     placeholder="Search nodes..."
@@ -406,7 +426,7 @@ export default function GraphPage() {
                                         setSearchQuery(e.target.value);
                                         handleSearch(e.target.value);
                                     }}
-                                    className="w-full pl-8 pr-3 py-1.5 bg-gray-800/50 text-white text-sm rounded border border-gray-700 focus:border-blue-500 focus:outline-none"
+                                    className="w-full pl-8 pr-3 py-1.5 bg-surface-container-muted text-foreground text-sm rounded border border-border focus:border-primary focus:outline-none"
                                 />
                             </div>
                         </div>
@@ -414,7 +434,7 @@ export default function GraphPage() {
                         {/* Filter Button */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors flex items-center gap-2"
+                            className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors flex items-center gap-2 border border-border/50"
                         >
                             <Filter className="w-4 h-4" />
                             <span className="text-sm">Filters</span>
@@ -422,25 +442,57 @@ export default function GraphPage() {
                     </>
                 )}
             </div>
-            {/* Zoom Controls */}
+            {/* Theme and Zoom Controls */}
             <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                {/* Theme Toggle */}
+                <div className="bg-surface-container/90 backdrop-blur rounded-lg p-1 border border-border/50 flex flex-col gap-1">
+                    <button
+                        onClick={() => setTheme('light')}
+                        className={`p-1.5 rounded transition-colors ${
+                            theme === 'light' ? 'bg-primary text-white' : 'hover:bg-surface-container-muted text-foreground'
+                        }`}
+                        title="Light Mode"
+                    >
+                        <Sun className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => setTheme('dark')}
+                        className={`p-1.5 rounded transition-colors ${
+                            theme === 'dark' ? 'bg-primary text-white' : 'hover:bg-surface-container-muted text-foreground'
+                        }`}
+                        title="Dark Mode"
+                    >
+                        <Moon className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={() => setTheme('system')}
+                        className={`p-1.5 rounded transition-colors ${
+                            theme === 'system' ? 'bg-primary text-white' : 'hover:bg-surface-container-muted text-foreground'
+                        }`}
+                        title="System Theme"
+                    >
+                        <Monitor className="w-4 h-4" />
+                    </button>
+                </div>
+                
+                {/* Zoom Controls */}
                 <button
                     onClick={handleZoomIn}
-                    className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors"
+                    className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors border border-border/50"
                     title="Zoom In"
                 >
                     <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
                     onClick={handleZoomOut}
-                    className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors"
+                    className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors border border-border/50"
                     title="Zoom Out"
                 >
                     <ZoomOut className="w-4 h-4" />
                 </button>
                 <button
                     onClick={handleZoomReset}
-                    className="bg-gray-900/90 backdrop-blur text-white p-2 rounded-lg hover:bg-gray-800/90 transition-colors"
+                    className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors border border-border/50"
                     title="Reset Zoom"
                 >
                     <Maximize2 className="w-4 h-4" />
@@ -614,11 +666,11 @@ export default function GraphPage() {
                                             <>
                                                 {(nodeData as ProjectNode).status && (
                                                     <div className="flex items-center gap-2">
-                                                        <div className={`w-2 h-2 rounded-full ${
-                                                            (nodeData as ProjectNode).status === 'active' ? 'bg-green-500' :
-                                                            (nodeData as ProjectNode).status === 'paused' ? 'bg-yellow-500' :
-                                                            'bg-gray-400'
-                                                        }`} />
+                                                        <div className={`w-2 h-2 rounded-full`} style={{
+                                                            backgroundColor: (nodeData as ProjectNode).status === 'active' ? canvasColors.statusActive :
+                                                                           (nodeData as ProjectNode).status === 'paused' ? canvasColors.statusPaused :
+                                                                           canvasColors.statusInactive
+                                                        }} />
                                                         <span className="text-onsurface-secondary capitalize">
                                                             {(nodeData as ProjectNode).status}
                                                         </span>
@@ -738,7 +790,7 @@ export default function GraphPage() {
                                     }
                                     
                                     // Node styling based on type - colored nodes
-                                    let color = '#ffffff'; // Default white
+                                    let color = canvasColors.nodeDefault; // Default
                                     let ringColor = null; // Division color for profiles
                                     let baseSize = 4;
                                     
@@ -746,13 +798,13 @@ export default function GraphPage() {
                                         // Use division color for profiles
                                         const profileNode = node as ProfileNode;
                                         ringColor = getDivisionColor(profileNode.division);
-                                        color = '#ffffff'; // White center for profiles
+                                        color = canvasColors.nodeProfile; // White center for profiles
                                         baseSize = 5;
                                     } else if (node.type === 'project') {
-                                        color = '#F59E0B'; // yellow/amber
+                                        color = canvasColors.nodeProject; // yellow/amber
                                         baseSize = 5;
                                     } else if (node.type === 'post') {
-                                        color = '#10B981'; // green for posts
+                                        color = canvasColors.nodePost; // green for posts
                                         baseSize = 3;
                                     }
                                     
@@ -790,14 +842,14 @@ export default function GraphPage() {
                                             (node as any).__img = img;
                                             
                                             // Draw placeholder while loading - gray circle
-                                            ctx.fillStyle = '#6B7280';
+                                            ctx.fillStyle = canvasColors.placeholder;
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else if (img.complete && img.naturalWidth > 0) {
                                             // Draw the loaded image
                                             ctx.drawImage(img, node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else {
                                             // Still loading, draw placeholder
-                                            ctx.fillStyle = '#6B7280';
+                                            ctx.fillStyle = canvasColors.placeholder;
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         }
                                         
@@ -824,11 +876,11 @@ export default function GraphPage() {
                                         // Draw inner white circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.fillStyle = '#ffffff';
+                                        ctx.fillStyle = canvasColors.nodeProfile;
                                         ctx.fill();
                                         
                                         // Draw profile icon
-                                        ctx.fillStyle = '#6B7280';
+                                        ctx.fillStyle = canvasColors.placeholder;
                                         ctx.font = `${size * 1.2}px Arial`;
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'middle';
@@ -858,7 +910,7 @@ export default function GraphPage() {
                                         ctx.font = `400 ${fontSize}px Inter, sans-serif`;
                                         
                                         // Text color
-                                        ctx.fillStyle = '#9CA3AF'; // gray-400
+                                        ctx.fillStyle = canvasColors.label;
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'top';
                                         ctx.fillText(label as string, node.x!, node.y! + size + 5);
@@ -877,7 +929,7 @@ export default function GraphPage() {
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
                                     
                                     // Lines - 50% normal, 100% for related, 10% for others when hovering
-                                    ctx.strokeStyle = '#6B7280'; // text-onsurface-secondary
+                                    ctx.strokeStyle = canvasColors.link;
                                     ctx.lineWidth = 0.75; // Thinner lines
                                     if (!hoveredNode) {
                                         ctx.globalAlpha = 0.5; // Normal state - 50% opacity for lines

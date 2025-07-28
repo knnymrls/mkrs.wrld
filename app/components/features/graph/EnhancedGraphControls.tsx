@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Users, Briefcase, MessageSquare, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 import { NELNET_DIVISIONS, getDivisionColor } from '@/lib/constants/divisions';
+import { useTheme } from '@/app/context/ThemeContext';
 
 interface EnhancedGraphControlsProps {
   showPeople: boolean;
@@ -38,6 +39,7 @@ export default function EnhancedGraphControls({
   onToggleDivisionGroups
 }: EnhancedGraphControlsProps) {
   const [expandedSection, setExpandedSection] = useState<'types' | 'divisions' | null>('types');
+  const { resolvedTheme } = useTheme();
 
   return (
     <div className="absolute top-20 left-4 z-20 bg-surface-bright/80 backdrop-blur-md rounded-lg border border-border w-64 max-h-[calc(100vh-120px)] overflow-y-auto">
@@ -61,7 +63,7 @@ export default function EnhancedGraphControls({
             >
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full transition-colors ${
-                  showPeople ? 'bg-blue-500' : 'bg-surface-container-muted'
+                  showPeople ? 'bg-primary' : 'bg-surface-container-muted'
                 }`} />
                 <span className="text-sm">People</span>
               </div>
@@ -78,7 +80,7 @@ export default function EnhancedGraphControls({
             >
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full transition-colors ${
-                  showProjects ? 'bg-amber-500' : 'bg-surface-container-muted'
+                  showProjects ? 'bg-amber-500 dark:bg-amber-400' : 'bg-surface-container-muted'
                 }`} />
                 <span className="text-sm">Projects</span>
               </div>
@@ -95,7 +97,7 @@ export default function EnhancedGraphControls({
             >
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full transition-colors ${
-                  showPosts ? 'bg-emerald-500' : 'bg-surface-container-muted'
+                  showPosts ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-surface-container-muted'
                 }`} />
                 <span className="text-sm">Posts</span>
               </div>
@@ -160,7 +162,7 @@ export default function EnhancedGraphControls({
                       className="w-3 h-3 rounded-full border-2 transition-all"
                       style={{
                         borderColor: isSelected ? color : 'transparent',
-                        backgroundColor: isSelected ? color : '#9CA3AF'
+                        backgroundColor: isSelected ? color : (resolvedTheme === 'dark' ? '#6B7280' : '#9CA3AF')
                       }}
                     />
                     <span className="text-sm flex-1">{division}</span>
