@@ -794,7 +794,6 @@ export default function GraphPage() {
                                 d3VelocityDecay={0.4}
                                 dagMode={undefined}
                                 dagLevelDistance={undefined}
-                                linkDistance={20}
                                 onEngineStop={() => {
                                     // Removed auto zoom - let users control their own view
                                     // Configure forces after engine starts
