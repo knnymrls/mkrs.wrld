@@ -376,6 +376,23 @@ export default function GraphPage() {
         fetchData();
     }, []);
 
+    // Configure forces when graph data changes
+    useEffect(() => {
+        if (graphRef.current && filteredData.nodes.length > 0) {
+            // Apply tight clustering forces
+            setTimeout(() => {
+                if (graphRef.current) {
+                    graphRef.current.d3Force('charge').strength(-20);
+                    graphRef.current.d3Force('link').distance(5).strength(1);
+                    graphRef.current.d3Force('center').strength(0.5);
+                    graphRef.current.d3Force('collide', graphRef.current.d3.forceCollide(20));
+                    // Reheat the simulation to apply new forces
+                    graphRef.current.d3ReheatSimulation();
+                }
+            }, 100);
+        }
+    }, [filteredData]);
+
     const handleNodeClick = useCallback((node: any) => {
         // Set the clicked node to show the popup
         setClickedNode(node.id);
@@ -798,9 +815,11 @@ export default function GraphPage() {
                                     // Removed auto zoom - let users control their own view
                                     // Configure forces after engine starts
                                     if (graphRef.current) {
-                                        graphRef.current.d3Force('charge').strength(-100);
-                                        graphRef.current.d3Force('link').distance(20);
-                                        graphRef.current.d3Force('center').strength(0.1);
+                                        // Very tight clustering
+                                        graphRef.current.d3Force('charge').strength(-20);
+                                        graphRef.current.d3Force('link').distance(5).strength(1);
+                                        graphRef.current.d3Force('center').strength(0.5);
+                                        graphRef.current.d3Force('collide', graphRef.current.d3.forceCollide(20));
                                     }
                                 }}
                                 onRenderFramePre={(ctx, globalScale) => {
