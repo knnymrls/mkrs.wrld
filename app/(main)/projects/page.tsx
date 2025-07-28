@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { Project, Contribution } from '../../models/Project';
 import { Profile } from '../../models/Profile';
+import ProjectIcon from '@/app/components/ui/ProjectIcon';
 
 interface ProjectWithContributors extends Project {
     contributors: Array<{
@@ -139,9 +140,14 @@ export default function Projects() {
                             onClick={() => router.push(`/projects/${project.id}`)}
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {project.title}
-                                </h3>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-shrink-0">
+                                        <ProjectIcon icon={project.icon} variant="graph" size={20} />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {project.title}
+                                    </h3>
+                                </div>
                                 <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(project.status)}`}>
                                     {project.status}
                                 </span>
