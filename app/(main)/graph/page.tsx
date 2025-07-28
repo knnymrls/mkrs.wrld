@@ -792,8 +792,8 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
-                                dagMode={null}
-                                dagLevelDistance={null}
+                                dagMode={undefined}
+                                dagLevelDistance={undefined}
                                 linkDistance={20}
                                 onEngineStop={() => {
                                     // Removed auto zoom - let users control their own view
