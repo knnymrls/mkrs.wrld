@@ -239,31 +239,39 @@ export default function GraphPage() {
                 profileSkills.get(s.profile_id)!.push(s.skill);
             });
 
-            // Create nodes
-            const profileNodes: ProfileNode[] = (profiles || []).map((p: any) => ({
-                id: p.id,
-                label: p.name || 'Unnamed',
-                type: 'profile' as const,
-                group: 1,
-                value: 1,
-                title: p.title,
-                location: p.location,
-                avatar_url: p.avatar_url,
-                skills: profileSkills.get(p.id) || [],
-                division: p.division,
-                department: p.department,
-                team: p.team
-            }));
+            // Create nodes - filter out profiles without names
+            const profileNodes: ProfileNode[] = (profiles || [])
+                .filter((p: any) => p.name && p.name.trim() !== '')
+                .map((p: any) => ({
+                    id: p.id,
+                    label: p.name,
+                    type: 'profile' as const,
+                    group: 1,
+                    value: 1,
+                    title: p.title,
+                    location: p.location,
+                    avatar_url: p.avatar_url,
+                    skills: profileSkills.get(p.id) || [],
+                    division: p.division,
+                    department: p.department,
+                    team: p.team
+                }));
 
-            const postNodes: PostNode[] = (posts || []).map((p: any) => ({
-                id: `post-${p.id}`,
-                label: p.content || 'Post',
-                type: 'post' as const,
-                group: 2,
-                value: 1,
-                authorName: profileMap.get(p.author_id) || 'Unknown',
-                created_at: p.created_at
-            }));
+            // Filter posts from unnamed users
+            const postNodes: PostNode[] = (posts || [])
+                .filter((p: any) => {
+                    const authorName = profileMap.get(p.author_id);
+                    return authorName && authorName.trim() !== '';
+                })
+                .map((p: any) => ({
+                    id: `post-${p.id}`,
+                    label: p.content || 'Post',
+                    type: 'post' as const,
+                    group: 2,
+                    value: 1,
+                    authorName: profileMap.get(p.author_id)!,
+                    created_at: p.created_at
+                }));
 
             const projectNodes: ProjectNode[] = (projects || []).map((p: any) => ({
                 id: `project-${p.id}`,
@@ -275,18 +283,29 @@ export default function GraphPage() {
                 description: p.description
             }));
 
-            // Create links
-            const authorLinks: Link[] = (posts || []).map((p: any) => ({
-                source: p.author_id,
-                target: `post-${p.id}`,
-                type: 'authored' as const
-            }));
+            // Create links - only for posts with named authors
+            const authorLinks: Link[] = (posts || [])
+                .filter((p: any) => {
+                    const authorName = profileMap.get(p.author_id);
+                    return authorName && authorName.trim() !== '';
+                })
+                .map((p: any) => ({
+                    source: p.author_id,
+                    target: `post-${p.id}`,
+                    type: 'authored' as const
+                }));
 
-            const mentionLinks: Link[] = (postMentions || []).map((m: any) => ({
-                source: `post-${m.post_id}`,
-                target: m.profile_id,
-                type: 'mentions_profile' as const
-            }));
+            // Filter mention links to only include named profiles
+            const mentionLinks: Link[] = (postMentions || [])
+                .filter((m: any) => {
+                    const mentionedName = profileMap.get(m.profile_id);
+                    return mentionedName && mentionedName.trim() !== '';
+                })
+                .map((m: any) => ({
+                    source: `post-${m.post_id}`,
+                    target: m.profile_id,
+                    type: 'mentions_profile' as const
+                }));
 
             const projectMentionLinks: Link[] = (postProjects || []).map((pp: any) => ({
                 source: `post-${pp.post_id}`,
@@ -294,14 +313,28 @@ export default function GraphPage() {
                 type: 'mentions_project' as const
             }));
 
-            const contributionLinks: Link[] = (contributions || []).map((c: any) => ({
-                source: c.person_id,
-                target: `project-${c.project_id}`,
-                type: 'contributes' as const
-            }));
+            // Filter contribution links to only include named contributors
+            const contributionLinks: Link[] = (contributions || [])
+                .filter((c: any) => {
+                    const contributorName = profileMap.get(c.person_id);
+                    return contributorName && contributorName.trim() !== '';
+                })
+                .map((c: any) => ({
+                    source: c.person_id,
+                    target: `project-${c.project_id}`,
+                    type: 'contributes' as const
+                }));
 
             const allNodes = [...profileNodes, ...postNodes, ...projectNodes];
             const allLinks = [...authorLinks, ...mentionLinks, ...projectMentionLinks, ...contributionLinks];
+            
+            // Create a set of valid node IDs for link validation
+            const validNodeIds = new Set(allNodes.map(node => node.id));
+            
+            // Filter links to only include those with valid source and target
+            const validLinks = allLinks.filter(link => 
+                validNodeIds.has(link.source) && validNodeIds.has(link.target)
+            );
             
             // Calculate connection counts for each node
             const connectionCounts: { [id: string]: number } = {};
@@ -309,7 +342,7 @@ export default function GraphPage() {
                 connectionCounts[node.id] = 0;
             });
             
-            allLinks.forEach(link => {
+            validLinks.forEach(link => {
                 if (connectionCounts[link.source] !== undefined) {
                     connectionCounts[link.source]++;
                 }
@@ -333,7 +366,7 @@ export default function GraphPage() {
             
             setGraphData({
                 nodes: allNodes,
-                links: allLinks,
+                links: validLinks,
             });
             setLoading(false);
         };

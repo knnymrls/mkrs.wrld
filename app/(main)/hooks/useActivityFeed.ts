@@ -70,7 +70,12 @@ export function useActivityFeed(user: User | null) {
       (data || []).map(post => formatPost(post as any, user))
     );
 
-    return postsWithDetails;
+    // Filter out posts from users without names
+    return postsWithDetails.filter(post => 
+      post.author.name && 
+      post.author.name.trim() !== '' && 
+      post.author.name !== 'Unknown'
+    );
   }, [supabase, user]);
 
   const fetchActivities = useCallback(async () => {
@@ -127,7 +132,7 @@ export function useActivityFeed(user: User | null) {
 
       const allActivities: ActivityItem[] = [];
 
-      // Add posts
+      // Add posts - already filtered for named authors
       posts.forEach(post => {
         allActivities.push({
           ...post,
@@ -135,26 +140,37 @@ export function useActivityFeed(user: User | null) {
         } as ActivityItem);
       });
 
-      // Add profiles
+      // Add profiles - filter out those without names
       if (profilesResult.data) {
-        profilesResult.data.forEach(profile => {
-          allActivities.push({
-            ...profile,
-            type: 'profile' as const,
-            skills: profile.skills || []
-          } as ActivityItem);
-        });
+        profilesResult.data
+          .filter(profile => profile.name && profile.name.trim() !== '')
+          .forEach(profile => {
+            allActivities.push({
+              ...profile,
+              type: 'profile' as const,
+              skills: profile.skills || []
+            } as ActivityItem);
+          });
       }
 
       // Add projects
       if (projectsResult.data) {
         projectsResult.data.forEach(project => {
+          // Filter out contributions from unnamed users
+          const namedContributors = (project.contributions || [])
+            .filter((contrib: any) => 
+              contrib.person && 
+              contrib.person.name && 
+              contrib.person.name.trim() !== ''
+            )
+            .map((contrib: any) => ({
+              person: contrib.person
+            }));
+          
           allActivities.push({
             ...project,
             type: 'project' as const,
-            contributors: (project.contributions || []).map((contrib: any) => ({
-              person: contrib.person
-            }))
+            contributors: namedContributors
           } as ActivityItem);
         });
       }
