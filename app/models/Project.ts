@@ -5,6 +5,7 @@ export interface Project {
   status: 'active' | 'paused' | 'complete';
   created_by: string;
   image_url: string | null;
+  icon: string | null;
   embedding: number[] | null;
   created_at: string;
   updated_at: string;

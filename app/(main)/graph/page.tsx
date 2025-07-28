@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Search, Sun, Moon, Monitor } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import Image from 'next/image';
 import GraphModeSelector, { GraphMode } from '@/app/components/features/graph/GraphModeSelector';
 import SkillRadarVisualization from '@/app/components/features/graph/SkillRadarVisualization';
@@ -214,7 +215,7 @@ export default function GraphPage() {
             ] = await Promise.all([
                 supabase.from('profiles').select('id, name, title, location, avatar_url, division, department, team'),
                 supabase.from('posts').select('id, author_id, content, created_at'),
-                supabase.from('projects').select('id, title, description, status'),
+                supabase.from('projects').select('id, title, description, status, icon'),
                 supabase.from('post_mentions').select('post_id, profile_id'),
                 supabase.from('post_projects').select('post_id, project_id'),
                 supabase.from('contributions').select('person_id, project_id, role'),
@@ -280,7 +281,8 @@ export default function GraphPage() {
                 group: 3,
                 value: 1,
                 status: p.status,
-                description: p.description
+                description: p.description,
+                icon: p.icon
             }));
 
             // Create links - only for posts with named authors
@@ -615,6 +617,17 @@ export default function GraphPage() {
                                                     height={40}
                                                     className="rounded-full"
                                                 />
+                                            ) : nodeData.type === 'project' && (nodeData as ProjectNode).icon ? (
+                                                (() => {
+                                                    const IconComponent = (LucideIcons as any)[(nodeData as ProjectNode).icon!];
+                                                    return IconComponent ? (
+                                                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                                            <IconComponent className="w-6 h-6 text-primary" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-2xl">🚀</div>
+                                                    );
+                                                })()
                                             ) : (
                                                 <div className={`text-2xl`}>
                                                     {nodeData.type === 'profile' ? '👤' :

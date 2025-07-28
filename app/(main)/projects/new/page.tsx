@@ -6,6 +6,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { getEmbedding } from '@/lib/embeddings/index';
 import { Profile } from '@/app/models/Profile';
+import IconPicker from '@/app/components/ui/IconPicker';
 
 export default function NewProject() {
     const { user } = useAuth();
@@ -15,6 +16,7 @@ export default function NewProject() {
         title: '',
         description: '',
         status: 'active' as 'active' | 'paused' | 'complete',
+        icon: 'Folder',
     });
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<Profile[]>([]);
@@ -102,6 +104,7 @@ export default function NewProject() {
                     title: formData.title,
                     description: formData.description,
                     status: formData.status,
+                    icon: formData.icon,
                     created_by: user.id,
                     embedding,
                 })
@@ -174,6 +177,16 @@ export default function NewProject() {
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 className="w-full min-h-[120px] px-4 py-3 bg-surface-container-muted border border-border rounded-xl text-base sm:text-sm text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
                                 placeholder="Describe the project goals, scope, and any relevant details..."
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-onsurface-primary mb-2">
+                                Project Icon
+                            </label>
+                            <IconPicker
+                                value={formData.icon}
+                                onChange={(icon) => setFormData({ ...formData, icon })}
                             />
                         </div>
 

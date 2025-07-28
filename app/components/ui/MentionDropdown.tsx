@@ -3,6 +3,7 @@
 import React, { forwardRef, useMemo, useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MentionSuggestion, DropdownPosition } from '@/app/types/mention';
+import * as LucideIcons from 'lucide-react';
 
 interface MentionDropdownProps {
   suggestions: MentionSuggestion[];
@@ -66,13 +67,24 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
           />
         );
       }
+      // For projects, check if they have an icon
+      if (suggestion.icon) {
+        const IconComponent = (LucideIcons as any)[suggestion.icon];
+        if (IconComponent) {
+          return (
+            <div className="w-5 h-5 flex items-center justify-center text-primary">
+              <IconComponent className="w-4 h-4" />
+            </div>
+          );
+        }
+      }
       return (
         <svg className="w-5 h-5 text-onsurface-primary" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
         </svg>
       );
     }
-  }, [suggestion.imageUrl, suggestion.name, isPerson]);
+  }, [suggestion.imageUrl, suggestion.name, isPerson, suggestion.icon]);
 
   return (
     <button

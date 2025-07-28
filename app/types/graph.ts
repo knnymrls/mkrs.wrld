@@ -44,6 +44,7 @@ export interface ProjectNode extends BaseNode {
   label: string;
   status?: 'active' | 'paused' | 'complete';
   description?: string;
+  icon?: string;
 }
 
 export type GraphNode = ProfileNode | PostNode | ProjectNode;

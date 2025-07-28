@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import * as LucideIcons from 'lucide-react';
 
 interface Project {
   id: string;
@@ -10,6 +11,7 @@ interface Project {
   status: 'active' | 'paused' | 'complete';
   created_at: string;
   created_by: string;
+  icon?: string | null;
   contributors?: Array<{
     person: {
       id: string;
@@ -40,6 +42,9 @@ const getStatusBadge = (status: Project['status']) => {
 const ProjectCard = React.memo(function ProjectCard({ project }: ProjectCardProps) {
   const router = useRouter();
 
+  // Get the icon component
+  const IconComponent = project.icon ? (LucideIcons as any)[project.icon] : null;
+
   return (
     <div
       className="bg-surface-container rounded-2xl border-[1px] border-border hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-4"
@@ -48,9 +53,15 @@ const ProjectCard = React.memo(function ProjectCard({ project }: ProjectCardProp
       <div className="p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-11 h-11 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
-              <div className="w-full h-full flex items-center bg-background justify-center text-onsurface-secondary font-medium text-lg">
-                {project.title.charAt(0).toUpperCase()}
+            <div className="w-11 h-11 bg-primary/10 rounded-full overflow-hidden flex-shrink-0">
+              <div className="w-full h-full flex items-center justify-center text-primary">
+                {IconComponent ? (
+                  <IconComponent className="w-6 h-6" />
+                ) : (
+                  <span className="font-medium text-lg">
+                    {project.title.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex-1 min-w-0">

@@ -24,7 +24,7 @@ export async function searchMentions(search: string, showCreateOption: boolean =
   // Search projects
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, title, status, image_url')
+    .select('id, title, status, image_url, icon')
     .ilike('title', `%${search}%`)
     .limit(5);
 
@@ -34,7 +34,8 @@ export async function searchMentions(search: string, showCreateOption: boolean =
       name: p.title,
       type: 'project' as const,
       subtitle: p.status,
-      imageUrl: p.image_url
+      imageUrl: p.image_url,
+      icon: p.icon
     })));
   }
 
