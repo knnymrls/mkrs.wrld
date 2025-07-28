@@ -420,10 +420,10 @@ export default function GraphPage() {
             // Highlight the matched node
             setHoveredNode(profileMatch.id);
             
-            // Center and zoom on the node if graph is ready
+            // Just center on the node without zooming
             if (graphRef.current && (profileMatch as any).x !== undefined) {
                 graphRef.current.centerAt((profileMatch as any).x, (profileMatch as any).y, 1000);
-                graphRef.current.zoom(2, 1000);
+                // Removed auto zoom - let users control their own zoom level
             }
         } else {
             setHoveredNode(null);
@@ -931,8 +931,33 @@ export default function GraphPage() {
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'middle';
                                         ctx.fillText('👤', node.x!, node.y!);
+                                    } else if (node.type === 'project') {
+                                        // Project nodes with icons
+                                        const projectNode = node as ProjectNode;
+                                        if (projectNode.icon) {
+                                            // Draw circle background
+                                            ctx.beginPath();
+                                            ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                            ctx.fillStyle = canvasColors.nodeProject;
+                                            ctx.fill();
+                                            
+                                            // We can't render React components in canvas, so we'll use text fallback
+                                            // For a better solution, we'd need to pre-render icons to images
+                                            ctx.fillStyle = '#ffffff';
+                                            ctx.font = `${size}px Arial`;
+                                            ctx.textAlign = 'center';
+                                            ctx.textBaseline = 'middle';
+                                            // Use first letter of icon name as fallback
+                                            ctx.fillText(projectNode.icon.charAt(0), node.x!, node.y!);
+                                        } else {
+                                            // Default project rendering
+                                            ctx.beginPath();
+                                            ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                            ctx.fillStyle = color;
+                                            ctx.fill();
+                                        }
                                     } else {
-                                        // Non-profile nodes (projects and posts)
+                                        // Other nodes (posts)
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
                                         ctx.fillStyle = color;
@@ -1033,12 +1058,7 @@ export default function GraphPage() {
                                 }}
                                 warmupTicks={100}
                                 onEngineStop={() => {
-                                    // Auto zoom out to see all nodes
-                                    if (graphRef.current) {
-                                        setTimeout(() => {
-                                            graphRef.current.zoomToFit(400, 250);
-                                        }, 100);
-                                    }
+                                    // Removed auto zoom - let users control their own view
                                 }}
                             />
                                 </div>
