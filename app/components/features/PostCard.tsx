@@ -28,7 +28,7 @@ interface Post {
     name: string;
     avatar_url: string | null;
   };
-  mentions: Array<{ id: string; name: string; type: 'person' | 'project'; imageUrl?: string | null }>;
+  mentions: Array<{ id: string; name: string; type: 'person' | 'project'; imageUrl?: string | null; icon?: string | null }>;
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;

@@ -58,7 +58,9 @@ export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: U
                 project_id,
                 projects!project_id (
                   id,
-                  title
+                  title,
+                  image_url,
+                  icon
                 )
               ),
               post_likes (user_id),

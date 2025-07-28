@@ -6,6 +6,7 @@ interface PostMention {
   name: string;
   type: 'person' | 'project';
   imageUrl?: string | null;
+  icon?: string | null;
 }
 
 /**
@@ -106,6 +107,7 @@ export function renderPostContentWithMentions(
         name={match.mention.name}
         type={match.mention.type}
         imageUrl={match.mention.imageUrl}
+        icon={match.mention.icon}
       />
     );
 

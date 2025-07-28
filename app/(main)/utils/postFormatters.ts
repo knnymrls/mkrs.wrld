@@ -67,7 +67,8 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
         id: m.projects?.id || m.project_id,
         name: m.projects?.title || '',
         type: 'project' as const,
-        imageUrl: m.projects?.image_url || null
+        imageUrl: m.projects?.image_url || null,
+        icon: m.projects?.icon || null
       }))
     ];
   } else {
@@ -89,7 +90,8 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
           projects!project_id (
             id,
             title,
-            image_url
+            image_url,
+            icon
           )
         `)
         .eq('post_id', post.id)
@@ -106,7 +108,8 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
         id: m.projects.id,
         name: m.projects.title,
         type: 'project' as const,
-        imageUrl: m.projects.image_url
+        imageUrl: m.projects.image_url,
+        icon: m.projects.icon
       }))
     ];
   }

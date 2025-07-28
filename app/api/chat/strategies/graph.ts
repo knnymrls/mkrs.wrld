@@ -213,7 +213,8 @@ export class GraphTraversalStrategy implements SearchStrategy {
               projects!project_id (
                 id,
                 title,
-                image_url
+                image_url,
+                icon
               )
             ),
             post_likes (user_id),
@@ -251,7 +252,8 @@ export class GraphTraversalStrategy implements SearchStrategy {
                   id: p.projects?.id || p.project_id,
                   name: p.projects?.title || 'Unknown Project',
                   type: 'project' as const,
-                  imageUrl: p.projects?.image_url
+                  imageUrl: p.projects?.image_url,
+                  icon: p.projects?.icon
                 })) || [])
               ],
               likes_count: postData.post_likes?.length || 0,

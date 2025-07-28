@@ -44,7 +44,8 @@ export function useActivityFeed(user: User | null) {
           projects!project_id (
             id,
             title,
-            image_url
+            image_url,
+            icon
           )
         ),
         post_likes (user_id),

@@ -15,6 +15,7 @@ import { getDivisionColor, NELNET_DIVISIONS } from '@/lib/constants/divisions';
 import { calculateDivisionGroups } from '@/lib/graph/divisionGrouping';
 import { ProfileNode, PostNode, ProjectNode, GraphNode } from '@/app/types/graph';
 import { useTheme } from '@/app/context/ThemeContext';
+import { drawIcon } from '@/lib/graph/iconRenderer';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -791,6 +792,18 @@ export default function GraphPage() {
                                 enableNodeDrag={true}
                                 d3AlphaDecay={0.02}
                                 d3VelocityDecay={0.4}
+                                dagMode={null}
+                                dagLevelDistance={null}
+                                linkDistance={20}
+                                onEngineStop={() => {
+                                    // Removed auto zoom - let users control their own view
+                                    // Configure forces after engine starts
+                                    if (graphRef.current) {
+                                        graphRef.current.d3Force('charge').strength(-100);
+                                        graphRef.current.d3Force('link').distance(20);
+                                        graphRef.current.d3Force('center').strength(0.1);
+                                    }
+                                }}
                                 onRenderFramePre={(ctx, globalScale) => {
                                     if (!showDivisionGroups || !showPeople) return;
                                     
@@ -934,27 +947,22 @@ export default function GraphPage() {
                                     } else if (node.type === 'project') {
                                         // Project nodes with icons
                                         const projectNode = node as ProjectNode;
+                                        // Draw circle background
+                                        ctx.beginPath();
+                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
+                                        ctx.fillStyle = canvasColors.nodeProject;
+                                        ctx.fill();
+                                        
+                                        // Draw icon if available
                                         if (projectNode.icon) {
-                                            // Draw circle background
-                                            ctx.beginPath();
-                                            ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                            ctx.fillStyle = canvasColors.nodeProject;
-                                            ctx.fill();
-                                            
-                                            // We can't render React components in canvas, so we'll use text fallback
-                                            // For a better solution, we'd need to pre-render icons to images
+                                            drawIcon(ctx, projectNode.icon, node.x!, node.y!, size * 0.6, '#ffffff');
+                                        } else {
+                                            // Fallback emoji for projects without icons
                                             ctx.fillStyle = '#ffffff';
-                                            ctx.font = `${size}px Arial`;
+                                            ctx.font = `${size * 1.2}px Arial`;
                                             ctx.textAlign = 'center';
                                             ctx.textBaseline = 'middle';
-                                            // Use first letter of icon name as fallback
-                                            ctx.fillText(projectNode.icon.charAt(0), node.x!, node.y!);
-                                        } else {
-                                            // Default project rendering
-                                            ctx.beginPath();
-                                            ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                            ctx.fillStyle = color;
-                                            ctx.fill();
+                                            ctx.fillText('🚀', node.x!, node.y!);
                                         }
                                     } else {
                                         // Other nodes (posts)
@@ -1057,9 +1065,6 @@ export default function GraphPage() {
                                     ctx.fill();
                                 }}
                                 warmupTicks={100}
-                                onEngineStop={() => {
-                                    // Removed auto zoom - let users control their own view
-                                }}
                             />
                                 </div>
                             )}

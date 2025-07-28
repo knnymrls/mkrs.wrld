@@ -19,7 +19,8 @@ export interface Post {
     id: string; 
     name: string; 
     type: 'person' | 'project'; 
-    imageUrl?: string | null 
+    imageUrl?: string | null;
+    icon?: string | null;
   }>;
   likes_count: number;
   comments_count: number;
