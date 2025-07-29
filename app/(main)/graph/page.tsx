@@ -618,17 +618,6 @@ export default function GraphPage() {
                                                     height={40}
                                                     className="rounded-full"
                                                 />
-                                            ) : nodeData.type === 'project' && (nodeData as ProjectNode).icon ? (
-                                                (() => {
-                                                    const IconComponent = (LucideIcons as any)[(nodeData as ProjectNode).icon!];
-                                                    return IconComponent ? (
-                                                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                                            <IconComponent className="w-6 h-6 text-primary" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-2xl">🚀</div>
-                                                    );
-                                                })()
                                             ) : (
                                                 <div className={`text-2xl`}>
                                                     {nodeData.type === 'profile' ? '👤' :
@@ -944,38 +933,11 @@ export default function GraphPage() {
                                         ctx.textBaseline = 'middle';
                                         ctx.fillText('👤', node.x!, node.y!);
                                     } else if (node.type === 'project') {
-                                        // Project nodes with icons
-                                        const projectNode = node as ProjectNode;
-                                        // Draw circle background
+                                        // Project nodes - plain orange circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
                                         ctx.fillStyle = canvasColors.nodeProject;
                                         ctx.fill();
-                                        
-                                        // Draw icon
-                                        if (projectNode.icon) {
-                                            // Check if it's a Lucide icon name by checking if it exists in LucideIcons
-                                            const IconComponent = (LucideIcons as any)[projectNode.icon];
-                                            
-                                            if (IconComponent) {
-                                                // It's a Lucide icon - use drawIcon
-                                                drawIcon(ctx, projectNode.icon, node.x!, node.y!, size * 0.7, '#ffffff');
-                                            } else {
-                                                // It's probably an emoji or unknown icon
-                                                ctx.fillStyle = '#ffffff';
-                                                ctx.font = `${size * 1.5}px Arial`;
-                                                ctx.textAlign = 'center';
-                                                ctx.textBaseline = 'middle';
-                                                ctx.fillText(projectNode.icon, node.x!, node.y!);
-                                            }
-                                        } else {
-                                            // Fallback emoji
-                                            ctx.fillStyle = '#ffffff';
-                                            ctx.font = `${size * 1.5}px Arial`;
-                                            ctx.textAlign = 'center';
-                                            ctx.textBaseline = 'middle';
-                                            ctx.fillText('🚀', node.x!, node.y!);
-                                        }
                                     } else {
                                         // Other nodes (posts)
                                         ctx.beginPath();
