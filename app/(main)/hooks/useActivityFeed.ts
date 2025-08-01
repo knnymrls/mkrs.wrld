@@ -16,7 +16,7 @@ export function useActivityFeed(user: User | null) {
   const supabase = createClientComponentClient();
 
   const fetchPosts = useCallback(async (limit?: number, offset?: number) => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('posts')
       .select(`
         id,
@@ -58,8 +58,14 @@ export function useActivityFeed(user: User | null) {
           position
         )
       `)
-      .order('created_at', { ascending: false })
-      .range(offset || 0, (offset || 0) + (limit || 20) - 1);
+      .order('created_at', { ascending: false });
+    
+    // Only apply range if limit is specified
+    if (limit !== undefined) {
+      query = query.range(offset || 0, (offset || 0) + limit - 1);
+    }
+    
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching posts:', error);
@@ -85,8 +91,8 @@ export function useActivityFeed(user: User | null) {
       setPage(0);
       setHasMore(true);
       
-      // Fetch posts with a limit to mix with other activities
-      const postsPromise = fetchPosts(20, 0);
+      // Fetch all posts without limit
+      const postsPromise = fetchPosts();
 
       // Fetch all profiles (only on initial load)
       const profilesPromise = supabase
@@ -183,10 +189,8 @@ export function useActivityFeed(user: User | null) {
 
       setActivities(allActivities);
       
-      // Check if we have more posts to load
-      if (posts.length < 20) {
-        setHasMore(false);
-      }
+      // Since we're fetching all posts initially, no more to load
+      setHasMore(false);
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {
