@@ -347,12 +347,6 @@ export default function ProjectRequestDetailPage() {
               <Users className="w-5 h-5" />
               <span>{request.max_participants} spot{request.max_participants !== 1 ? 's' : ''} available</span>
             </div>
-            {(request.department || request.division) && (
-              <div className="flex items-center gap-2 text-onsurface-secondary">
-                <Building2 className="w-5 h-5" />
-                <span>{[request.department, request.division].filter(Boolean).join(' • ')}</span>
-              </div>
-            )}
           </div>
         </div>
 
