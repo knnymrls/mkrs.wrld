@@ -10,11 +10,18 @@ import ChatHistory from '../../components/features/ChatHistory';
 import { TrackedMention } from '../../types/mention';
 
 export default function ChatbotPage() {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const router = useRouter();
     const [sessionId, setSessionId] = useState<string>('');
     const [input, setInput] = useState('');
     const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
+
+    // Check authentication
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace('/auth/signin');
+        }
+    }, [user, loading, router]);
 
     // Initialize session ID on component mount
     useEffect(() => {
@@ -38,6 +45,22 @@ export default function ChatbotPage() {
         // Redirect to the chat session page
         router.push(`/chatbot/${sessionId}`);
     };
+
+    // Show loading state while checking auth
+    if (loading || !user) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center px-9 py-12">
+                <div className="max-w-3xl w-full text-center">
+                    <div className="bg-surface-container rounded-2xl shadow-lg p-8 border border-border">
+                        <div className="animate-pulse">
+                            <div className="h-8 bg-surface-container-muted rounded-xl w-1/4 mb-6 mx-auto"></div>
+                            <div className="h-4 bg-surface-container-muted rounded-lg w-1/2 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!sessionId) {
         return (

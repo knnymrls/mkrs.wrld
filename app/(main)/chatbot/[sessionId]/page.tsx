@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import ChatInput from '../../../components/features/ChatInput';
@@ -20,8 +20,9 @@ interface ChatMessage {
 
 export default function ChatSessionPage() {
     const params = useParams();
+    const router = useRouter();
     const sessionId = params.sessionId as string;
-    const { user, session } = useAuth();
+    const { user, session, loading: authLoading } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -29,6 +30,13 @@ export default function ChatSessionPage() {
     const [initialLoad, setInitialLoad] = useState(true);
     const [sessionCreated, setSessionCreated] = useState(false);
     const pendingMessageProcessed = useRef(false);
+
+    // Check authentication
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.replace('/auth/signin');
+        }
+    }, [user, authLoading, router]);
 
     // Load messages from database or localStorage on mount
     useEffect(() => {
@@ -314,7 +322,7 @@ export default function ChatSessionPage() {
         sendMessage();
     };
 
-    if (initialLoad) {
+    if (authLoading || initialLoad || !user) {
         return (
             <div className="h-screen bg-background flex items-center justify-center">
                 <div className="animate-pulse">
