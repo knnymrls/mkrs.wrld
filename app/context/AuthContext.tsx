@@ -124,8 +124,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signOut = async () => {
-        await supabase.auth.signOut();
-        setHasProfile(null);
+        try {
+            // Use local scope to avoid 403 errors with global logout
+            const { error } = await supabase.auth.signOut({ scope: 'local' });
+            
+            if (error) {
+                console.error('Sign out error:', error);
+                // Even if there's an error, clear local state
+            }
+            
+            // Clear local state regardless
+            setUser(null);
+            setSession(null);
+            setHasProfile(null);
+            
+            // Redirect to home page
+            router.push('/');
+        } catch (err) {
+            console.error('Sign out error:', err);
+            // Clear local state even on error
+            setUser(null);
+            setSession(null);
+            setHasProfile(null);
+            router.push('/');
+        }
     };
 
     const value = {
