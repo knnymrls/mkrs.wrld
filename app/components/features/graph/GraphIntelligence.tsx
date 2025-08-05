@@ -48,11 +48,11 @@ export default function GraphIntelligence({ stats, metrics, mode }: GraphIntelli
     riskAlerts: [
       "Only 1 person knows Kubernetes",
       "3 isolated experts detected",
-      "Frontend skills concentrated in one team"
+      "Frontend skills concentrated in specific groups"
     ],
     opportunities: [
       "5 people interested in GraphQL",
-      "Cross-team ML collaboration potential",
+      "Cross-functional ML collaboration potential",
       "Mentorship opportunity: React expertise"
     ]
   };

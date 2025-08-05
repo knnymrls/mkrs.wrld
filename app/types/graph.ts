@@ -26,9 +26,6 @@ export interface ProfileNode extends BaseNode {
   title?: string;
   location?: string;
   skills?: string[];
-  division?: string;
-  department?: string;
-  team?: string;
 }
 
 export interface PostNode extends BaseNode {

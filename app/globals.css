@@ -1,16 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #fafafa;
+  --background: #fbfbfb;
   --foreground: #171717;
   
   /* Custom colors for the app */
-  --primary: #8CB332;
-  --primary-hover: #76972a;
+  --primary: #121212;
+  --primary-hover: #212121;
   --surface-container: #ffffff;
   --surface-container-muted: #f0f0f0;
-  --border: #dbdbdb;
+  --border: #eee;
   --onsurface-primary: #464646;
   --onsurface-secondary: #999999;
 }
@@ -21,8 +22,8 @@
   --foreground: #ededed;
   
   /* Custom colors for dark mode */
-  --primary: #8CB332;
-  --primary-hover: #9bc23e;
+  --primary: #eee;
+  --primary-hover: #ffffff;
   --surface-container: #292929;
   --surface-container-muted: #191919;
   --border: #404040;
@@ -37,8 +38,8 @@
     --foreground: #ededed;
     
     /* Custom colors for dark mode */
-    --primary: #8CB332;
-    --primary-hover: #9bc23e;
+    --primary: #eee;
+    --primary-hover: #fff;
     --surface-container: #292929;
     --surface-container-muted: #191919;
     --border: #404040;
@@ -64,7 +65,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
 @keyframes ping-once {
@@ -84,6 +85,12 @@ body {
 
 .animate-ping-once {
   animation: ping-once 0.6s cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Mention styling for proper inline wrapping */
+.mention-link {
+  display: inline;
+  word-break: break-word;
 }
 
 /* Custom shadow utilities for dark mode */

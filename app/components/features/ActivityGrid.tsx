@@ -73,8 +73,6 @@ interface ProjectRequestActivity extends BaseActivity {
   skills_needed: string[];
   time_commitment: 'few_hours' | 'few_days' | 'week' | 'few_weeks' | 'month' | 'months';
   urgency: 'low' | 'medium' | 'high';
-  department?: string;
-  division?: string;
   status: 'open' | 'in_review' | 'filled' | 'cancelled';
   max_participants: number;
   created_by: string;
@@ -126,19 +124,19 @@ const ActivityGrid = React.memo(function ActivityGrid({
   const triggerRef = useInfiniteScroll({
     hasMore,
     loading: loadingMore,
-    onLoadMore: onLoadMore || (() => {}),
+    onLoadMore: onLoadMore || (() => { }),
     threshold: 200
   });
 
   if (loading) {
     return (
-      <div 
-        className="w-full" 
-        style={{ 
-          columnCount: 'auto', 
-          columnWidth: '280px', 
-          columnGap: '16px', 
-          position: 'relative' 
+      <div
+        className="w-full"
+        style={{
+          columnCount: 'auto',
+          columnWidth: '280px',
+          columnGap: '16px',
+          position: 'relative'
         }}
       >
         <PostCardSkeleton count={4} variant="short" />
@@ -159,13 +157,13 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   return (
     <>
-      <div 
-        className="w-full" 
-        style={{ 
-          columnCount: 'auto', 
-          columnWidth: '280px', 
-          columnGap: '16px', 
-          position: 'relative' 
+      <div
+        className="w-full"
+        style={{
+          columnCount: 'auto',
+          columnWidth: '280px',
+          columnGap: '12px',
+          position: 'relative'
         }}
       >
         {items.map((item) => {
@@ -196,18 +194,18 @@ const ActivityGrid = React.memo(function ActivityGrid({
           }
         })}
       </div>
-      
+
       {/* Infinite scroll trigger */}
       {hasMore && (
         <div ref={triggerRef} className="w-full py-8">
           {loadingMore && (
-            <div 
-              className="w-full" 
-              style={{ 
-                columnCount: 'auto', 
-                columnWidth: '280px', 
-                columnGap: '16px', 
-                position: 'relative' 
+            <div
+              className="w-full"
+              style={{
+                columnCount: 'auto',
+                columnWidth: '280px',
+                columnGap: '16px',
+                position: 'relative'
               }}
             >
               <PostCardSkeleton count={3} variant="medium" />
@@ -215,7 +213,7 @@ const ActivityGrid = React.memo(function ActivityGrid({
           )}
         </div>
       )}
-      
+
       {/* End of feed message */}
       {!hasMore && items.length > 0 && (
         <div className="py-8 text-center">

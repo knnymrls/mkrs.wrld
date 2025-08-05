@@ -15,8 +15,6 @@ interface ProjectRequestCardGridProps {
     skills_needed: string[];
     time_commitment: 'few_hours' | 'few_days' | 'week' | 'few_weeks' | 'month' | 'months';
     urgency: 'low' | 'medium' | 'high';
-    department?: string;
-    division?: string;
     status: 'open' | 'in_review' | 'filled' | 'cancelled';
     max_participants: number;
     created_by: string;
@@ -113,13 +111,6 @@ export default function ProjectRequestCardGrid({ request }: ProjectRequestCardGr
           </div>
         </div>
 
-        {/* Department/Division if available */}
-        {(request.department || request.division) && (
-          <div className="flex items-center gap-1 mt-2 text-xs text-onsurface-secondary">
-            <Building2 className="w-3 h-3" />
-            <span>{[request.department, request.division].filter(Boolean).join(' • ')}</span>
-          </div>
-        )}
       </div>
     </div>
   );

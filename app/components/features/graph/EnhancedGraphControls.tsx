@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Users, Briefcase, MessageSquare, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
-import { NELNET_DIVISIONS, getDivisionColor } from '@/lib/constants/divisions';
-import { useTheme } from '@/app/context/ThemeContext';
+import { Users, Briefcase, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface EnhancedGraphControlsProps {
   showPeople: boolean;
@@ -14,12 +12,6 @@ interface EnhancedGraphControlsProps {
   onTogglePosts: () => void;
   connectionThreshold: number;
   onConnectionThresholdChange: (value: number) => void;
-  selectedDivisions: string[];
-  onDivisionToggle: (division: string) => void;
-  onClearDivisions: () => void;
-  onSelectAllDivisions: () => void;
-  showDivisionGroups: boolean;
-  onToggleDivisionGroups: () => void;
 }
 
 export default function EnhancedGraphControls({
@@ -30,16 +22,9 @@ export default function EnhancedGraphControls({
   onToggleProjects,
   onTogglePosts,
   connectionThreshold,
-  onConnectionThresholdChange,
-  selectedDivisions,
-  onDivisionToggle,
-  onClearDivisions,
-  onSelectAllDivisions,
-  showDivisionGroups,
-  onToggleDivisionGroups
+  onConnectionThresholdChange
 }: EnhancedGraphControlsProps) {
-  const [expandedSection, setExpandedSection] = useState<'types' | 'divisions' | null>('types');
-  const { resolvedTheme } = useTheme();
+  const [expandedSection, setExpandedSection] = useState<'types' | null>('types');
 
   return (
     <div className="absolute top-20 left-4 z-20 bg-surface-bright/80 backdrop-blur-md rounded-lg border border-border w-64 max-h-[calc(100vh-120px)] overflow-y-auto">
@@ -105,93 +90,6 @@ export default function EnhancedGraphControls({
                 {showPosts ? 'visible' : 'hidden'}
               </span>
             </button>
-          </div>
-        )}
-      </div>
-
-      {/* Divisions Section */}
-      <div className="border-b border-border/50">
-        <button
-          onClick={() => setExpandedSection(expandedSection === 'divisions' ? null : 'divisions')}
-          className="w-full p-3 flex items-center justify-between hover:bg-surface-container-muted transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Building2 size={16} className="text-onsurface-secondary" />
-            <h3 className="text-sm font-medium text-onsurface-primary">Divisions</h3>
-          </div>
-          {expandedSection === 'divisions' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-        
-        {expandedSection === 'divisions' && (
-          <div className="p-3 pt-0">
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={onSelectAllDivisions}
-                className="text-xs text-primary hover:underline"
-              >
-                Select All
-              </button>
-              <span className="text-xs text-onsurface-secondary">|</span>
-              <button
-                onClick={onClearDivisions}
-                className="text-xs text-primary hover:underline"
-              >
-                Clear
-              </button>
-            </div>
-            
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {NELNET_DIVISIONS.map((division) => {
-                const isSelected = selectedDivisions.includes(division);
-                const color = getDivisionColor(division);
-                
-                return (
-                  <label
-                    key={division}
-                    className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-all hover:bg-surface-container-muted ${
-                      isSelected ? 'text-onsurface-primary' : 'text-onsurface-secondary/50'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => onDivisionToggle(division)}
-                      className="sr-only"
-                    />
-                    <div 
-                      className="w-3 h-3 rounded-full border-2 transition-all"
-                      style={{
-                        borderColor: isSelected ? color : 'transparent',
-                        backgroundColor: isSelected ? color : (resolvedTheme === 'dark' ? '#6B7280' : '#9CA3AF')
-                      }}
-                    />
-                    <span className="text-sm flex-1">{division}</span>
-                  </label>
-                );
-              })}
-            </div>
-            
-            {/* Division Grouping Toggle */}
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <label className="flex items-center justify-between cursor-pointer p-2 rounded-md hover:bg-surface-container-muted">
-                <span className="text-sm text-onsurface-primary">Group by Division</span>
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={showDivisionGroups}
-                    onChange={onToggleDivisionGroups}
-                    className="sr-only"
-                  />
-                  <div className={`w-10 h-5 rounded-full transition-colors ${
-                    showDivisionGroups ? 'bg-primary' : 'bg-surface-container-muted'
-                  }`}>
-                    <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
-                      showDivisionGroups ? 'translate-x-5' : 'translate-x-0.5'
-                    } transform mt-0.5`} />
-                  </div>
-                </div>
-              </label>
-            </div>
           </div>
         )}
       </div>

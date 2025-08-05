@@ -111,7 +111,7 @@ const PostCard = React.memo(function PostCard({
   return (
     <>
       <div
-        className="bg-surface-container rounded-xl sm:rounded-2xl border-[1px] border-border hover:scale-[1.02] sm:hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-3 sm:mb-4 touch-manipulation"
+        className="bg-surface-container rounded-lg sm:rounded-xl border-[1px] border-border hover:scale-[1.02] sm:hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-3 sm:mb-4 touch-manipulation"
         onClick={() => onPostClick(post)}
       >
         <div className="p-3 sm:p-4 flex flex-col gap-3">
@@ -147,7 +147,7 @@ const PostCard = React.memo(function PostCard({
                 className="text-xs sm:text-sm font-sans text-onsurface-secondary"
               />
 
-              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap">
+              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap break-words">
                 {renderedContent}
               </div>
             </div>
@@ -156,20 +156,19 @@ const PostCard = React.memo(function PostCard({
           {/* Post Images Grid */}
           {images.length > 0 && (
             <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' :
-                images.length === 2 ? 'grid-cols-2' :
-                  images.length === 3 ? 'grid-cols-2' :
-                    'grid-cols-2'
+              images.length === 2 ? 'grid-cols-2' :
+                images.length === 3 ? 'grid-cols-2' :
+                  'grid-cols-2'
               }`}>
               {images.map((image, index) => {
                 const aspectRatio = image.height / image.width;
                 const isVeryTall = aspectRatio > 1.5;
-                
+
                 return (
                   <div
                     key={index}
-                    className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${
-                      images.length === 3 && index === 0 ? 'col-span-2' : ''
-                    } ${isVeryTall ? 'max-h-[400px]' : ''}`}
+                    className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${images.length === 3 && index === 0 ? 'col-span-2' : ''
+                      } ${isVeryTall ? 'max-h-[400px]' : ''}`}
                     onClick={(e) => handleImageClick(e, image.url)}
                   >
                     <img

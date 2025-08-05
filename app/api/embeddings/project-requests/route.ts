@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
       projectRequest.title,
       projectRequest.description,
       ...(projectRequest.skills_needed || []),
-      projectRequest.department,
-      projectRequest.division,
       `${projectRequest.time_commitment} time commitment`,
       `${projectRequest.urgency} urgency`
     ].filter(Boolean).join(' ');

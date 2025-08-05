@@ -93,7 +93,7 @@ export function renderPostContentWithMentions(
     // Add text before this mention
     if (match.start > lastIndex) {
       parts.push(
-        <span key={`text-${idx}`} className="align-middle">
+        <span key={`text-${idx}`}>
           {content.substring(lastIndex, match.start)}
         </span>
       );
@@ -117,7 +117,7 @@ export function renderPostContentWithMentions(
   // Add any remaining text after the last mention
   if (lastIndex < content.length) {
     parts.push(
-      <span key="text-end" className="align-middle">
+      <span key="text-end">
         {content.substring(lastIndex)}
       </span>
     );

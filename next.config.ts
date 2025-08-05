@@ -14,7 +14,43 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'dxbqbwafawbcccuocaoe.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
+  },
+  // Performance optimizations
+  swcMinify: true,
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{member}}',
+    },
+  },
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@heroicons/react', 'framer-motion'],
+  },
+  // Webpack optimizations
+  webpack: (config, { dev, isServer }) => {
+    // Development-specific optimizations
+    if (dev && !isServer) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+      };
+    }
+    
+    // Cache configuration
+    config.cache = {
+      type: 'filesystem',
+      buildDependencies: {
+        config: [__filename],
+      },
+    };
+    
+    return config;
   },
 };
 

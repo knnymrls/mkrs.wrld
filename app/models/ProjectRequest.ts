@@ -5,8 +5,6 @@ export interface ProjectRequest {
   skills_needed: string[];
   time_commitment: 'few_hours' | 'few_days' | 'week' | 'few_weeks' | 'month' | 'months';
   urgency: 'low' | 'medium' | 'high';
-  department?: string;
-  division?: string;
   status: 'open' | 'in_review' | 'filled' | 'cancelled';
   max_participants: number;
   created_by: string;

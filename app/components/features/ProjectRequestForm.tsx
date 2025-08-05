@@ -11,26 +11,18 @@ interface ProjectRequestFormProps {
     skills_needed: string[];
     time_commitment: string;
     urgency: string;
-    department?: string;
-    division?: string;
     max_participants: number;
   }) => Promise<void>;
   onCancel: () => void;
-  userProfile?: {
-    department?: string;
-    division?: string;
-  };
 }
 
-export default function ProjectRequestForm({ onSubmit, onCancel, userProfile }: ProjectRequestFormProps) {
+export default function ProjectRequestForm({ onSubmit, onCancel }: ProjectRequestFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [timeCommitment, setTimeCommitment] = useState('few_days');
   const [urgency, setUrgency] = useState('medium');
-  const [department, setDepartment] = useState(userProfile?.department || '');
-  const [division, setDivision] = useState(userProfile?.division || '');
   const [maxParticipants, setMaxParticipants] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,8 +55,6 @@ export default function ProjectRequestForm({ onSubmit, onCancel, userProfile }: 
         skills_needed: skills,
         time_commitment: timeCommitment,
         urgency,
-        department: department.trim() || undefined,
-        division: division.trim() || undefined,
         max_participants: maxParticipants
       });
     } finally {
@@ -174,34 +164,6 @@ export default function ProjectRequestForm({ onSubmit, onCancel, userProfile }: 
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-onsurface-primary mb-2">
-                  Department
-                </label>
-                <input
-                  type="text"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g., Engineering"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-onsurface-primary mb-2">
-                  Division
-                </label>
-                <input
-                  type="text"
-                  value={division}
-                  onChange={(e) => setDivision(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g., Catalyst"
-                />
               </div>
             </div>
 

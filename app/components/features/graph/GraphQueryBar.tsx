@@ -12,7 +12,6 @@ interface GraphQueryBarProps {
 interface QueryFilters {
   timeRange?: string;
   nodeTypes?: string[];
-  departments?: string[];
   skills?: string[];
 }
 
@@ -27,7 +26,7 @@ const exampleQueries = [
   "Show me Python experts who've worked on ML",
   "Find people connecting frontend and backend teams",
   "What skills are trending this month?",
-  "Who bridges the data science and engineering teams?",
+  "Who connects data science and engineering skills?",
   "Show collaboration patterns in the last quarter"
 ];
 

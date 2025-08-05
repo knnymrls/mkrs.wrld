@@ -15,18 +15,13 @@ export default function ProjectBoardPage() {
   const [filteredRequests, setFilteredRequests] = useState<ProjectRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ department?: string; division?: string } | undefined>();
   const [filters, setFilters] = useState({
     search: '',
     skills: [] as string[],
     timeCommitment: '',
-    urgency: '',
-    department: '',
-    division: ''
+    urgency: ''
   });
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
-  const [availableDepartments, setAvailableDepartments] = useState<string[]>([]);
-  const [availableDivisions, setAvailableDivisions] = useState<string[]>([]);
   
   const { user } = useAuth();
 
@@ -40,7 +35,6 @@ export default function ProjectBoardPage() {
 
   useEffect(() => {
     if (user && showForm) {
-      getUserProfile();
     }
   }, [user, showForm]);
 
@@ -70,20 +64,14 @@ export default function ProjectBoardPage() {
 
       setRequests(processedRequests);
 
-      // Extract unique skills, departments, and divisions
+      // Extract unique skills
       const skills = new Set<string>();
-      const departments = new Set<string>();
-      const divisions = new Set<string>();
 
       processedRequests.forEach(request => {
         request.skills_needed?.forEach((skill: string) => skills.add(skill));
-        if (request.department) departments.add(request.department);
-        if (request.division) divisions.add(request.division);
       });
 
       setAvailableSkills(Array.from(skills).sort());
-      setAvailableDepartments(Array.from(departments).sort());
-      setAvailableDivisions(Array.from(divisions).sort());
     } catch (error) {
       console.error('Error fetching project requests:', error);
     } finally {
@@ -121,15 +109,6 @@ export default function ProjectBoardPage() {
       filtered = filtered.filter(request => request.urgency === filters.urgency);
     }
 
-    // Department filter
-    if (filters.department) {
-      filtered = filtered.filter(request => request.department === filters.department);
-    }
-
-    // Division filter
-    if (filters.division) {
-      filtered = filtered.filter(request => request.division === filters.division);
-    }
 
     setFilteredRequests(filtered);
   };
@@ -232,19 +211,6 @@ export default function ProjectBoardPage() {
     }
   };
 
-  const getUserProfile = async () => {
-    if (!user) return;
-    
-    const { data } = await supabase
-      .from('profiles')
-      .select('department, division')
-      .eq('id', user.id)
-      .single();
-    
-    if (data) {
-      setUserProfile(data);
-    }
-  };
 
   if (loading) {
     return (
@@ -283,8 +249,6 @@ export default function ProjectBoardPage() {
             filters={filters}
             onFilterChange={setFilters}
             availableSkills={availableSkills}
-            availableDepartments={availableDepartments}
-            availableDivisions={availableDivisions}
           />
         </div>
 
@@ -293,7 +257,7 @@ export default function ProjectBoardPage() {
             <div className="text-center py-12 bg-surface-container rounded-lg">
               <Briefcase className="w-12 h-12 text-onsurface-secondary mx-auto mb-4" />
               <p className="text-onsurface-secondary text-lg">
-                {filters.search || filters.skills.length > 0 || filters.timeCommitment || filters.urgency || filters.department || filters.division
+                {filters.search || filters.skills.length > 0 || filters.timeCommitment || filters.urgency
                   ? 'No project requests match your filters'
                   : 'No open project requests yet'}
               </p>
@@ -324,7 +288,6 @@ export default function ProjectBoardPage() {
         <ProjectRequestForm
           onSubmit={handleCreateRequest}
           onCancel={() => setShowForm(false)}
-          userProfile={userProfile}
         />
       )}
     </div>

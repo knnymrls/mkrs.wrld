@@ -10,21 +10,15 @@ interface ProjectFiltersProps {
     skills: string[];
     timeCommitment: string;
     urgency: string;
-    department: string;
-    division: string;
   };
   onFilterChange: (filters: any) => void;
   availableSkills?: string[];
-  availableDepartments?: string[];
-  availableDivisions?: string[];
 }
 
 export default function ProjectFilters({ 
   filters, 
   onFilterChange,
-  availableSkills = [],
-  availableDepartments = [],
-  availableDivisions = []
+  availableSkills = []
 }: ProjectFiltersProps) {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({ ...filters, search: e.target.value });
@@ -42,14 +36,12 @@ export default function ProjectFilters({
       search: '',
       skills: [],
       timeCommitment: '',
-      urgency: '',
-      department: '',
-      division: ''
+      urgency: ''
     });
   };
 
   const hasActiveFilters = filters.search || filters.skills.length > 0 || 
-    filters.timeCommitment || filters.urgency || filters.department || filters.division;
+    filters.timeCommitment || filters.urgency;
 
   return (
     <div className="bg-surface-container rounded-lg shadow-sm border border-border p-6 space-y-6">
@@ -130,38 +122,6 @@ export default function ProjectFilters({
           ))}
         </select>
       </div>
-
-      {availableDepartments.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-onsurface-primary mb-2">Department</label>
-          <select
-            value={filters.department}
-            onChange={(e) => onFilterChange({ ...filters, department: e.target.value })}
-            className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Any</option>
-            {availableDepartments.map(dept => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {availableDivisions.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-onsurface-primary mb-2">Division</label>
-          <select
-            value={filters.division}
-            onChange={(e) => onFilterChange({ ...filters, division: e.target.value })}
-            className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Any</option>
-            {availableDivisions.map(div => (
-              <option key={div} value={div}>{div}</option>
-            ))}
-          </select>
-        </div>
-      )}
     </div>
   );
 }

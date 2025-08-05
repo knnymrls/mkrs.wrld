@@ -13,7 +13,6 @@ import { Link } from '../../models/Link';
 import { Skill } from '../../models/Skill';
 import Image from 'next/image';
 import { User, Pencil, Trash2, Plus, X } from 'lucide-react';
-import { NELNET_DIVISIONS } from '@/lib/constants/divisions';
 
 interface EditModalProps {
   isOpen: boolean;
@@ -53,9 +52,6 @@ export default function Profile() {
         embedding: number[];
         location: string;
         title: string;
-        division: string | null;
-        department: string | null;
-        team: string | null;
         avatar_url: string | null;
     } | null>(null);
     const [educations, setEducations] = useState<Education[]>([]);
@@ -69,9 +65,6 @@ export default function Profile() {
         skills: '',
         location: '',
         title: '',
-        division: '',
-        department: '',
-        team: '',
     });
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -94,7 +87,7 @@ export default function Profile() {
             // Fetch profile
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('name, bio, location, title, division, department, team, embedding, avatar_url')
+                .select('name, bio, location, title, embedding, avatar_url')
                 .eq('id', user.id)
                 .single();
 
@@ -108,9 +101,6 @@ export default function Profile() {
                     skills: '', // Will be populated separately
                     location: profileData?.location || '',
                     title: profileData?.title || '',
-                    division: profileData?.division || '',
-                    department: profileData?.department || '',
-                    team: profileData?.team || '',
                 });
             }
 
@@ -194,7 +184,7 @@ export default function Profile() {
         const educationText = educations.map(edu => `${edu.degree} from ${edu.school}`).join('. ');
         const experienceText = experiences.map(exp => `${exp.role} at ${exp.company}`).join('. ');
         
-        const embeddingInput = `${formData.bio} ${formData.skills || ''} ${formData.title || ''} ${formData.location || ''} ${formData.division || ''} ${formData.department || ''} ${formData.team || ''} ${educationText} ${experienceText}`;
+        const embeddingInput = `${formData.bio} ${formData.skills || ''} ${formData.title || ''} ${formData.location || ''} ${educationText} ${experienceText}`;
         const embedding = await getEmbedding(embeddingInput);
 
         const { error } = await supabase
@@ -204,9 +194,6 @@ export default function Profile() {
                 bio: formData.bio,
                 location: formData.location,
                 title: formData.title,
-                division: formData.division || null,
-                department: formData.department || null,
-                team: formData.team || null,
                 avatar_url: avatarUrl,
                 embedding,
             })
@@ -251,9 +238,6 @@ export default function Profile() {
                 bio: formData.bio,
                 location: formData.location,
                 title: formData.title,
-                division: formData.division || null,
-                department: formData.department || null,
-                team: formData.team || null,
                 avatar_url: avatarUrl,
                 embedding,
             });
@@ -450,34 +434,6 @@ export default function Profile() {
                                     placeholder="Location"
                                 />
                             </div>
-                            <div className="mt-4">
-                                <select
-                                    value={formData.division}
-                                    onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-                                    className="w-full p-3 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
-                                >
-                                    <option value="">Select Division</option>
-                                    {NELNET_DIVISIONS.map(div => (
-                                        <option key={div} value={div}>{div}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex gap-2 mt-2">
-                                <input
-                                    type="text"
-                                    value={formData.department}
-                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                    className="flex-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
-                                    placeholder="Department"
-                                />
-                                <input
-                                    type="text"
-                                    value={formData.team}
-                                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                                    className="flex-1 p-2 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
-                                    placeholder="Team"
-                                />
-                            </div>
                             <div className="flex gap-2 justify-center mt-4">
                                 <button
                                     type="submit"
@@ -506,13 +462,6 @@ export default function Profile() {
                             <p className="text-lg text-gray-600 dark:text-gray-400">
                                 {profile?.title || 'Your Title'} in {profile?.location || 'Your Location'}
                             </p>
-                            {profile?.division && (
-                                <p className="text-base text-gray-500 dark:text-gray-500 mt-1">
-                                    {profile.division}
-                                    {profile.department && ` • ${profile.department}`}
-                                    {profile.team && ` • ${profile.team}`}
-                                </p>
-                            )}
                             <button
                                 onClick={() => setIsEditing(true)}
                                 className="mt-4 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"

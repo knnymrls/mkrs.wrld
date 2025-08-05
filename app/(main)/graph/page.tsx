@@ -10,9 +10,6 @@ import Image from 'next/image';
 import GraphModeSelector, { GraphMode } from '@/app/components/features/graph/GraphModeSelector';
 import SkillRadarVisualization from '@/app/components/features/graph/SkillRadarVisualization';
 import EnhancedGraphControls from '@/app/components/features/graph/EnhancedGraphControls';
-import DivisionLegend from '@/app/components/features/graph/DivisionLegend';
-import { getDivisionColor, NELNET_DIVISIONS } from '@/lib/constants/divisions';
-import { calculateDivisionGroups } from '@/lib/graph/divisionGrouping';
 import { ProfileNode, PostNode, ProjectNode, GraphNode } from '@/app/types/graph';
 import { useTheme } from '@/app/context/ThemeContext';
 import { drawIcon } from '@/lib/graph/iconRenderer';
@@ -56,9 +53,6 @@ export default function GraphPage() {
     const [showProjects, setShowProjects] = useState(true);
     const [showPosts, setShowPosts] = useState(true);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
-    const [selectedDivisions, setSelectedDivisions] = useState<string[]>([...NELNET_DIVISIONS]);
-    const [showLegend, setShowLegend] = useState(true);
-    const [showDivisionGroups, setShowDivisionGroups] = useState(false);
 
     // Theme-aware colors for canvas rendering
     const canvasColors = useMemo(() => {
@@ -117,8 +111,7 @@ export default function GraphPage() {
             totalNodes: graphData.nodes.length,
             showPeople,
             showPosts,
-            showProjects,
-            selectedDivisions
+            showProjects
         });
 
         const filteredNodes = graphData.nodes.filter(node => {
@@ -127,24 +120,6 @@ export default function GraphPage() {
             if (node.type === 'post' && !showPosts) return false;
             if (node.type === 'project' && !showProjects) return false;
             
-            // Division filter for profiles - TEMPORARILY DISABLED
-            // TODO: Update profile divisions in database to match new division names
-            if (node.type === 'profile') {
-                const profileNode = node as ProfileNode;
-                console.log('Profile division check:', {
-                    name: profileNode.label,
-                    division: profileNode.division,
-                    selectedDivisions,
-                    wouldBeFiltered: profileNode.division ? !selectedDivisions.includes(profileNode.division) : true
-                });
-                // TEMPORARY: Show all profiles regardless of division
-                // if (!profileNode.division) {
-                //     if (!selectedDivisions.includes('Other')) return false;
-                // } else {
-                //     // Check if profile's division is selected
-                //     if (!selectedDivisions.includes(profileNode.division)) return false;
-                // }
-            }
             
             // Connection count filter
             const connections = nodeConnectionCounts[node.id] || 0;
@@ -168,7 +143,7 @@ export default function GraphPage() {
         });
 
         setFilteredData({ nodes: filteredNodes, links: filteredLinks });
-    }, [graphData, showPeople, showPosts, showProjects, connectionThreshold, nodeConnectionCounts, selectedDivisions]);
+    }, [graphData, showPeople, showPosts, showProjects, connectionThreshold, nodeConnectionCounts]);
 
     // Calculate graph statistics
     useEffect(() => {
@@ -214,7 +189,7 @@ export default function GraphPage() {
                 { data: contributions, error: contributionsError },
                 { data: skills, error: skillsError }
             ] = await Promise.all([
-                supabase.from('profiles').select('id, name, title, location, avatar_url, division, department, team'),
+                supabase.from('profiles').select('id, name, title, location, avatar_url'),
                 supabase.from('posts').select('id, author_id, content, created_at'),
                 supabase.from('projects').select('id, title, description, status, icon'),
                 supabase.from('post_mentions').select('post_id, profile_id'),
@@ -254,9 +229,6 @@ export default function GraphPage() {
                     location: p.location,
                     avatar_url: p.avatar_url,
                     skills: profileSkills.get(p.id) || [],
-                    division: p.division,
-                    department: p.department,
-                    team: p.team
                 }));
 
             // Filter posts from unnamed users
@@ -560,18 +532,6 @@ export default function GraphPage() {
                                 onTogglePosts={() => setShowPosts(!showPosts)}
                                 connectionThreshold={connectionThreshold}
                                 onConnectionThresholdChange={setConnectionThreshold}
-                                selectedDivisions={selectedDivisions}
-                                onDivisionToggle={(division) => {
-                                    setSelectedDivisions(prev => 
-                                        prev.includes(division) 
-                                            ? prev.filter(d => d !== division)
-                                            : [...prev, division]
-                                    );
-                                }}
-                                onClearDivisions={() => setSelectedDivisions([])}
-                                onSelectAllDivisions={() => setSelectedDivisions([...NELNET_DIVISIONS])}
-                                showDivisionGroups={showDivisionGroups}
-                                onToggleDivisionGroups={() => setShowDivisionGroups(!showDivisionGroups)}
                             />
                         )}
 
@@ -663,22 +623,6 @@ export default function GraphPage() {
                                                 {(nodeData as ProfileNode).location && (
                                                     <div className="text-onsurface-secondary">
                                                         📍 {(nodeData as ProfileNode).location}
-                                                    </div>
-                                                )}
-                                                {(nodeData as ProfileNode).division && (
-                                                    <div className="flex items-center gap-2">
-                                                        <div 
-                                                            className="w-3 h-3 rounded-full" 
-                                                            style={{ backgroundColor: getDivisionColor((nodeData as ProfileNode).division) }}
-                                                        />
-                                                        <span className="text-onsurface-secondary">
-                                                            {(nodeData as ProfileNode).division}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {(nodeData as ProfileNode).team && (
-                                                    <div className="text-onsurface-secondary text-xs">
-                                                        Team: {(nodeData as ProfileNode).team}
                                                     </div>
                                                 )}
                                                 {(nodeData as ProfileNode).skills && (nodeData as ProfileNode).skills!.length > 0 && (
@@ -792,40 +736,6 @@ export default function GraphPage() {
                                         graphRef.current.d3Force('center').strength(0.1);
                                     }
                                 }}
-                                onRenderFramePre={(ctx, globalScale) => {
-                                    if (!showDivisionGroups || !showPeople) return;
-                                    
-                                    // Draw division group bubbles
-                                    const groups = calculateDivisionGroups(filteredData.nodes, selectedDivisions);
-                                    
-                                    ctx.save();
-                                    groups.forEach(group => {
-                                        if (group.nodes.length < 2) return; // Don't draw bubble for single nodes
-                                        
-                                        const color = getDivisionColor(group.division);
-                                        
-                                        // Draw translucent circle
-                                        ctx.beginPath();
-                                        ctx.arc(group.center.x, group.center.y, group.radius, 0, 2 * Math.PI);
-                                        ctx.fillStyle = color + '10'; // 10% opacity
-                                        ctx.fill();
-                                        
-                                        // Draw border
-                                        ctx.strokeStyle = color + '30'; // 30% opacity
-                                        ctx.lineWidth = 2 / globalScale; // Adjust line width based on zoom
-                                        ctx.stroke();
-                                        
-                                        // Draw label if zoomed out enough
-                                        if (globalScale > 0.3) {
-                                            ctx.font = `${14 / globalScale}px Inter, sans-serif`;
-                                            ctx.fillStyle = color;
-                                            ctx.textAlign = 'center';
-                                            ctx.textBaseline = 'bottom';
-                                            ctx.fillText(group.division, group.center.x, group.center.y - group.radius - 5);
-                                        }
-                                    });
-                                    ctx.restore();
-                                }}
                                 nodeCanvasObjectMode={() => 'replace'}
                                 nodeCanvasObject={(node, ctx, globalScale) => {
                                     const isRelated = !hoveredNode || relatedNodes.has(node.id as string);
@@ -838,13 +748,9 @@ export default function GraphPage() {
                                     
                                     // Node styling based on type - colored nodes
                                     let color = canvasColors.nodeDefault; // Default
-                                    let ringColor = null; // Division color for profiles
                                     let baseSize = 4;
                                     
                                     if (node.type === 'profile') {
-                                        // Use division color for profiles
-                                        const profileNode = node as ProfileNode;
-                                        ringColor = getDivisionColor(profileNode.division);
                                         color = canvasColors.nodeProfile; // White center for profiles
                                         baseSize = 5;
                                     } else if (node.type === 'project') {
@@ -901,26 +807,8 @@ export default function GraphPage() {
                                         }
                                         
                                         ctx.restore();
-                                        
-                                        // Draw division ring for profile with image
-                                        if (ringColor) {
-                                            ctx.strokeStyle = ringColor;
-                                            ctx.lineWidth = 2;
-                                            ctx.beginPath();
-                                            ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI);
-                                            ctx.stroke();
-                                        }
                                     } else if (node.type === 'profile') {
-                                        // Profile without image - draw circle with division color
-                                        if (ringColor) {
-                                            // Draw outer ring
-                                            ctx.beginPath();
-                                            ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI);
-                                            ctx.fillStyle = ringColor;
-                                            ctx.fill();
-                                        }
-                                        
-                                        // Draw inner white circle
+                                        // Profile without image - draw simple circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
                                         ctx.fillStyle = canvasColors.nodeProfile;
@@ -1047,12 +935,6 @@ export default function GraphPage() {
                 )}
             </div>
 
-            {/* Division Legend */}
-            {currentMode === 'network' && selectedDivisions.length > 0 && (
-                <div className="absolute bottom-4 right-4 z-10">
-                    <DivisionLegend visibleDivisions={selectedDivisions} />
-                </div>
-            )}
 
         </div>
     );

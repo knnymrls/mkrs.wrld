@@ -61,12 +61,6 @@ export default function ProjectRequestCard({ request, onInterestClick }: Project
           <Users className="w-4 h-4" />
           <span>{request.max_participants} spot{request.max_participants !== 1 ? 's' : ''}</span>
         </div>
-        {request.department && (
-          <div className="flex items-center gap-1">
-            <Building2 className="w-4 h-4" />
-            <span>{request.department}</span>
-          </div>
-        )}
       </div>
 
       <div className="flex items-center justify-between">
