@@ -29,11 +29,13 @@ const nextConfig: NextConfig = {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
     },
   },
+  // Fix for client reference manifest issues in Next.js 15
+  serverExternalPackages: ['@supabase/supabase-js'],
   experimental: {
     optimizePackageImports: ['lucide-react', '@heroicons/react', 'framer-motion'],
   },
-  // Fix for client reference manifest issues in Next.js 15
-  serverExternalPackages: ['@supabase/supabase-js'],
+  // Vercel-specific configuration to handle client reference manifest issues
+  poweredByHeader: false,
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
     // Development-specific optimizations
@@ -56,6 +58,8 @@ const nextConfig: NextConfig = {
       // Disable filesystem cache in production builds
       config.cache = false;
     }
+
+
 
     return config;
   },
