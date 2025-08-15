@@ -12,8 +12,13 @@ const manifestPaths = [
   '.next/server/app/(main)/_client-reference-manifest.js'
 ];
 
-// Create minimal manifest content
-const manifestContent = `module.exports = {};`;
+// Create proper manifest content with clientModules structure
+const manifestContent = `module.exports = {
+  clientModules: {},
+  ssrModuleMapping: {},
+  edgeSSRModuleMapping: {},
+  entryCSSFiles: {}
+};`;
 
 let created = false;
 
