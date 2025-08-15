@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     ],
   },
   // Performance optimizations
-  swcMinify: true,
+  // swcMinify is enabled by default in Next.js 15+
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
@@ -42,13 +42,18 @@ const nextConfig: NextConfig = {
       };
     }
     
-    // Cache configuration
-    config.cache = {
-      type: 'filesystem',
-      buildDependencies: {
-        config: [__filename],
-      },
-    };
+    // Cache configuration - only enable filesystem cache in development
+    if (dev) {
+      config.cache = {
+        type: 'filesystem',
+        buildDependencies: {
+          config: [__filename],
+        },
+      };
+    } else {
+      // Disable filesystem cache in production builds
+      config.cache = false;
+    }
     
     return config;
   },
