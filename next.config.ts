@@ -59,7 +59,23 @@ const nextConfig: NextConfig = {
       config.cache = false;
     }
 
-
+    // Vercel-specific fixes for client reference manifest
+    if (!dev && !isServer) {
+      // Ensure client reference manifest is properly generated
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization?.splitChunks,
+          cacheGroups: {
+            ...config.optimization?.splitChunks?.cacheGroups,
+            default: {
+              ...config.optimization?.splitChunks?.cacheGroups?.default,
+              minChunks: 1,
+            },
+          },
+        },
+      };
+    }
 
     return config;
   },
