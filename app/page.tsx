@@ -1,12 +1,12 @@
 'use client';
 
-import { useAuth } from '@/app/context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import landing page to avoid SSR issues
-const LandingPage = dynamic(() => import('@/app/landing/page'), {
+const LandingPage = dynamic(() => import('./landing/page'), {
     ssr: false
 });
 
