@@ -21,6 +21,21 @@ const nextConfig: NextConfig = {
     ],
   },
   serverExternalPackages: ['@supabase/supabase-js'],
+  experimental: {
+    // Force client reference manifest generation
+    turbo: {},
+  },
+  webpack: (config, { isServer }) => {
+    // Ensure client reference manifest is always generated
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        providedExports: true,
+        usedExports: true,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
