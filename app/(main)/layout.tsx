@@ -1,6 +1,9 @@
 import Navbar from '../components/layout/Navbar';
 import MobileNavbar from '../components/layout/MobileNavbar';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function MainLayout({
   children,
 }: {
