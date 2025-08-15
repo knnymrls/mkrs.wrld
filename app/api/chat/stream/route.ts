@@ -51,9 +51,12 @@ export async function POST(req: NextRequest) {
         const authHeader = req.headers.get('authorization');
 
         // Create Supabase client with the user's auth token
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
         const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          supabaseUrl,
+          supabaseAnonKey,
           {
             global: {
               headers: {

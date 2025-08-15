@@ -5,10 +5,10 @@ import * as THREE from 'three';
 
 export default function ThreeGlobe() {
     const mountRef = useRef<HTMLDivElement>(null);
-    const sceneRef = useRef<THREE.Scene>();
-    const rendererRef = useRef<THREE.WebGLRenderer>();
-    const sphereRef = useRef<THREE.Mesh>();
-    const frameRef = useRef<number>();
+    const sceneRef = useRef<THREE.Scene | null>(null);
+    const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+    const sphereRef = useRef<THREE.Mesh | null>(null);
+    const frameRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (!mountRef.current) return;
@@ -27,9 +27,9 @@ export default function ThreeGlobe() {
         camera.position.z = 3;
 
         // Renderer setup
-        const renderer = new THREE.WebGLRenderer({ 
+        const renderer = new THREE.WebGLRenderer({
             alpha: true,
-            antialias: true 
+            antialias: true
         });
         renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
@@ -38,16 +38,16 @@ export default function ThreeGlobe() {
 
         // Create globe
         const geometry = new THREE.SphereGeometry(1, 64, 64);
-        
+
         // Create Earth texture
         const textureLoader = new THREE.TextureLoader();
-        
+
         // Create a canvas for the Earth texture
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        
+
         if (ctx) {
             // Create gradient for ocean
             const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -56,30 +56,30 @@ export default function ThreeGlobe() {
             gradient.addColorStop(1, '#1e3a5f');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             // Draw continents
             ctx.fillStyle = '#2d5f3f';
-            
+
             // Africa & Europe
             ctx.beginPath();
             ctx.ellipse(512, 200, 80, 120, 0, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Asia
             ctx.beginPath();
             ctx.ellipse(700, 180, 120, 80, -0.2, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Americas
             ctx.beginPath();
             ctx.ellipse(250, 256, 60, 140, 0.3, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Australia
             ctx.beginPath();
             ctx.ellipse(750, 350, 40, 30, 0, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Add some texture detail
             for (let i = 0; i < 200; i++) {
                 const x = Math.random() * canvas.width;
@@ -91,10 +91,10 @@ export default function ThreeGlobe() {
                 ctx.fill();
             }
         }
-        
+
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
-        
+
         const material = new THREE.MeshPhongMaterial({
             map: texture,
             specular: 0x222222,
@@ -189,8 +189,8 @@ export default function ThreeGlobe() {
     }, []);
 
     return (
-        <div 
-            ref={mountRef} 
+        <div
+            ref={mountRef}
             className="w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] lg:w-[600px] lg:h-[600px]"
             style={{ opacity: 0.5 }}
         />

@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { EntityExpander } from '../utils/entity-expander';
 
 const defaultSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 );
 
 export class KeywordSearchStrategy implements SearchStrategy {
@@ -19,10 +19,10 @@ export class KeywordSearchStrategy implements SearchStrategy {
 
   async execute(query: string, params?: SearchParams): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
-    
+
     // Extract keywords from query or use provided ones
     let keywords = params?.searchTerms || this.extractKeywords(query);
-    
+
     // Always expand keywords for better coverage
     const expandedKeywords = new Set<string>();
     for (const keyword of keywords) {
@@ -30,25 +30,25 @@ export class KeywordSearchStrategy implements SearchStrategy {
       expanded.forEach(term => expandedKeywords.add(term.toLowerCase()));
     }
     keywords = Array.from(expandedKeywords);
-    
+
     if (keywords.length === 0) return results;
-    
+
     // Build OR conditions for each keyword
     const orConditions = keywords.map(k => `%${k}%`);
-    
+
     // Search profiles
     const profileConditions = keywords.flatMap(k => [
       `title.ilike.%${k}%`,
       `bio.ilike.%${k}%`,
       `name.ilike.%${k}%`,
     ]).join(',');
-    
+
     const { data: profiles } = await this.supabase
       .from('profiles')
       .select('*')
       .or(profileConditions)
       .limit(20);
-    
+
     if (profiles) {
       for (const profile of profiles) {
         // Fetch related data
@@ -56,20 +56,20 @@ export class KeywordSearchStrategy implements SearchStrategy {
           .from('skills')
           .select('skill')
           .eq('profile_id', profile.id);
-        
+
         const { data: experiences } = await this.supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profile.id);
-        
+
         // Calculate relevance based on how many keywords match
-        const matchedKeywords = keywords.filter(k => 
+        const matchedKeywords = keywords.filter(k =>
           profile.title?.toLowerCase().includes(k) ||
           profile.bio?.toLowerCase().includes(k) ||
           profile.name?.toLowerCase().includes(k) ||
           skills?.some(s => s.skill.toLowerCase().includes(k))
         );
-        
+
         results.push({
           type: 'profile',
           id: profile.id,
@@ -83,14 +83,14 @@ export class KeywordSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     // Search experiences
     const experienceConditions = keywords.flatMap(k => [
       `role.ilike.%${k}%`,
       `description.ilike.%${k}%`,
       `company.ilike.%${k}%`,
     ]).join(',');
-    
+
     const { data: experiences } = await this.supabase
       .from('experiences')
       .select(`
@@ -99,17 +99,17 @@ export class KeywordSearchStrategy implements SearchStrategy {
       `)
       .or(experienceConditions)
       .limit(20);
-    
+
     if (experiences) {
       for (const exp of experiences) {
         const profile = exp.profiles;
-        
+
         // Fetch skills for the profile
         const { data: skills } = await this.supabase
           .from('skills')
           .select('skill')
           .eq('profile_id', profile.id);
-        
+
         results.push({
           type: 'experience',
           id: exp.id,
@@ -121,17 +121,17 @@ export class KeywordSearchStrategy implements SearchStrategy {
             },
           },
           relevanceScore: 0.8,
-          matchReason: `Experience matches: ${keywords.filter(k => 
+          matchReason: `Experience matches: ${keywords.filter(k =>
             exp.role?.toLowerCase().includes(k) ||
             exp.description?.toLowerCase().includes(k)
           ).join(', ')}`,
         });
       }
     }
-    
+
     // Search skills
     const skillConditions = keywords.map(k => `skill.ilike.%${k}%`).join(',');
-    
+
     const { data: skills } = await this.supabase
       .from('skills')
       .select(`
@@ -140,11 +140,11 @@ export class KeywordSearchStrategy implements SearchStrategy {
       `)
       .or(skillConditions)
       .limit(30);
-    
+
     if (skills) {
       // Group by profile to avoid duplicates
       const profileMap = new Map();
-      
+
       for (const skill of skills) {
         const profileId = skill.profile_id;
         if (!profileMap.has(profileId)) {
@@ -155,7 +155,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
         }
         profileMap.get(profileId).matchedSkills.push(skill.skill);
       }
-      
+
       // Convert to results
       for (const [profileId, data] of profileMap) {
         // Fetch all skills and experiences for this profile
@@ -163,12 +163,12 @@ export class KeywordSearchStrategy implements SearchStrategy {
           .from('skills')
           .select('skill')
           .eq('profile_id', profileId);
-        
+
         const { data: experiences } = await this.supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profileId);
-        
+
         results.push({
           type: 'profile',
           id: profileId,
@@ -182,23 +182,23 @@ export class KeywordSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     // Search posts
     const postConditions = keywords.map(k => `content.ilike.%${k}%`).join(',');
-    
+
     const { data: posts } = await this.supabase
       .from('posts')
       .select('*')
       .or(postConditions)
       .order('created_at', { ascending: false })
       .limit(20);
-    
+
     if (posts) {
       for (const post of posts) {
-        const matchedKeywords = keywords.filter(k => 
+        const matchedKeywords = keywords.filter(k =>
           post.content.toLowerCase().includes(k)
         );
-        
+
         results.push({
           type: 'post',
           id: post.id,
@@ -208,26 +208,26 @@ export class KeywordSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     // Search projects
     const projectConditions = keywords.flatMap(k => [
       `title.ilike.%${k}%`,
       `description.ilike.%${k}%`,
     ]).join(',');
-    
+
     const { data: projects } = await this.supabase
       .from('projects')
       .select('*')
       .or(projectConditions)
       .limit(20);
-    
+
     if (projects) {
       for (const project of projects) {
-        const matchedKeywords = keywords.filter(k => 
+        const matchedKeywords = keywords.filter(k =>
           project.title?.toLowerCase().includes(k) ||
           project.description?.toLowerCase().includes(k)
         );
-        
+
         results.push({
           type: 'project',
           id: project.id,
@@ -237,7 +237,7 @@ export class KeywordSearchStrategy implements SearchStrategy {
         });
       }
     }
-    
+
     return results;
   }
 

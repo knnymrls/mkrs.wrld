@@ -5,11 +5,14 @@ export async function GET(req: NextRequest) {
   try {
     // Get the authorization header to pass to Supabase
     const authHeader = req.headers.get('authorization');
-    
+
     // Create Supabase client with the user's auth token
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: {
@@ -31,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     // Analyze skill distribution
     const skillMap = new Map<string, { count: number; experts: any[] }>();
-    
+
     skills?.forEach((item: any) => {
       const skill = item.skill;
       if (!skillMap.has(skill)) {
@@ -87,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     const demandMap = new Map<string, number>();
     const techKeywords = ['react', 'python', 'kubernetes', 'graphql', 'typescript', 'aws', 'docker', 'ml', 'ai'];
-    
+
     recentPosts?.forEach((post: any) => {
       const content = post.content.toLowerCase();
       techKeywords.forEach(keyword => {

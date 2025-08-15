@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   try {
     // Clean up old session contexts periodically
     sessionContextManager.cleanupOldSessions(24);
-    
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     const sessionId = searchParams.get('sessionId');
@@ -17,11 +17,14 @@ export async function GET(req: NextRequest) {
 
     // Get the authorization header to pass to Supabase
     const authHeader = req.headers.get('authorization');
-    
+
     // Create Supabase client with the user's auth token
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: {
@@ -47,7 +50,7 @@ export async function GET(req: NextRequest) {
 
       // Sort messages by created_at
       if (session && session.messages) {
-        session.messages.sort((a: any, b: any) => 
+        session.messages.sort((a: any, b: any) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
       }
@@ -82,15 +85,18 @@ export async function POST(req: NextRequest) {
 
     // Get the authorization header to pass to Supabase
     const authHeader = req.headers.get('authorization');
-    
+
     if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     // Create Supabase client with the user's auth token
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: {
@@ -102,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -145,11 +151,14 @@ export async function DELETE(req: NextRequest) {
 
     // Get the authorization header to pass to Supabase
     const authHeader = req.headers.get('authorization');
-    
+
     // Create Supabase client with the user's auth token
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: {

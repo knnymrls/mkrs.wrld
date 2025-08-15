@@ -21,7 +21,7 @@ export default function HexGlobe() {
         if (!globeEl.current || !countries) return;
 
         // Initialize globe with hexed polygons
-        const globe = Globe()(globeEl.current)
+        const globe = new Globe(globeEl.current)
             .globeImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
             .hexPolygonsData(countries.features)
             .hexPolygonResolution(3)

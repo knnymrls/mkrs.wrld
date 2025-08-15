@@ -36,18 +36,21 @@ export async function POST(req: NextRequest) {
     if (!message?.trim()) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
     // Get the authorization header to pass to Supabase
     const authHeader = req.headers.get('authorization');
-    
+
     // Create Supabase client with the user's auth token
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         global: {
           headers: {
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     // Use provided sessionId or generate a new one
     let currentSessionId = sessionId;
-    
+
     // For now, we'll use the provided sessionId without database validation
     // This allows the frontend to manage sessions via localStorage
     if (!currentSessionId) {
@@ -70,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     // Fetch chat history from database if session exists
     const chatHistory: ChatCompletionMessageParam[] = [];
-    
+
     if (currentSessionId) {
       try {
         const { data: sessionData } = await supabase
@@ -79,14 +82,14 @@ export async function POST(req: NextRequest) {
           .eq('id', currentSessionId)
           .eq('user_id', userId)
           .single();
-          
+
         if (sessionData?.messages) {
           // Convert database messages to OpenAI format
           // Limit to last 10 messages for context window
           const recentMessages = sessionData.messages
             .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
             .slice(-10);
-            
+
           recentMessages.forEach((msg: any) => {
             chatHistory.push({
               role: msg.role as 'user' | 'assistant',
@@ -103,17 +106,17 @@ export async function POST(req: NextRequest) {
     const queryParser = new QueryParser();
     const retrievalAgent = new RetrievalAgent();
     const responseAgent = new ResponseAgent();
-    
+
     // Pass the authenticated supabase client to the retrieval agent
     retrievalAgent.setSupabaseClient(supabase);
 
     // Enhance query with session context
     const enhancedMessage = sessionContextManager.enhanceQueryWithContext(
-      message, 
-      currentSessionId || '', 
+      message,
+      currentSessionId || '',
       chatHistory
     );
-    
+
     // Parse the enhanced query
     const parsedQuery = queryParser.parse(enhancedMessage);
 
@@ -126,7 +129,7 @@ export async function POST(req: NextRequest) {
         .filter(m => m.type === 'project')
         .map(m => m.name);
     }
-    
+
     // Update session context
     sessionContextManager.updateContext(currentSessionId || '', {
       userId,
@@ -228,20 +231,20 @@ export async function POST(req: NextRequest) {
 
     if (updateError) throw updateError;
 
-    return NextResponse.json({ 
-      answer: finalAnswer, 
+    return NextResponse.json({
+      answer: finalAnswer,
       sources,
-      sessionId: currentSessionId 
+      sessionId: currentSessionId
     });
 
   } catch (err) {
     console.error('Chat error:', err instanceof Error ? err.message : 'Unknown error', err instanceof Error ? err.stack : '');
-    
+
     // Return more specific error messages in development
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? `Server error: ${err instanceof Error ? err.message : 'Unknown error'}` 
+    const errorMessage = process.env.NODE_ENV === 'development'
+      ? `Server error: ${err instanceof Error ? err.message : 'Unknown error'}`
       : 'Server error.';
-      
+
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -4,8 +4,8 @@ import { Post } from '@/app/models/Post';
 import { createClient } from '@supabase/supabase-js';
 
 const defaultSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 );
 
 export class GraphTraversalStrategy implements SearchStrategy {
@@ -17,9 +17,9 @@ export class GraphTraversalStrategy implements SearchStrategy {
   }
 
   async execute(
-    query: string, 
-    params?: { 
-      seedEntities: { type: string; id: string }[]; 
+    query: string,
+    params?: {
+      seedEntities: { type: string; id: string }[];
       depth?: number;
       relationTypes?: string[];
     }
@@ -28,12 +28,12 @@ export class GraphTraversalStrategy implements SearchStrategy {
     const visited = new Set<string>();
     const depth = params?.depth || 2;
     const seedEntities = params?.seedEntities || [];
-    
+
     // Process each seed entity
     for (const seed of seedEntities) {
       await this.traverse(seed, depth, visited, results);
     }
-    
+
     return results;
   }
 
@@ -45,9 +45,9 @@ export class GraphTraversalStrategy implements SearchStrategy {
   ) {
     const key = `${entity.type}:${entity.id}`;
     if (visited.has(key) || remainingDepth <= 0) return;
-    
+
     visited.add(key);
-    
+
     if (entity.type === 'profile') {
       // Get all posts by this person
       const { data: posts } = await this.supabase
@@ -56,7 +56,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         .eq('author_id', entity.id)
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       if (posts) {
         for (const post of posts) {
           results.push({
@@ -66,13 +66,13 @@ export class GraphTraversalStrategy implements SearchStrategy {
             relevanceScore: 0.7,
             matchReason: `Posted by related person`,
           });
-          
+
           // Get mentions from this post
           const { data: mentions } = await this.supabase
             .from('post_mentions')
             .select('profile_id')
             .eq('post_id', post.id);
-          
+
           if (mentions && remainingDepth > 1) {
             for (const mention of mentions) {
               await this.traverse(
@@ -83,13 +83,13 @@ export class GraphTraversalStrategy implements SearchStrategy {
               );
             }
           }
-          
+
           // Get projects linked to this post
           const { data: projectLinks } = await this.supabase
             .from('post_projects')
             .select('project_id')
             .eq('post_id', post.id);
-          
+
           if (projectLinks && remainingDepth > 1) {
             for (const link of projectLinks) {
               await this.traverse(
@@ -102,13 +102,13 @@ export class GraphTraversalStrategy implements SearchStrategy {
           }
         }
       }
-      
+
       // Get projects this person contributes to
       const { data: contributions } = await this.supabase
         .from('contributions')
         .select('project_id, role, description')
         .eq('person_id', entity.id);
-      
+
       if (contributions) {
         for (const contrib of contributions) {
           await this.traverse(
@@ -119,7 +119,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           );
         }
       }
-      
+
     } else if (entity.type === 'project') {
       // Get project details
       const { data: project } = await this.supabase
@@ -127,7 +127,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         .select('*')
         .eq('id', entity.id)
         .single();
-      
+
       if (project && !results.find(r => r.type === 'project' && r.id === project.id)) {
         results.push({
           type: 'project',
@@ -137,7 +137,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           matchReason: 'Connected through graph traversal',
         });
       }
-      
+
       // Get all contributors
       const { data: contributors } = await this.supabase
         .from('contributions')
@@ -148,7 +148,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           profiles!inner(id, name, title, bio)
         `)
         .eq('project_id', entity.id);
-      
+
       if (contributors && remainingDepth > 1) {
         for (const contrib of contributors) {
           // Add the contributor profile
@@ -157,7 +157,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
               .from('skills')
               .select('skill')
               .eq('profile_id', contrib.person_id);
-            
+
             results.push({
               type: 'profile',
               id: contrib.person_id,
@@ -171,7 +171,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
               matchReason: `Contributes to related project as ${contrib.role}`,
             });
           }
-          
+
           // Traverse to this person's other connections
           await this.traverse(
             { type: 'profile', id: contrib.person_id },
@@ -181,7 +181,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           );
         }
       }
-      
+
       // Get posts mentioning this project
       const { data: postMentions } = await this.supabase
         .from('post_projects')
@@ -230,7 +230,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         `)
         .eq('project_id', entity.id)
         .limit(10);
-      
+
       if (postMentions && remainingDepth > 1) {
         for (const mention of postMentions) {
           if (!results.find(r => r.type === 'post' && r.id === mention.post_id)) {
@@ -264,7 +264,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
               image_height: postData.image_height,
               images: postData.post_images || []
             };
-            
+
             results.push({
               type: 'post',
               id: mention.post_id,
@@ -273,7 +273,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
               matchReason: 'Mentions related project',
             });
           }
-          
+
           // Traverse to post author
           if (mention.posts && (mention.posts as any).author_id) {
             await this.traverse(
@@ -285,7 +285,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
           }
         }
       }
-      
+
     } else if (entity.type === 'post') {
       // Get post details
       const { data: post } = await this.supabase
@@ -293,7 +293,7 @@ export class GraphTraversalStrategy implements SearchStrategy {
         .select('*')
         .eq('id', entity.id)
         .single();
-      
+
       if (post) {
         // Get the author
         await this.traverse(
@@ -302,13 +302,13 @@ export class GraphTraversalStrategy implements SearchStrategy {
           visited,
           results
         );
-        
+
         // Get mentioned profiles
         const { data: mentions } = await this.supabase
           .from('post_mentions')
           .select('profile_id')
           .eq('post_id', entity.id);
-        
+
         if (mentions && remainingDepth > 1) {
           for (const mention of mentions) {
             await this.traverse(
@@ -319,13 +319,13 @@ export class GraphTraversalStrategy implements SearchStrategy {
             );
           }
         }
-        
+
         // Get mentioned projects
         const { data: projectMentions } = await this.supabase
           .from('post_projects')
           .select('project_id')
           .eq('post_id', entity.id);
-        
+
         if (projectMentions && remainingDepth > 1) {
           for (const mention of projectMentions) {
             await this.traverse(

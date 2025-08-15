@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
+
     // Create a Supabase client with the user's token
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         }
       }
     });
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -102,7 +102,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    
+
     // Create a Supabase client with the user's token
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
@@ -111,7 +111,7 @@ export async function PATCH(request: NextRequest) {
         }
       }
     });
-    
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -124,7 +124,7 @@ export async function PATCH(request: NextRequest) {
     if (markAllRead) {
       // Mark all notifications as read
       const { data, error } = await supabase.rpc('mark_all_notifications_read');
-      
+
       if (error) {
         console.error('Error marking all notifications as read:', error);
         return NextResponse.json({ error: 'Failed to mark notifications as read' }, { status: 500 });
@@ -133,10 +133,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true, markedCount: data });
     } else if (notificationId) {
       // Mark single notification as read
-      const { data, error } = await supabase.rpc('mark_notification_read', { 
-        p_notification_id: notificationId 
+      const { data, error } = await supabase.rpc('mark_notification_read', {
+        p_notification_id: notificationId
       });
-      
+
       if (error) {
         console.error('Error marking notification as read:', error);
         return NextResponse.json({ error: 'Failed to mark notification as read' }, { status: 500 });
