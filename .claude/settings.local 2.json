@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(npx:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm install)",
+      "Bash(grep:*)",
+      "Bash(cp:*)",
+      "Bash(supabase link:*)",
+      "Bash(supabase db:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(rg:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "defaultMode": "acceptEdits"
+  }
+}
