@@ -34,7 +34,7 @@ export default function HexGlobe() {
             .backgroundColor('rgba(0,0,0,0)')
             .showAtmosphere(true)
             .atmosphereColor('#ffffff')
-            .atmosphereAltitude(0.15);
+            .atmosphereAltitude(0.9);
 
         // Set up auto-rotation
         globe.controls().autoRotate = true;
@@ -73,7 +73,7 @@ export default function HexGlobe() {
             ref={globeEl}
             className="globe-container"
             style={{
-                opacity: 0.2
+                opacity: 0.3
             }}
         />
     );
