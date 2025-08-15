@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@heroicons/react', 'framer-motion'],
   },
+  // Fix for client reference manifest issues in Next.js 15
+  serverExternalPackages: ['@supabase/supabase-js'],
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
     // Development-specific optimizations
@@ -41,7 +43,7 @@ const nextConfig: NextConfig = {
         aggregateTimeout: 300,
       };
     }
-    
+
     // Cache configuration - only enable filesystem cache in development
     if (dev) {
       config.cache = {
@@ -54,7 +56,7 @@ const nextConfig: NextConfig = {
       // Disable filesystem cache in production builds
       config.cache = false;
     }
-    
+
     return config;
   },
 };
