@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "app/**/*": {
+      "maxDuration": 30
+    }
+  },
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install"
+}

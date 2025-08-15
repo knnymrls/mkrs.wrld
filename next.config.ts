@@ -33,6 +33,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
   experimental: {
     optimizePackageImports: ['lucide-react', '@heroicons/react', 'framer-motion'],
+    // Disable PPR to avoid client reference manifest issues
+    ppr: false,
   },
   // Vercel-specific configuration to handle client reference manifest issues
   poweredByHeader: false,
@@ -57,24 +59,6 @@ const nextConfig: NextConfig = {
     } else {
       // Disable filesystem cache in production builds
       config.cache = false;
-    }
-
-    // Vercel-specific fixes for client reference manifest
-    if (!dev && !isServer) {
-      // Ensure client reference manifest is properly generated
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          ...config.optimization?.splitChunks,
-          cacheGroups: {
-            ...config.optimization?.splitChunks?.cacheGroups,
-            default: {
-              ...config.optimization?.splitChunks?.cacheGroups?.default,
-              minChunks: 1,
-            },
-          },
-        },
-      };
     }
 
     return config;
