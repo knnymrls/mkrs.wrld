@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useAuth } from '@/app/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Dynamically import HexGlobe to avoid any hydration issues
-const HexGlobe = dynamic(() => import('@/app/components/ui/HexGlobe'), {
+const HexGlobe = dynamic(() => import('../components/ui/HexGlobe'), {
     ssr: false,
     loading: () => <div className="h-[400px]" />
 });
