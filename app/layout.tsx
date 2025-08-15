@@ -3,8 +3,6 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthHandler } from './components/features/AuthHandler';
 
-// Force dynamic rendering to avoid client reference manifest issues
-export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'mkrs.world',
