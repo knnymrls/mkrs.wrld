@@ -12,13 +12,9 @@ const manifestPaths = [
   '.next/server/app/(main)/_client-reference-manifest.js'
 ];
 
-// Create proper manifest content with clientModules structure
-const manifestContent = `module.exports = {
-  clientModules: {},
-  ssrModuleMapping: {},
-  edgeSSRModuleMapping: {},
-  entryCSSFiles: {}
-};`;
+// Create proper manifest content for Next.js 15
+// This creates a minimal but valid manifest structure
+const manifestContent = `globalThis.__RSC_MANIFEST=(globalThis.__RSC_MANIFEST||{});globalThis.__RSC_MANIFEST["/page"]={"moduleLoading":{"prefix":"/_next/"},"ssrModuleMapping":{},"edgeSSRModuleMapping":{},"clientModules":{},"entryCSSFiles":{},"rscModuleMapping":{},"edgeRscModuleMapping":{}};`;
 
 let created = false;
 
