@@ -17,7 +17,7 @@ export default function RootPage() {
     useEffect(() => {
         // If user is authenticated, redirect to the main app
         if (!loading && user) {
-            router.push('/feed');
+            router.push('/(main)');
         }
     }, [user, loading, router]);
 
