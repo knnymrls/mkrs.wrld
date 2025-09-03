@@ -1,7 +1,6 @@
 import './globals.css';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthHandler } from './components/features/AuthHandler';
 
 
 export const metadata = {
@@ -26,7 +25,6 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <AuthProvider>
-            <AuthHandler />
             {children}
           </AuthProvider>
         </ThemeProvider>

@@ -1,20 +1,13 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { 
-  isPublicRoute, 
-  isProtectedRoute, 
-  isAuthPageRoute,
-  AUTH_ROUTES,
-  DEFAULT_REDIRECT 
-} from './app/lib/auth-config';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(req: NextRequest) {
+export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
-      headers: req.headers,
+      headers: request.headers,
     },
-  });
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,90 +15,49 @@ export async function middleware(req: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return req.cookies.get(name)?.value;
+          return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: CookieOptions) {
-          req.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+        set(name: string, value: string, options: any) {
+          request.cookies.set({ name, value, ...options })
+          response.cookies.set({ name, value, ...options })
         },
-        remove(name: string, options: CookieOptions) {
-          req.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: req.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+        remove(name: string, options: any) {
+          request.cookies.set({ name, value: '', ...options })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
-  );
+  )
 
-  // Get the user - more reliable than getSession
-  const { data: { user } } = await supabase.auth.getUser();
-  const path = req.nextUrl.pathname;
+  // ALWAYS call getUser to refresh the session
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // If user is authenticated and trying to access auth pages, redirect to dashboard
-  if (user && isAuthPageRoute(path)) {
-    return NextResponse.redirect(new URL(DEFAULT_REDIRECT.signIn, req.url));
+  // Protected routes - redirect to signin if not authenticated
+  const protectedPaths = ['/dashboard', '/profile', '/projects', '/chatbot', '/graph', '/notifications', '/project-board', '/onboarding']
+  const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  
+  if (!user && isProtectedPath) {
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
 
-  // If user is not authenticated and trying to access protected route, redirect to signin
-  if (!user && isProtectedRoute(path)) {
-    // Store the intended destination
-    const redirectUrl = new URL(AUTH_ROUTES.signIn, req.url);
-    redirectUrl.searchParams.set('redirectTo', path);
-    return NextResponse.redirect(redirectUrl);
+  // Auth pages - redirect to dashboard if authenticated
+  const authPaths = ['/auth/signin', '/auth/signup']
+  const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  
+  if (user && isAuthPath) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Handle root path
-  if (path === '/') {
-    if (user) {
-      // Authenticated users go to dashboard
-      return NextResponse.redirect(new URL(DEFAULT_REDIRECT.signIn, req.url));
-    }
-    // Unauthenticated users stay on root (shows landing)
+  // Root page - redirect to dashboard if authenticated
+  if (user && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Handle /landing path - authenticated users go to dashboard
-  if (path === '/landing' && user) {
-    return NextResponse.redirect(new URL(DEFAULT_REDIRECT.signIn, req.url));
-  }
-
-  return response;
+  return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - api routes
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}

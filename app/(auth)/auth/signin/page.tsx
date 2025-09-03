@@ -20,7 +20,8 @@ export default function SignIn() {
 
         try {
             await signIn(email, password);
-            // AuthHandler and middleware will handle the redirect
+            // Middleware will handle the redirect
+            router.refresh();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred during sign in');
         } finally {
