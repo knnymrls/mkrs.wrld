@@ -5,6 +5,6 @@ export async function GET(request: Request) {
   // The Supabase client-side SDK will handle the auth tokens
   const requestUrl = new URL(request.url)
   
-  // Redirect to home page
-  return NextResponse.redirect(new URL('/', requestUrl.origin))
+  // Redirect to dashboard
+  return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
 }

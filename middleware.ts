@@ -1,56 +1,111 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { 
+  isPublicRoute, 
+  isProtectedRoute, 
+  isAuthPageRoute,
+  AUTH_ROUTES,
+  DEFAULT_REDIRECT 
+} from './app/lib/auth-config';
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+  let response = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  // Protected routes that require authentication
-  const protectedRoutes = [
-    '/dashboard',
-    '/profile',
-    '/chatbot',
-    '/graph',
-    '/project-requests',
-    '/onboarding',
-    '/projects',
-    '/project-board',
-    '/notifications',
-  ];
-
-  const isProtectedRoute = protectedRoutes.some(route => 
-    req.nextUrl.pathname.startsWith(route)
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
+    }
   );
 
-  // If user is not authenticated and trying to access protected route
-  if (!session && isProtectedRoute) {
-    // Redirect to landing page
-    return NextResponse.redirect(new URL('/landing', req.url));
+  // Get the user - more reliable than getSession
+  const { data: { user } } = await supabase.auth.getUser();
+  const path = req.nextUrl.pathname;
+
+  // If user is authenticated and trying to access auth pages, redirect to dashboard
+  if (user && isAuthPageRoute(path)) {
+    return NextResponse.redirect(new URL(DEFAULT_REDIRECT.signIn, req.url));
   }
 
-  // Landing page logic
-  if (req.nextUrl.pathname === '/landing') {
-    // If authenticated user visits /landing, redirect to main app
-    if (session) {
-      return NextResponse.redirect(new URL('/', req.url));
+  // If user is not authenticated and trying to access protected route, redirect to signin
+  if (!user && isProtectedRoute(path)) {
+    // Store the intended destination
+    const redirectUrl = new URL(AUTH_ROUTES.signIn, req.url);
+    redirectUrl.searchParams.set('redirectTo', path);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Handle root path
+  if (path === '/') {
+    if (user) {
+      // Authenticated users go to dashboard
+      return NextResponse.redirect(new URL(DEFAULT_REDIRECT.signIn, req.url));
     }
-    // Unauthenticated users can stay on landing
-    return res;
+    // Unauthenticated users stay on root (shows landing)
   }
 
-  // Root page logic - no redirect needed
-  // The root page component will handle showing landing or app based on auth state
+  // Handle /landing path - authenticated users go to dashboard
+  if (path === '/landing' && user) {
+    return NextResponse.redirect(new URL(DEFAULT_REDIRECT.signIn, req.url));
+  }
 
-  return res;
+  return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|auth).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - api routes
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

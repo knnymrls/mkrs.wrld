@@ -1,21 +1,38 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
 export function AuthHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Get redirect URL from query params or default to dashboard
+        const redirectTo = searchParams.get('redirectTo') || '/dashboard';
+        router.push(redirectTo);
+      } else if (event === 'SIGNED_OUT') {
+        // Redirect to home on sign out
+        router.push('/');
+      }
+    });
+
     // Check if we have auth tokens in the URL hash
     if (typeof window !== 'undefined' && window.location.hash) {
-      // The Supabase client with detectSessionInUrl will handle this automatically
+      // The Supabase client will handle the tokens automatically
       // Just clean up the URL
       const cleanUrl = window.location.pathname + window.location.search;
-      router.replace(cleanUrl);
+      window.history.replaceState({}, '', cleanUrl);
     }
-  }, [router]);
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router, searchParams]);
 
   return null;
 }
