@@ -22,9 +22,7 @@ const nextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
   experimental: {
     // Disable client reference manifest optimization that might cause issues
-    optimizePackageImports: [],
-    // Ensure proper handling of server components
-    serverComponentsExternalPackages: ['@supabase/supabase-js']
+    optimizePackageImports: []
   },
   webpack: (config, { dev, isServer }) => {
     // Fix for client reference manifest issues
