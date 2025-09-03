@@ -12,11 +12,15 @@ export async function middleware(req: NextRequest) {
 
   // Protected routes that require authentication
   const protectedRoutes = [
+    '/dashboard',
     '/profile',
     '/chatbot',
     '/graph',
     '/project-requests',
     '/onboarding',
+    '/projects',
+    '/project-board',
+    '/notifications',
   ];
 
   const isProtectedRoute = protectedRoutes.some(route => 

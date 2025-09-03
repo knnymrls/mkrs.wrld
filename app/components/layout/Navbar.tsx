@@ -91,7 +91,7 @@ export default function Navbar() {
     }> = [
             {
                 name: 'Home',
-                href: '/',
+                href: '/dashboard',
                 icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" id="Dashboard-3--Streamline-Flex-Remix" height="24" width="24">
                         <desc>

@@ -15,9 +15,9 @@ export default function RootPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // If user is authenticated, redirect to the main app
+        // If user is authenticated, redirect to the dashboard
         if (!loading && user) {
-            router.push('/(main)');
+            router.push('/dashboard');
         }
     }, [user, loading, router]);
 
