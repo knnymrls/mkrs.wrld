@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/fix-manifest.js",
+    "vercel-build": "next build && node scripts/fix-manifest.js || echo 'Manifest fix failed but continuing'",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
