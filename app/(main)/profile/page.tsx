@@ -364,14 +364,14 @@ export default function Profile() {
     if (loading || !user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <p className="text-gray-500">Loading...</p>
+                <p className="text-onsurface-secondary">Loading...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-gray-900">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="min-h-screen bg-background">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12">
                 {/* Profile Header - Centered */}
                 <div className="text-center mb-12">
                     <div className="mb-6">
@@ -401,8 +401,8 @@ export default function Profile() {
                                     className="rounded-full mx-auto"
                                 />
                             ) : (
-                                <div className="w-[120px] h-[120px] rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                                    <User size={60} className="text-gray-400 dark:text-gray-500" />
+                                <div className="w-[120px] h-[120px] rounded-full bg-surface-container-muted flex items-center justify-center mx-auto">
+                                    <User size={60} className="text-onsurface-secondary" />
                                 </div>
                             )
                         )}
@@ -414,7 +414,7 @@ export default function Profile() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="text-3xl font-semibold text-center w-full border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
+                                className="text-3xl font-semibold text-center w-full border-b border-border bg-transparent focus:outline-none focus:border-primary"
                                 placeholder="Your Name"
                             />
                             <div className="flex gap-2">
@@ -422,22 +422,22 @@ export default function Profile() {
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="text-lg text-center flex-1 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
+                                    className="text-lg text-center flex-1 border-b border-border bg-transparent focus:outline-none focus:border-primary"
                                     placeholder="Title"
                                 />
-                                <span className="text-lg text-gray-600 dark:text-gray-400">in</span>
+                                <span className="text-lg text-onsurface-secondary">in</span>
                                 <input
                                     type="text"
                                     value={formData.location}
                                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    className="text-lg text-center flex-1 border-b border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:border-gray-500"
+                                    className="text-lg text-center flex-1 border-b border-border bg-transparent focus:outline-none focus:border-primary"
                                     placeholder="Location"
                                 />
                             </div>
                             <div className="flex gap-2 justify-center mt-4">
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                                    className="px-4 py-2 bg-primary text-white dark:text-background rounded-lg hover:bg-primary-hover transition-colors"
                                 >
                                     Save Changes
                                 </button>
@@ -448,7 +448,7 @@ export default function Profile() {
                                         setAvatarFile(null);
                                         setRemoveAvatar(false);
                                     }}
-                                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    className="px-4 py-2 border border-border rounded-lg hover:bg-surface-container-muted transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -456,15 +456,15 @@ export default function Profile() {
                         </form>
                     ) : (
                         <>
-                            <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">
+                            <h1 className="text-3xl font-semibold text-foreground mb-2">
                                 {profile?.name || 'Your Name'}
                             </h1>
-                            <p className="text-lg text-gray-600 dark:text-gray-400">
+                            <p className="text-lg text-onsurface-secondary">
                                 {profile?.title || 'Your Title'} in {profile?.location || 'Your Location'}
                             </p>
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="mt-4 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                                className="mt-4 text-sm text-onsurface-secondary hover:text-foreground transition-colors"
                             >
                                 Edit Profile
                             </button>
@@ -480,11 +480,11 @@ export default function Profile() {
                             value={formData.bio}
                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                             rows={4}
-                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-3 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             placeholder="Tell us about yourself..."
                         />
                     ) : (
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                        <p className="text-onsurface-primary leading-relaxed">
                             {profile?.bio || 'No bio yet'}
                         </p>
                     )}
@@ -493,17 +493,17 @@ export default function Profile() {
                 {/* Skills Section */}
                 {(isEditing || skills.length > 0) && (
                     <section className="mb-12">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Skills</h2>
+                        <h2 className="text-xl font-semibold text-foreground mb-4">Skills</h2>
                         {isEditing ? (
                             <input
                                 type="text"
                                 value={formData.skills}
                                 onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                                className="w-full p-3 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                                 placeholder="React, TypeScript, Node.js (comma-separated)"
                             />
                         ) : (
-                            <p className="text-gray-700 dark:text-gray-300">
+                            <p className="text-onsurface-primary">
                                 {skills.map(s => s.skill).join(', ')}
                             </p>
                         )}
@@ -513,33 +513,33 @@ export default function Profile() {
                 {/* Work Experience */}
                 <section className="mb-12">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Work Experience</h2>
+                        <h2 className="text-xl font-semibold text-foreground">Work Experience</h2>
                         <button
                             onClick={() => router.push('/profile/experience/new')}
-                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-1"
+                            className="text-sm text-onsurface-secondary hover:text-foreground transition-colors flex items-center gap-1"
                         >
                             <Plus size={16} /> Add Experience
                         </button>
                     </div>
                     <div className="space-y-4">
                         {experiences.map((exp) => (
-                            <div key={exp.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                            <div key={exp.id} className="border-b border-border pb-4 last:border-0">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                        <h3 className="font-medium text-gray-900 dark:text-white">
+                                        <h3 className="font-medium text-foreground">
                                             {exp.role} @ {exp.company}
                                         </h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        <p className="text-sm text-onsurface-secondary">
                                             {exp.company}
                                         </p>
                                         {exp.description && (
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                                            <p className="text-sm text-onsurface-primary mt-2">
                                                 {exp.description}
                                             </p>
                                         )}
                                     </div>
                                     <div className="flex items-start gap-4 ml-4">
-                                        <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                        <span className="text-sm text-onsurface-secondary whitespace-nowrap">
                                             {formatDateRange(exp.start_date, exp.end_date)}
                                         </span>
                                         <div className="flex gap-2">
@@ -561,7 +561,7 @@ export default function Profile() {
                             </div>
                         ))}
                         {experiences.length === 0 && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">No experience added yet</p>
+                            <p className="text-sm text-onsurface-secondary">No experience added yet</p>
                         )}
                     </div>
                 </section>
@@ -569,28 +569,28 @@ export default function Profile() {
                 {/* Education */}
                 <section className="mb-12">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Education</h2>
+                        <h2 className="text-xl font-semibold text-foreground">Education</h2>
                         <button
                             onClick={() => router.push('/profile/education/new')}
-                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-1"
+                            className="text-sm text-onsurface-secondary hover:text-foreground transition-colors flex items-center gap-1"
                         >
                             <Plus size={16} /> Add Education
                         </button>
                     </div>
                     <div className="space-y-4">
                         {educations.map((edu) => (
-                            <div key={edu.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                            <div key={edu.id} className="border-b border-border pb-4 last:border-0">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                        <h3 className="font-medium text-gray-900 dark:text-white">
+                                        <h3 className="font-medium text-foreground">
                                             {edu.degree} @ {edu.school}
                                         </h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        <p className="text-sm text-onsurface-secondary">
                                             {edu.school}
                                         </p>
                                     </div>
                                     <div className="flex items-start gap-4 ml-4">
-                                        <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                        <span className="text-sm text-onsurface-secondary whitespace-nowrap">
                                             {formatDateRange(edu.year, edu.year)}
                                         </span>
                                         <div className="flex gap-2">
@@ -612,7 +612,7 @@ export default function Profile() {
                             </div>
                         ))}
                         {educations.length === 0 && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">No education added yet</p>
+                            <p className="text-sm text-onsurface-secondary">No education added yet</p>
                         )}
                     </div>
                 </section>
@@ -645,7 +645,7 @@ export default function Profile() {
                             type="text"
                             name="school"
                             defaultValue={editingEducation?.school}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             required
                         />
                     </div>
@@ -657,7 +657,7 @@ export default function Profile() {
                             type="text"
                             name="degree"
                             defaultValue={editingEducation?.degree}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             required
                         />
                     </div>
@@ -669,7 +669,7 @@ export default function Profile() {
                             type="text"
                             name="year"
                             defaultValue={editingEducation?.year || ''}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             required
                         />
                     </div>
@@ -677,7 +677,7 @@ export default function Profile() {
                         <button
                             type="button"
                             onClick={() => setEditingEducation(null)}
-                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="px-4 py-2 border border-border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
                         >
                             Cancel
                         </button>
@@ -720,7 +720,7 @@ export default function Profile() {
                             type="text"
                             name="company"
                             defaultValue={editingExperience?.company}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             required
                         />
                     </div>
@@ -732,7 +732,7 @@ export default function Profile() {
                             type="text"
                             name="role"
                             defaultValue={editingExperience?.role}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             required
                         />
                     </div>
@@ -745,7 +745,7 @@ export default function Profile() {
                                 type="date"
                                 name="start_date"
                                 defaultValue={editingExperience?.start_date || ''}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                                className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                                 required
                             />
                         </div>
@@ -757,7 +757,7 @@ export default function Profile() {
                                 type="date"
                                 name="end_date"
                                 defaultValue={editingExperience?.end_date || ''}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                                className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                             />
                         </div>
                     </div>
@@ -769,14 +769,14 @@ export default function Profile() {
                             name="description"
                             defaultValue={editingExperience?.description || ''}
                             rows={3}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:outline-none focus:border-gray-500"
+                            className="w-full p-2 border border-border rounded-md bg-transparent focus:outline-none focus:border-primary"
                         />
                     </div>
                     <div className="flex gap-2 justify-end">
                         <button
                             type="button"
                             onClick={() => setEditingExperience(null)}
-                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="px-4 py-2 border border-border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
                         >
                             Cancel
                         </button>

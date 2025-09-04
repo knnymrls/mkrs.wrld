@@ -184,7 +184,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading profile...</p>
+        <p className="text-onsurface-secondary">Loading profile...</p>
       </div>
     );
   }
@@ -192,14 +192,14 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Profile not found</p>
+        <p className="text-onsurface-secondary">Profile not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12">
         {/* Profile Header - Centered */}
         <div className="text-center mb-12">
           <div className="mb-6">
@@ -212,15 +212,15 @@ export default function ProfilePage() {
                 className="rounded-full mx-auto"
               />
             ) : (
-              <div className="w-[120px] h-[120px] rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                <User size={60} className="text-gray-400 dark:text-gray-500" />
+              <div className="w-[120px] h-[120px] rounded-full bg-surface-container-muted flex items-center justify-center mx-auto">
+                <User size={60} className="text-onsurface-secondary" />
               </div>
             )}
           </div>
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-semibold text-foreground mb-2">
             {profile.name}
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-lg text-onsurface-secondary">
             {profile.title} in {profile.location}
           </p>
         </div>
@@ -228,8 +228,8 @@ export default function ProfilePage() {
         {/* About Section */}
         {profile.bio && (
           <section className="mb-12">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">About</h2>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            <h2 className="text-xl font-semibold text-foreground mb-4">About</h2>
+            <p className="text-onsurface-primary leading-relaxed">
               {profile.bio}
             </p>
           </section>
@@ -238,29 +238,29 @@ export default function ProfilePage() {
         {/* Contributions Section */}
         {profile.projects.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Contributions</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Contributions</h2>
             <div className="space-y-4">
               {profile.projects.map((project) => (
-                <div key={project.id} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0">
+                <div key={project.id} className="border-b border-border pb-6 last:border-0">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                      <h3 className="text-lg font-medium text-foreground mb-1">
                         {project.title}
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      <p className="text-onsurface-secondary text-sm">
                         {project.description || profile.bio || 'No description available'}
                       </p>
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-4">
+                    <span className="text-sm text-onsurface-secondary ml-4">
                       {project.start_date && project.end_date ? formatDateRange(project.start_date, project.end_date) : ''}
                     </span>
                   </div>
                   
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <div className="bg-surface-container rounded-md p-4">
+                    <p className="text-sm font-medium text-onsurface-primary mb-2">
                       {project.role}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-onsurface-secondary mb-3">
                       {project.description || 'No description available'}
                     </p>
                     
@@ -274,17 +274,17 @@ export default function ProfilePage() {
                                 alt={contributor.name}
                                 width={32}
                                 height={32}
-                                className="rounded-full border-2 border-gray-50 dark:border-gray-800"
+                                className="rounded-full border-2 border-background"
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-gray-50 dark:border-gray-800 flex items-center justify-center">
-                                <User size={16} className="text-gray-500 dark:text-gray-400" />
+                              <div className="w-8 h-8 rounded-full bg-surface-container-muted border-2 border-background flex items-center justify-center">
+                                <User size={16} className="text-onsurface-secondary" />
                               </div>
                             )}
                           </div>
                         ))}
                         {project.contributors.length > 4 && (
-                          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-gray-50 dark:border-gray-800 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
+                          <div className="w-8 h-8 rounded-full bg-surface-container-muted border-2 border-background flex items-center justify-center text-xs font-medium text-onsurface-primary">
                             +{project.contributors.length - 4}
                           </div>
                         )}
@@ -298,7 +298,7 @@ export default function ProfilePage() {
                         e.stopPropagation();
                         router.push(`/projects/${project.id}`);
                       }}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      className="text-sm text-onsurface-secondary hover:text-foreground transition-colors"
                     >
                       View Project
                     </button>
@@ -312,20 +312,20 @@ export default function ProfilePage() {
         {/* Work Experience */}
         {profile.experiences.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Work Experience</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Work Experience</h2>
             <div className="space-y-4">
               {profile.experiences.map((exp) => (
-                <div key={exp.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                <div key={exp.id} className="border-b border-border pb-4 last:border-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white">
+                      <h3 className="font-medium text-foreground">
                         {exp.role} @ {exp.company}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-onsurface-secondary">
                         {exp.company}
                       </p>
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4">
+                    <span className="text-sm text-onsurface-secondary whitespace-nowrap ml-4">
                       {formatDateRange(exp.start_date, exp.end_date)}
                     </span>
                   </div>
@@ -338,20 +338,20 @@ export default function ProfilePage() {
         {/* Education */}
         {profile.educations.length > 0 && (
           <section className="mb-12">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Education</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Education</h2>
             <div className="space-y-4">
               {profile.educations.map((edu) => (
-                <div key={edu.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                <div key={edu.id} className="border-b border-border pb-4 last:border-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white">
+                      <h3 className="font-medium text-foreground">
                         {edu.degree} @ {edu.school}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-onsurface-secondary">
                         {edu.school}
                       </p>
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4">
+                    <span className="text-sm text-onsurface-secondary whitespace-nowrap ml-4">
                       {formatDateRange(edu.year, edu.year)}
                     </span>
                   </div>
