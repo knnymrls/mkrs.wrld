@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, Suspense } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from '../components/features/CreatePostModal';
@@ -38,7 +38,7 @@ interface Post {
   }>;
 }
 
-function HomeContent() {
+export default function Home() {
   const { user, hasProfile, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -125,8 +125,8 @@ function HomeContent() {
   const handlePostDelete = useCallback(async (postId: string) => {
     try {
       // Import supabase client
-      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
-      const supabase = createClientComponentClient();
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
       
       // Delete the post from database
       const { error: deleteError } = await supabase
@@ -219,13 +219,5 @@ function HomeContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="text-onsurface-secondary">Loading...</div></div>}>
-      <HomeContent />
-    </Suspense>
   );
 }
