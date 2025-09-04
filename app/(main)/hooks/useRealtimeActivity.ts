@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { formatPost } from '../utils/postFormatters';
 import { ActivityItem } from '@/app/components/features/ActivityGrid';
@@ -15,7 +15,7 @@ interface UseRealtimeActivityOptions {
  * Consolidates posts, profiles, and projects into a single channel
  */
 export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: UseRealtimeActivityOptions) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
     if (!user) return;
@@ -203,5 +203,5 @@ export function useRealtimeActivity({ user, onNewActivity, onRemoveActivity }: U
     return () => {
       activityChannel.unsubscribe();
     };
-  }, [user, onNewActivity, onRemoveActivity, supabase]);
+  }, [user, onNewActivity, onRemoveActivity]);
 }

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { formatPost } from '../utils/postFormatters';
 import { ActivityItem } from '@/app/components/features/ActivityGrid';
@@ -13,7 +13,7 @@ export function useActivityFeed(user: User | null) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const fetchPosts = useCallback(async (limit?: number, offset?: number) => {
     let query = supabase
@@ -83,7 +83,7 @@ export function useActivityFeed(user: User | null) {
       post.author.name.trim() !== '' && 
       post.author.name !== 'Unknown'
     );
-  }, [supabase, user]);
+  }, [user]);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -91,8 +91,8 @@ export function useActivityFeed(user: User | null) {
       setPage(0);
       setHasMore(true);
       
-      // Fetch all posts without limit
-      const postsPromise = fetchPosts();
+      // Fetch initial posts with a limit
+      const postsPromise = fetchPosts(20, 0);
 
       // Fetch all profiles (only on initial load)
       const profilesPromise = supabase
@@ -189,14 +189,14 @@ export function useActivityFeed(user: User | null) {
 
       setActivities(allActivities);
       
-      // Since we're fetching all posts initially, no more to load
-      setHasMore(false);
+      // We have more posts to load if we got exactly 20
+      setHasMore(posts.length === 20);
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {
       setLoadingActivities(false);
     }
-  }, [fetchPosts, supabase]);
+  }, [fetchPosts]);
 
   const loadMoreActivities = useCallback(async () => {
     if (loadingMore || !hasMore) return;

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { TrackedMention } from '@/app/types/mention';
 
@@ -22,7 +22,7 @@ export function usePostInteractions({ user, onActivityUpdate }: UsePostInteracti
   const [quickCommentMentions, setQuickCommentMentions] = useState<{ [postId: string]: TrackedMention[] }>({});
   const [submittingQuickComment, setSubmittingQuickComment] = useState<{ [postId: string]: boolean }>({});
   
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const toggleLike = useCallback(async (postId: string, currentlyLiked: boolean) => {
     if (!user) return;

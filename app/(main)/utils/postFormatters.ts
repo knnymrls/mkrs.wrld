@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Post, PostImage } from '@/app/models/Post';
 import { TypedSupabaseClient } from '@/app/types/supabase';
@@ -43,7 +43,7 @@ export interface RawPostData {
  * Handles both pre-fetched relations and separate fetching of relations
  */
 export async function formatPost(postData: RawPostData, user: User | null): Promise<Post> {
-  const supabase = createClientComponentClient() as TypedSupabaseClient;
+  const supabase = createClient() as TypedSupabaseClient;
   const post = postData;
   
   // If author data is nested, extract it
