@@ -67,13 +67,13 @@ export default function ConvertToProjectModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface-container rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Convert to Project</h2>
+            <h2 className="text-2xl font-bold text-onsurface-primary">Convert to Project</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-onsurface-secondary hover:text-onsurface-primary transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -81,38 +81,38 @@ export default function ConvertToProjectModal({
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-onsurface-primary mb-2">
                 Project Title
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-surface-container-muted border border-border rounded-md text-onsurface-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-onsurface-primary mb-2">
                 Project Description
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                className="w-full px-3 py-2 bg-surface-container-muted border border-border rounded-md text-onsurface-primary focus:outline-none focus:ring-2 focus:ring-primary h-32 resize-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-onsurface-primary mb-2">
                 Status
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-surface-container-muted border border-border rounded-md text-onsurface-primary focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
@@ -121,24 +121,24 @@ export default function ConvertToProjectModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-onsurface-primary mb-2">
                 Assign Roles to Contributors
               </label>
               <div className="space-y-3">
                 {contributors.map((contributor) => (
                   <div key={contributor.user_id} className="flex items-center gap-3">
-                    <span className="flex-1 text-gray-700">{contributor.name}</span>
+                    <span className="flex-1 text-onsurface-primary">{contributor.name}</span>
                     <input
                       type="text"
                       value={contributor.role}
                       onChange={(e) => handleRoleChange(contributor.user_id, e.target.value)}
                       placeholder="e.g., Lead Developer, Designer"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 bg-surface-container-muted border border-border rounded-md text-onsurface-primary placeholder-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-onsurface-secondary mt-2">
                 Only contributors with assigned roles will be added to the project
               </p>
             </div>
@@ -147,14 +147,14 @@ export default function ConvertToProjectModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 py-2 px-4 bg-primary text-white dark:text-background rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isSubmitting ? 'Creating Project...' : 'Create Project'}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+                className="flex-1 py-2 px-4 bg-surface-container-muted text-onsurface-primary rounded-md hover:bg-border focus:outline-none focus:ring-2 focus:ring-border transition-colors"
               >
                 Cancel
               </button>

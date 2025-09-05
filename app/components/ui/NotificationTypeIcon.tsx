@@ -50,7 +50,7 @@ export default function NotificationTypeIcon({ type }: NotificationTypeIconProps
       case 'project_added_as_contributor':
         return 'text-purple-600';
       default:
-        return 'text-gray-600';
+        return 'text-onsurface-secondary';
     }
   };
 
