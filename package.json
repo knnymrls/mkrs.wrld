@@ -61,6 +61,7 @@
     "eslint": "^9.28.0",
     "jest": "^30.0.2",
     "jest-environment-jsdom": "^30.0.2",
+    "supabase": "^2.39.2",
     "tailwindcss": "^4",
     "tsx": "^4.20.1",
     "typescript": "^5"

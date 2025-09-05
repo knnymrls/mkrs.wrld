@@ -638,7 +638,7 @@ export default function Profile() {
                     className="space-y-4"
                 >
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-onsurface-primary mb-1">
                             School
                         </label>
                         <input
@@ -650,7 +650,7 @@ export default function Profile() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-onsurface-primary mb-1">
                             Degree
                         </label>
                         <input
@@ -662,7 +662,7 @@ export default function Profile() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-onsurface-primary mb-1">
                             Year
                         </label>
                         <input
@@ -677,13 +677,13 @@ export default function Profile() {
                         <button
                             type="button"
                             onClick={() => setEditingEducation(null)}
-                            className="px-4 py-2 border border-border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="px-4 py-2 border border-border rounded-md hover:bg-surface-container-muted"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                            className="px-4 py-2 bg-primary text-white dark:text-background rounded-md hover:bg-primary-hover"
                         >
                             Save
                         </button>
@@ -713,7 +713,7 @@ export default function Profile() {
                     className="space-y-4"
                 >
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-onsurface-primary mb-1">
                             Company
                         </label>
                         <input
@@ -725,7 +725,7 @@ export default function Profile() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-onsurface-primary mb-1">
                             Role
                         </label>
                         <input
@@ -738,7 +738,7 @@ export default function Profile() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-onsurface-primary mb-1">
                                 Start Date
                             </label>
                             <input
@@ -750,7 +750,7 @@ export default function Profile() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-onsurface-primary mb-1">
                                 End Date
                             </label>
                             <input
@@ -762,7 +762,7 @@ export default function Profile() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-onsurface-primary mb-1">
                             Description
                         </label>
                         <textarea
@@ -776,13 +776,13 @@ export default function Profile() {
                         <button
                             type="button"
                             onClick={() => setEditingExperience(null)}
-                            className="px-4 py-2 border border-border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="px-4 py-2 border border-border rounded-md hover:bg-surface-container-muted"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                            className="px-4 py-2 bg-primary text-white dark:text-background rounded-md hover:bg-primary-hover"
                         >
                             Save
                         </button>

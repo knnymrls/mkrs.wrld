@@ -200,7 +200,7 @@ export default function CommentsList({
               setCommentMentions([]);
             }}
             disabled={!newComment.trim() || submittingComment}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white dark:text-background bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
           >
             {submittingComment ? (
               <div className="flex items-center gap-2">
@@ -295,7 +295,7 @@ export default function CommentsList({
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={() => updateComment(comment.id, editCommentText, editMentions)}
-                          className="px-3 py-1 text-xs font-medium text-white bg-primary rounded-full hover:bg-primary-hover transition-colors"
+                          className="px-3 py-1 text-xs font-medium text-white dark:text-background bg-primary rounded-full hover:bg-primary-hover transition-colors"
                         >
                           Save
                         </button>

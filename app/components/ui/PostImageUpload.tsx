@@ -98,7 +98,7 @@ export default function PostImageUpload({
               disabled={disabled || isUploading}
               className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-colors
                 ${disabled || isUploading 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  ? 'bg-surface-container-muted text-onsurface-secondary cursor-not-allowed' 
                   : 'bg-button-bg text-text-secondary hover:bg-button-bg-hover cursor-pointer'
                 }`}
             >
@@ -134,7 +134,7 @@ export default function PostImageUpload({
             alt="Upload preview"
             shape="square"
             size="auto"
-            className="h-auto rounded-lg object-contain bg-gray-50 max-h-[120px] w-auto"
+            className="h-auto rounded-lg object-contain bg-surface-container max-h-[120px] w-auto"
           />
           <div className="absolute -top-2 -right-2">
             <RemoveButton

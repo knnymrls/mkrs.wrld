@@ -113,9 +113,9 @@ const SuggestionItem = React.memo<SuggestionItemProps>(({
 SuggestionItem.displayName = 'SuggestionItem';
 
 const LoadingState = () => (
-  <div className="px-4 py-8 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+  <div className="px-4 py-8 flex flex-col items-center justify-center text-onsurface-secondary">
     <div className="flex items-center gap-2 mb-2">
-      <div className="w-4 h-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      <div className="w-4 h-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       <span className="text-sm font-medium">Searching...</span>
     </div>
     <p className="text-xs text-center">Finding people and projects</p>
@@ -123,7 +123,7 @@ const LoadingState = () => (
 );
 
 const ErrorState = ({ error }: { error: string }) => (
-  <div className="px-4 py-6 flex flex-col items-center justify-center text-red-500 dark:text-red-400">
+  <div className="px-4 py-6 flex flex-col items-center justify-center text-red-600 dark:text-red-400">
     <svg className="w-5 h-5 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
     </svg>
@@ -133,7 +133,7 @@ const ErrorState = ({ error }: { error: string }) => (
 );
 
 const EmptyState = () => (
-  <div className="px-4 py-6 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+  <div className="px-4 py-6 flex flex-col items-center justify-center text-onsurface-secondary">
     <svg className="w-5 h-5 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
@@ -229,7 +229,7 @@ const MentionDropdown = forwardRef<HTMLDivElement, MentionDropdownProps>(
 
         {/* Content */}
         <div
-          className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+          className="overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
           style={{ maxHeight: `${maxHeight - 40}px` }}
         >
           {isLoading ? (

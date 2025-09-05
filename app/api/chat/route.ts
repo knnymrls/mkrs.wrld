@@ -3,9 +3,9 @@ import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { RetrievalAgent } from './agents/retrieval';
 import { ResponseAgent } from './agents/response';
 import { QueryParser } from './utils/query-parser';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { Database } from '@/lib/database.types';
 import { ChatSession, ChatMessage } from '@/app/models/chat';
-import { TypedSupabaseClient } from '@/app/types/supabase';
 import { SearchResults } from '@/app/models/Search';
 import { DataRequest } from '@/app/types/chat';
 import { Source } from '@/app/models/Search';
@@ -48,10 +48,14 @@ export async function POST(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
-    const supabase = createClient(
+    const supabase = createServerClient<Database>(
       supabaseUrl,
       supabaseAnonKey,
       {
+        cookies: {
+          getAll() { return []; },
+          setAll() {}
+        },
         global: {
           headers: {
             authorization: authHeader || '',
@@ -78,21 +82,21 @@ export async function POST(req: NextRequest) {
       try {
         const { data: sessionData } = await supabase
           .from('chat_sessions')
-          .select('messages:chat_messages(*)')
+          .select('*, chat_messages(*)')
           .eq('id', currentSessionId)
           .eq('user_id', userId)
           .single();
 
-        if (sessionData?.messages) {
+        if (sessionData?.chat_messages) {
           // Convert database messages to OpenAI format
           // Limit to last 10 messages for context window
-          const recentMessages = sessionData.messages
+          const recentMessages = sessionData.chat_messages
             .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
             .slice(-10);
 
           recentMessages.forEach((msg: any) => {
             chatHistory.push({
-              role: msg.role as 'user' | 'assistant',
+              role: msg.role,
               content: msg.content
             });
           });
@@ -169,14 +173,14 @@ export async function POST(req: NextRequest) {
     }
 
     // First, ensure the session exists
-    const { data: existingSession } = await supabase
+    const { data: existingSession } = currentSessionId ? await supabase
       .from('chat_sessions')
       .select('id')
       .eq('id', currentSessionId)
       .eq('user_id', userId)
-      .single();
+      .single() : { data: null };
 
-    if (!existingSession) {
+    if (!existingSession && currentSessionId) {
       // Create session if it doesn't exist
       const { error: createError } = await supabase
         .from('chat_sessions')
@@ -192,44 +196,52 @@ export async function POST(req: NextRequest) {
     }
 
     // Store user message in database
-    const { error: userMsgError } = await supabase
-      .from('chat_messages')
-      .insert({
-        session_id: currentSessionId,
-        user_id: userId,
-        role: 'user',
-        content: message,
-        metadata: mentions.length > 0 ? { mentions } : undefined
-      });
+    if (currentSessionId) {
+      const { error: userMsgError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: currentSessionId,
+          user_id: userId,
+          role: 'user',
+          content: message,
+          metadata: mentions.length > 0 ? { mentions } : null
+        });
 
-    if (userMsgError) {
-      console.error('User message insert error:', userMsgError);
-      // Continue even if message save fails
+      if (userMsgError) {
+        console.error('User message insert error:', userMsgError);
+        // Continue even if message save fails
+      }
     }
 
     // Store assistant response in database
-    const { error: assistantMsgError } = await supabase
-      .from('chat_messages')
-      .insert({
-        session_id: currentSessionId,
-        user_id: userId,
-        role: 'assistant',
-        content: finalAnswer,
-        metadata: sources.length > 0 ? { sources } : undefined
-      });
+    if (currentSessionId) {
+      const { error: assistantMsgError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: currentSessionId,
+          user_id: userId,
+          role: 'assistant',
+          content: finalAnswer,
+          metadata: sources.length > 0 ? { sources } : null
+        });
 
-    if (assistantMsgError) {
-      console.error('Assistant message insert error:', assistantMsgError);
-      // Continue even if message save fails
+      if (assistantMsgError) {
+        console.error('Assistant message insert error:', assistantMsgError);
+        // Continue even if message save fails
+      }
     }
 
     // Update session updated_at
-    const { error: updateError } = await supabase
-      .from('chat_sessions')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', currentSessionId);
+    if (currentSessionId) {
+      const { error: updateError } = await supabase
+        .from('chat_sessions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', currentSessionId);
 
-    if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Session update error:', updateError);
+      }
+    }
 
     return NextResponse.json({
       answer: finalAnswer,
@@ -249,7 +261,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function executeDataRequest(request: DataRequest, results: SearchResults, supabase: TypedSupabaseClient) {
+async function executeDataRequest(request: DataRequest, results: SearchResults, supabase: ReturnType<typeof createServerClient<Database>>) {
   switch (request.type) {
     case 'recent_activity':
       // Fetch recent posts for found profiles
@@ -270,33 +282,30 @@ async function executeDataRequest(request: DataRequest, results: SearchResults, 
       break;
 
     case 'experience_details':
-      // Fetch missing experience details
-      const profilesNeedingExp = results.profiles
-        .filter((p: Profile) => !(p as any).experiences || (p as any).experiences?.length === 0)
-        .map((p: Profile) => p.id);
+      // Fetch experience details for all profiles
+      const profileIdsForExperiences = results.profiles.map((p: Profile) => p.id);
 
-      for (const profileId of profilesNeedingExp) {
+      for (const profileId of profileIdsForExperiences) {
         const { data: experiences } = await supabase
           .from('experiences')
           .select('*')
           .eq('profile_id', profileId);
 
-        if (experiences) {
-          const profile = results.profiles.find((p: Profile) => p.id === profileId) as any;
-          if (profile) {
-            profile.experiences = experiences;
+        if (experiences && experiences.length > 0) {
+          // Add experiences to the profile in results
+          const profileIndex = results.profiles.findIndex((p: Profile) => p.id === profileId);
+          if (profileIndex !== -1) {
+            (results.profiles[profileIndex] as any).experiences = experiences;
           }
         }
       }
       break;
 
     case 'project_details':
-      // Fetch missing contributor details
-      const projectIds = results.projects
-        .filter((p: Project) => !(p as any).contributions || (p as any).contributions?.length === 0)
-        .map((p: Project) => p.id);
+      // Fetch contributor details for all projects
+      const projectIdsForContributors = results.projects.map((p: Project) => p.id);
 
-      for (const projectId of projectIds) {
+      for (const projectId of projectIdsForContributors) {
         const { data: contributions } = await supabase
           .from('contributions')
           .select(`
@@ -307,10 +316,11 @@ async function executeDataRequest(request: DataRequest, results: SearchResults, 
           `)
           .eq('project_id', projectId);
 
-        if (contributions) {
-          const project = results.projects.find((p: Project) => p.id === projectId) as any;
-          if (project) {
-            project.contributions = contributions;
+        if (contributions && contributions.length > 0) {
+          // Add contributions to the project in results
+          const projectIndex = results.projects.findIndex((p: Project) => p.id === projectId);
+          if (projectIndex !== -1) {
+            (results.projects[projectIndex] as any).contributions = contributions;
           }
         }
       }

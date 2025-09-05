@@ -204,7 +204,7 @@ export default function NotificationsPage() {
                   onClick={() => setFilter(option.value)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     filter === option.value
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-white dark:text-background'
                       : 'bg-surface-container text-onsurface-secondary hover:bg-surface-container-muted'
                   }`}
                 >
@@ -235,10 +235,10 @@ export default function NotificationsPage() {
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="bg-surface-container rounded-lg p-4 animate-pulse">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                  <div className="w-10 h-10 bg-surface-container-muted rounded-full"></div>
                   <div className="flex-1">
-                    <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    <div className="h-4 bg-surface-container-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-surface-container-muted rounded w-1/2"></div>
                   </div>
                 </div>
               </div>

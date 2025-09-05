@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Post, PostImage } from '@/app/models/Post';
-import { TypedSupabaseClient } from '@/app/types/supabase';
 import { Profile } from '@/app/models/Profile';
 import { Project } from '@/app/models/Project';
 
@@ -43,7 +42,7 @@ export interface RawPostData {
  * Handles both pre-fetched relations and separate fetching of relations
  */
 export async function formatPost(postData: RawPostData, user: User | null): Promise<Post> {
-  const supabase = createClient() as TypedSupabaseClient;
+  const supabase = createClient();
   const post = postData;
   
   // If author data is nested, extract it

@@ -152,8 +152,8 @@ export default function ChatHistory() {
                 <div className="space-y-1">
                     {[1, 2].map((i) => (
                         <div key={i} className="animate-pulse py-3">
-                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                            <div className="h-5 bg-surface-container-muted rounded w-3/4 mb-2"></div>
+                            <div className="h-4 bg-surface-container-muted rounded w-1/2"></div>
                         </div>
                     ))}
                 </div>
@@ -167,7 +167,7 @@ export default function ChatHistory() {
 
     return (
         <div className="mt-12">
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-border">
                 {sessions.map((session, index) => (
                     <div
                         key={`session-${session.sessionId}-${index}`}
@@ -178,10 +178,10 @@ export default function ChatHistory() {
                                 className="flex-1 min-w-0 cursor-pointer"
                                 onClick={() => handleSessionClick(session.sessionId)}
                             >
-                                <p className="text-base font-medium text-gray-900 dark:text-white">
+                                <p className="text-base font-medium text-onsurface-primary">
                                     {session.firstMessage || 'Chat Session'}
                                 </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                <p className="text-sm text-onsurface-secondary mt-0.5">
                                     {session.messageCount > 0 
                                         ? `${session.messageCount} messages` 
                                         : formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })
@@ -190,7 +190,7 @@ export default function ChatHistory() {
                             </div>
                             <button
                                 onClick={(e) => handleDeleteSession(e, session.sessionId)}
-                                className="p-2 text-gray-400 cursor-pointer hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="p-2 text-onsurface-secondary cursor-pointer hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                 aria-label="Delete chat"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
