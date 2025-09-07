@@ -457,7 +457,7 @@ export default function GraphPage() {
                     <button
                         onClick={() => setTheme('light')}
                         className={`p-1.5 rounded transition-colors ${
-                            theme === 'light' ? 'bg-primary text-white' : 'hover:bg-surface-container-muted text-foreground'
+                            theme === 'light' ? 'bg-primary text-white dark:text-background' : 'hover:bg-surface-container-muted text-foreground'
                         }`}
                         title="Light Mode"
                     >
@@ -466,7 +466,7 @@ export default function GraphPage() {
                     <button
                         onClick={() => setTheme('dark')}
                         className={`p-1.5 rounded transition-colors ${
-                            theme === 'dark' ? 'bg-primary text-white' : 'hover:bg-surface-container-muted text-foreground'
+                            theme === 'dark' ? 'bg-primary text-white dark:text-background' : 'hover:bg-surface-container-muted text-foreground'
                         }`}
                         title="Dark Mode"
                     >
@@ -475,7 +475,7 @@ export default function GraphPage() {
                     <button
                         onClick={() => setTheme('system')}
                         className={`p-1.5 rounded transition-colors ${
-                            theme === 'system' ? 'bg-primary text-white' : 'hover:bg-surface-container-muted text-foreground'
+                            theme === 'system' ? 'bg-primary text-white dark:text-background' : 'hover:bg-surface-container-muted text-foreground'
                         }`}
                         title="System Theme"
                     >

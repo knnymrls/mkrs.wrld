@@ -235,7 +235,7 @@ export default function ProjectBoardPage() {
         {user && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-onprimary rounded-md hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white dark:text-background rounded-md hover:bg-primary-hover transition-colors"
           >
             <Plus className="w-5 h-5" />
             Post Project

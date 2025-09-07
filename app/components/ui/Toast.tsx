@@ -19,7 +19,7 @@ export default function Toast({ message, type = 'info', duration = 3000, onClose
   }, [duration, onClose]);
 
   const typeStyles = {
-    info: 'bg-primary text-white',
+    info: 'bg-primary text-white dark:text-background',
     success: 'bg-green-600 text-white',
     error: 'bg-red-600 text-white',
     warning: 'bg-yellow-600 text-white',

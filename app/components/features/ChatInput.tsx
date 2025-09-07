@@ -739,7 +739,7 @@ const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(({
               className="p-2 rounded-full bg-primary hover:bg-primary-hover disabled:opacity-50 transition-all hover:scale-105 shadow-sm"
               aria-label="Send message"
             >
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-white dark:text-background" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </button>

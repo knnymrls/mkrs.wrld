@@ -108,7 +108,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     { value: 'bug', label: '🐛 Bug Report', color: 'text-red-500' },
     { value: 'feature', label: '✨ Feature Request', color: 'text-blue-500' },
     { value: 'improvement', label: '💡 Improvement', color: 'text-yellow-500' },
-    { value: 'other', label: '💬 Other', color: 'text-gray-500' },
+    { value: 'other', label: '💬 Other', color: 'text-onsurface-secondary' },
   ];
 
   return (
@@ -222,7 +222,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting || !title.trim() || !description.trim()}
-                  className="flex-1 py-3 px-4 border border-transparent rounded-xl text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-all"
+                  className="flex-1 py-3 px-4 border border-transparent rounded-xl text-white dark:text-background bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-all"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 </button>
