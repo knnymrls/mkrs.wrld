@@ -22,7 +22,17 @@ export default function SignUp() {
             await signUp(email, password);
             router.push('/auth/verify-email');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred during sign up');
+            const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up';
+            
+            // Check if user already exists
+            if (errorMessage.toLowerCase().includes('already registered') || 
+                errorMessage.toLowerCase().includes('already exists') ||
+                errorMessage.toLowerCase().includes('duplicate') ||
+                errorMessage.toLowerCase().includes('user already exists')) {
+                setError('existingAccount');
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setLoading(false);
         }
@@ -52,9 +62,28 @@ export default function SignUp() {
 
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {error && (
-                            <div className="rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 p-4">
-                                <div className="text-sm text-red-700 dark:text-red-400">{error}</div>
-                            </div>
+                            error === 'existingAccount' ? (
+                                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 p-4">
+                                    <div className="space-y-3">
+                                        <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                            An account with this email already exists
+                                        </p>
+                                        <p className="text-sm text-amber-600 dark:text-amber-500">
+                                            Please sign in to continue, or use a different email address.
+                                        </p>
+                                        <Link
+                                            href={`/auth/signin?email=${encodeURIComponent(email)}`}
+                                            className="inline-flex items-center justify-center w-full py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                                        >
+                                            Go to Sign In
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 p-4">
+                                    <div className="text-sm text-red-700 dark:text-red-400">{error}</div>
+                                </div>
+                            )
                         )}
 
                         <div className="space-y-4">
