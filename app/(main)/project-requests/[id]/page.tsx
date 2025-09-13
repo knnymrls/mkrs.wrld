@@ -14,7 +14,7 @@ export default function ProjectRequestDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [request, setRequest] = useState<ProjectRequest | null>(null);
   const [interests, setInterests] = useState<ProjectInterest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ export default function ProjectRequestDetailPage() {
   const fetchProjectRequest = async () => {
     try {
       console.log('Fetching project request with ID:', params.id);
-      
+
       // Fetch project request
       const { data: requestData, error: requestError } = await supabase
         .from('project_requests')
@@ -65,7 +65,7 @@ export default function ProjectRequestDetailPage() {
           .order('created_at', { ascending: false });
 
         if (interestsError) throw interestsError;
-        
+
         // Fetch skills for each interested user
         const interestsWithSkills = await Promise.all(
           (interestsData || []).map(async (interest) => {
@@ -74,7 +74,7 @@ export default function ProjectRequestDetailPage() {
                 .from('skills')
                 .select('skill')
                 .eq('profile_id', interest.interested_user.id);
-              
+
               return {
                 ...interest,
                 interested_user: {
@@ -86,7 +86,7 @@ export default function ProjectRequestDetailPage() {
             return interest;
           })
         );
-        
+
         setInterests(interestsWithSkills);
       } else if (user) {
         // Check if current user has expressed interest
@@ -152,7 +152,7 @@ export default function ProjectRequestDetailPage() {
         .eq('interested_user_id', user.id);
 
       if (error) throw error;
-      
+
       setInterests([]);
       fetchProjectRequest();
     } catch (error) {
@@ -170,7 +170,7 @@ export default function ProjectRequestDetailPage() {
 
       if (error) throw error;
 
-      setInterests(interests.map(i => 
+      setInterests(interests.map(i =>
         i.id === interestId ? { ...i, status } : i
       ));
 
@@ -374,7 +374,7 @@ export default function ProjectRequestDetailPage() {
             ) : user && !hasExpressedInterest ? (
               <button
                 onClick={() => setShowInterestForm(true)}
-                className="px-6 py-2 bg-primary text-onprimary rounded-md hover:bg-primary/90 transition-colors"
+                className="px-6 py-2 bg-primary text-surface-container rounded-md hover:bg-primary/90 transition-colors"
               >
                 Express Interest
               </button>
@@ -415,7 +415,7 @@ export default function ProjectRequestDetailPage() {
               <button
                 onClick={handleExpressInterest}
                 disabled={submitting}
-                className="flex-1 py-2 px-4 bg-primary text-onprimary rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2 px-4 bg-primary text-surface-container rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Submitting...' : 'Submit'}
               </button>
@@ -441,8 +441,8 @@ export default function ProjectRequestDetailPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       {interest.interested_user?.avatar_url ? (
-                        <img 
-                          src={interest.interested_user.avatar_url} 
+                        <img
+                          src={interest.interested_user.avatar_url}
                           alt={interest.interested_user.name}
                           className="w-10 h-10 rounded-full"
                         />
@@ -452,7 +452,7 @@ export default function ProjectRequestDetailPage() {
                         </div>
                       )}
                       <div>
-                        <Link 
+                        <Link
                           href={`/profile/${interest.interested_user?.id}`}
                           className="font-semibold text-onsurface-primary hover:text-primary"
                         >
@@ -463,7 +463,7 @@ export default function ProjectRequestDetailPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {interest.message && (
                       <div className="bg-surface-container-muted rounded p-3 mb-3">
                         <p className="text-onsurface-primary text-sm">{interest.message}</p>
@@ -503,9 +503,8 @@ export default function ProjectRequestDetailPage() {
                   )}
 
                   {interest.status !== 'interested' && (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      interest.status === 'selected' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${interest.status === 'selected' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                      }`}>
                       {interest.status === 'selected' ? 'Selected' : 'Declined'}
                     </span>
                   )}

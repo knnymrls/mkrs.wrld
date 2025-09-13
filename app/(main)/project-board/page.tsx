@@ -22,7 +22,7 @@ export default function ProjectBoardPage() {
     urgency: ''
   });
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
-  
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function ProjectBoardPage() {
       // Generate embedding for the request
       const embeddingText = `${data.title} ${data.description} ${data.skills_needed.join(' ')}`;
       console.log('Generating embedding for:', embeddingText);
-      
+
       const embedding = await getEmbedding(embeddingText);
       console.log('Embedding generated, length:', embedding?.length);
 
@@ -196,13 +196,13 @@ export default function ProjectBoardPage() {
       }
 
       // Update local state
-      setRequests(requests.map(r => 
-        r.id === requestId 
+      setRequests(requests.map(r =>
+        r.id === requestId
           ? {
-              ...r,
-              is_interested: !r.is_interested,
-              interest_count: r.is_interested ? (r.interest_count || 1) - 1 : (r.interest_count || 0) + 1
-            }
+            ...r,
+            is_interested: !r.is_interested,
+            interest_count: r.is_interested ? (r.interest_count || 1) - 1 : (r.interest_count || 0) + 1
+          }
           : r
       ));
     } catch (error) {
@@ -235,7 +235,7 @@ export default function ProjectBoardPage() {
         {user && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white dark:text-background rounded-md hover:bg-primary-hover transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-surface-container rounded-md hover:bg-primary-hover transition-colors"
           >
             <Plus className="w-5 h-5" />
             Post Project

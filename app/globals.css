@@ -5,7 +5,7 @@
 :root {
   --background: #fbfbfb;
   --foreground: #171717;
-  
+
   /* Custom colors for the app */
   --primary: #121212;
   --primary-hover: #212121;
@@ -14,13 +14,24 @@
   --border: #eee;
   --onsurface-primary: #464646;
   --onsurface-secondary: #999999;
+
+  /* Additional colors */
+  --onprimary: #ffffff;
+  --success: #22c55e;
+  --onsuccess: #ffffff;
+  --error: #ef4444;
+  --onerror: #ffffff;
+  --warning: #f59e0b;
+  --onwarning: #ffffff;
+  --avatar-bg: #e5e5e5;
+  --surface: #fbfbfb;
 }
 
 /* Dark mode with class-based approach */
 .dark {
   --background: #1D1D1D;
   --foreground: #ededed;
-  
+
   /* Custom colors for dark mode */
   --primary: #eee;
   --primary-hover: #ffffff;
@@ -29,6 +40,17 @@
   --border: #404040;
   --onsurface-primary: #f3f4f6;
   --onsurface-secondary: #b7b7b7;
+
+  /* Additional colors for dark mode */
+  --onprimary: #1D1D1D;
+  --success: #22c55e;
+  --onsuccess: #ffffff;
+  --error: #ef4444;
+  --onerror: #ffffff;
+  --warning: #f59e0b;
+  --onwarning: #ffffff;
+  --avatar-bg: #404040;
+  --surface: #1D1D1D;
 }
 
 /* Also support system preference when no manual theme is set */
@@ -36,7 +58,7 @@
   :root:not(.light):not(.dark) {
     --background: #1D1D1D;
     --foreground: #ededed;
-    
+
     /* Custom colors for dark mode */
     --primary: #eee;
     --primary-hover: #fff;
@@ -45,6 +67,17 @@
     --border: #404040;
     --onsurface-primary: #f3f4f6;
     --onsurface-secondary: #b7b7b7;
+
+    /* Additional colors for dark mode */
+    --onprimary: #1D1D1D;
+    --success: #22c55e;
+    --onsuccess: #ffffff;
+    --error: #ef4444;
+    --onerror: #ffffff;
+    --warning: #f59e0b;
+    --onwarning: #ffffff;
+    --avatar-bg: #404040;
+    --surface: #1D1D1D;
   }
 }
 
@@ -58,6 +91,15 @@
   --color-onsurface-primary: var(--onsurface-primary);
   --color-onsurface-secondary: var(--onsurface-secondary);
   --color-border: var(--border);
+  --color-onprimary: var(--onprimary);
+  --color-success: var(--success);
+  --color-onsuccess: var(--onsuccess);
+  --color-error: var(--error);
+  --color-onerror: var(--onerror);
+  --color-warning: var(--warning);
+  --color-onwarning: var(--onwarning);
+  --color-avatar-bg: var(--avatar-bg);
+  --color-surface: var(--surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

@@ -74,11 +74,10 @@ export default function ProjectRequestCard({ request, onInterestClick }: Project
         {onInterestClick && request.status === 'open' && (
           <button
             onClick={onInterestClick}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              request.is_interested
-                ? 'bg-surface-container-muted text-onsurface-primary hover:bg-surface-container-muted/80'
-                : 'bg-primary text-onprimary hover:bg-primary/90'
-            }`}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${request.is_interested
+              ? 'bg-surface-container-muted text-onsurface-primary hover:bg-surface-container-muted/80'
+              : 'bg-primary text-surface-container hover:bg-primary/90'
+              }`}
           >
             {request.is_interested ? 'Interested ✓' : 'Show Interest'}
           </button>

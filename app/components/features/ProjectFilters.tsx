@@ -15,8 +15,8 @@ interface ProjectFiltersProps {
   availableSkills?: string[];
 }
 
-export default function ProjectFilters({ 
-  filters, 
+export default function ProjectFilters({
+  filters,
   onFilterChange,
   availableSkills = []
 }: ProjectFiltersProps) {
@@ -40,7 +40,7 @@ export default function ProjectFilters({
     });
   };
 
-  const hasActiveFilters = filters.search || filters.skills.length > 0 || 
+  const hasActiveFilters = filters.search || filters.skills.length > 0 ||
     filters.timeCommitment || filters.urgency;
 
   return (
@@ -82,11 +82,10 @@ export default function ProjectFilters({
               <button
                 key={skill}
                 onClick={() => handleSkillToggle(skill)}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  filters.skills.includes(skill)
-                    ? 'bg-primary text-onprimary'
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${filters.skills.includes(skill)
+                    ? 'bg-primary text-surface-container'
                     : 'bg-surface-container-muted text-onsurface-primary hover:bg-surface-container-muted/80'
-                }`}
+                  }`}
               >
                 {skill}
               </button>
