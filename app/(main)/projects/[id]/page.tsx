@@ -295,7 +295,7 @@ export default function ProjectPage() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <p className="text-gray-500">Loading project...</p>
+                <p className="text-onsurface-secondary">Loading project...</p>
             </div>
         );
     }
@@ -303,7 +303,7 @@ export default function ProjectPage() {
     if (!project) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <p className="text-gray-500">Project not found</p>
+                <p className="text-onsurface-secondary">Project not found</p>
             </div>
         );
     }
@@ -402,7 +402,7 @@ export default function ProjectPage() {
                                             </button>
                                             <button
                                                 onClick={handleDeleteProject}
-                                                className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30"
+                                                className="px-3 py-1 text-sm font-medium text-error bg-error/10 rounded-md hover:bg-error/20"
                                             >
                                                 Delete
                                             </button>
@@ -425,11 +425,11 @@ export default function ProjectPage() {
                 {/* Contributors Section */}
                 <div className="bg-surface-container rounded-lg shadow-md p-6 mb-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Contributors</h2>
+                        <h2 className="text-xl font-semibold text-onsurface-primary">Contributors</h2>
                         {isCreator && (
                             <button
                                 onClick={() => setShowAddContributor(!showAddContributor)}
-                                className="px-3 py-1 text-sm font-medium text-onsurface-primary bg-indigo-600 rounded-md hover:bg-indigo-700"
+                                className="px-3 py-1 text-sm font-medium text-onprimary bg-primary rounded-md hover:bg-primary-hover"
                             >
                                 Add Contributor
                             </button>
@@ -437,7 +437,7 @@ export default function ProjectPage() {
                     </div>
 
                     {showAddContributor && (
-                        <div className="mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md">
+                        <div className="mb-4 p-4 border border-border rounded-md">
                             <input
                                 type="text"
                                 value={searchTerm}
@@ -445,7 +445,7 @@ export default function ProjectPage() {
                                     setSearchTerm(e.target.value);
                                     searchProfiles(e.target.value);
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mb-2"
+                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted mb-2"
                                 placeholder="Search for contributors by name or email..."
                             />
 
@@ -453,14 +453,14 @@ export default function ProjectPage() {
                                 type="text"
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mb-2"
+                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted mb-2"
                                 placeholder="Role (e.g., Developer, Designer, PM)"
                             />
 
                             <textarea
                                 value={selectedDescription}
                                 onChange={(e) => setSelectedDescription(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mb-2"
+                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted mb-2"
                                 rows={2}
                                 placeholder="Description (optional)"
                             />
@@ -470,15 +470,15 @@ export default function ProjectPage() {
                                     {searchResults.map((profile) => (
                                         <div
                                             key={profile.id}
-                                            className="flex justify-between items-center p-2 border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            className="flex justify-between items-center p-2 border border-border rounded hover:bg-surface-container-muted"
                                         >
                                             <div>
                                                 <p className="font-medium">{profile.name}</p>
-                                                <p className="text-sm text-gray-500">{profile.email}</p>
+                                                <p className="text-sm text-onsurface-secondary">{profile.email}</p>
                                             </div>
                                             <button
                                                 onClick={() => handleAddContributor(profile.id)}
-                                                className="px-3 py-1 text-sm font-medium text-onsurface-primary bg-green-600 rounded-md hover:bg-green-700"
+                                                className="px-3 py-1 text-sm font-medium text-onsuccess bg-success rounded-md hover:bg-success/90"
                                             >
                                                 Add
                                             </button>
@@ -493,17 +493,17 @@ export default function ProjectPage() {
                         {project.contributors.map((contrib) => (
                             <div
                                 key={contrib.contribution.id}
-                                className="flex justify-between items-center p-3 border border-gray-200 dark:border-gray-700 rounded-md"
+                                className="flex justify-between items-center p-3 border border-border rounded-md"
                             >
                                 <div>
-                                    <p className="font-medium text-gray-900 dark:text-white">
+                                    <p className="font-medium text-onsurface-primary">
                                         {contrib.profile.name}
                                     </p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-onsurface-secondary">
                                         {contrib.contribution.role}
                                     </p>
                                     {contrib.contribution.description && (
-                                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                                        <p className="text-sm text-onsurface-secondary mt-1">
                                             {contrib.contribution.description}
                                         </p>
                                     )}
@@ -511,7 +511,7 @@ export default function ProjectPage() {
                                 {isCreator && contrib.profile.id !== project.created_by && (
                                     <button
                                         onClick={() => handleRemoveContributor(contrib.contribution.id)}
-                                        className="px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+                                        className="px-3 py-1 text-sm font-medium text-error hover:bg-error/10 rounded-md"
                                     >
                                         Remove
                                     </button>
@@ -523,13 +523,13 @@ export default function ProjectPage() {
 
                 {/* Related Posts Section */}
                 {project.posts.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Related Posts</h2>
+                    <div className="bg-surface-container rounded-lg shadow-md p-6">
+                        <h2 className="text-xl font-semibold text-onsurface-primary mb-4">Related Posts</h2>
                         <div className="space-y-4">
                             {project.posts.map((post) => (
-                                <div key={post.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
-                                    <p className="text-gray-800 dark:text-gray-200 mb-2">{post.content}</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <div key={post.id} className="border-b border-border pb-4 last:border-0">
+                                    <p className="text-onsurface-primary mb-2">{post.content}</p>
+                                    <p className="text-sm text-onsurface-secondary">
                                         By {post.author?.name || 'Unknown'} on {new Date(post.created_at).toLocaleDateString()}
                                     </p>
                                 </div>
