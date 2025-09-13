@@ -34,7 +34,7 @@ export default function SignIn() {
             <div className="max-w-md w-full">
                 {/* Logo */}
                 <div className="flex justify-center mb-8">
-                    <div className="p-3 bg-white rounded-xl text-onsurface-primary">
+                    <div className="p-3 bg-surface-container rounded-xl text-onsurface-primary border border-border">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" id="Earth-1--Streamline-Flex-Remix" height="32" width="32">
                             <desc>Earth 1 Streamline Icon: https://streamlinehq.com</desc>
                             <g id="earth-1--planet-earth-globe-world">
@@ -97,7 +97,7 @@ export default function SignIn() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-surface-container bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 {loading ? 'Signing in...' : 'Sign in'}
                             </button>
