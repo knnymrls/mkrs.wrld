@@ -29,7 +29,7 @@ export default function ProjectPage() {
     const router = useRouter();
     const params = useParams();
     const projectId = params.id as string;
-    
+
     const [project, setProject] = useState<ProjectWithDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -96,7 +96,7 @@ export default function ProjectPage() {
                         .select('*')
                         .eq('id', link.posts.author_id)
                         .single();
-                    
+
                     return {
                         ...link.posts,
                         author: authorData
@@ -207,7 +207,7 @@ export default function ProjectPage() {
 
             // Refresh project data
             await fetchProject();
-            
+
             // Reset form
             setShowAddContributor(false);
             setSearchTerm('');
@@ -241,7 +241,7 @@ export default function ProjectPage() {
 
     const handleDeleteProject = async () => {
         if (!project) return;
-        
+
         if (!confirm(`Are you sure you want to delete "${project.title}"? This action cannot be undone.`)) {
             return;
         }
@@ -410,7 +410,7 @@ export default function ProjectPage() {
                                     )}
                                 </div>
                             </div>
-                            
+
                             {project.description && (
                                 <p className="text-onsurface-secondary mb-4">{project.description}</p>
                             )}
@@ -429,7 +429,7 @@ export default function ProjectPage() {
                         {isCreator && (
                             <button
                                 onClick={() => setShowAddContributor(!showAddContributor)}
-                                className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                                className="px-3 py-1 text-sm font-medium text-onsurface-primary bg-indigo-600 rounded-md hover:bg-indigo-700"
                             >
                                 Add Contributor
                             </button>
@@ -448,7 +448,7 @@ export default function ProjectPage() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mb-2"
                                 placeholder="Search for contributors by name or email..."
                             />
-                            
+
                             <input
                                 type="text"
                                 value={selectedRole}
@@ -456,7 +456,7 @@ export default function ProjectPage() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mb-2"
                                 placeholder="Role (e.g., Developer, Designer, PM)"
                             />
-                            
+
                             <textarea
                                 value={selectedDescription}
                                 onChange={(e) => setSelectedDescription(e.target.value)}
@@ -478,7 +478,7 @@ export default function ProjectPage() {
                                             </div>
                                             <button
                                                 onClick={() => handleAddContributor(profile.id)}
-                                                className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                                                className="px-3 py-1 text-sm font-medium text-onsurface-primary bg-green-600 rounded-md hover:bg-green-700"
                                             >
                                                 Add
                                             </button>
