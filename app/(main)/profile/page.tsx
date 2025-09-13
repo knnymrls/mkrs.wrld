@@ -210,7 +210,7 @@ export default function Profile() {
                     role,
                     start_date,
                     end_date,
-                    project:projects (
+                    project:projects!inner (
                         id,
                         title,
                         description,
