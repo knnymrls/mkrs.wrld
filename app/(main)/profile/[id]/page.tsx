@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase/client';
 import { Profile } from '../../../models/Profile';
 import Image from 'next/image';
 import { User } from 'lucide-react';
+import SocialLinks from '../../../components/features/SocialLinks';
+import ProjectIcon from '../../../components/ui/ProjectIcon';
 
 interface ContributionData {
   role: string;
@@ -53,6 +55,15 @@ interface ProfileWithDetails extends Profile {
       name: string;
       avatar_url?: string;
     }>;
+  }>;
+  createdProjects: Array<{
+    id: string;
+    title: string;
+    status: string;
+    description?: string;
+    created_at: string;
+    image_url?: string;
+    icon?: string;
   }>;
 }
 
@@ -109,6 +120,13 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      // Fetch projects created by the user
+      const { data: createdProjects } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('created_by', profileId)
+        .order('created_at', { ascending: false });
+
       // Fetch projects with contributors
       const { data: contributionsData } = await supabase
         .from('contributions')
@@ -159,7 +177,8 @@ export default function ProfilePage() {
         educations: educationData || [],
         experiences: experienceData || [],
         posts: postsData || [],
-        projects: projectsWithContributors.filter(p => p !== null) || []
+        projects: projectsWithContributors.filter(p => p !== null) || [],
+        createdProjects: createdProjects || []
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -232,6 +251,62 @@ export default function ProfilePage() {
             <p className="text-onsurface-primary leading-relaxed">
               {profile.bio}
             </p>
+          </section>
+        )}
+
+        {/* Social Links Section */}
+        <section className="mb-12">
+          <SocialLinks profileId={profileId} />
+        </section>
+
+        {/* Created Projects Section */}
+        {profile.createdProjects.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Created Projects</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {profile.createdProjects.map((project) => (
+                <div
+                  key={project.id}
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                  className="border border-border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <ProjectIcon icon={project.icon} size={24} />
+                      <div>
+                        <h3 className="text-lg font-medium text-foreground">
+                          {project.title}
+                        </h3>
+                        <span className="text-sm text-onsurface-secondary capitalize">
+                          {project.status || 'Active'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {project.description && (
+                    <p className="text-sm text-onsurface-secondary line-clamp-2 mb-3">
+                      {project.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-onsurface-secondary">
+                      Created {new Date(project.created_at).toLocaleDateString()}
+                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/projects/${project.id}`);
+                      }}
+                      className="text-sm text-primary hover:text-primary-hover transition-colors"
+                    >
+                      View Project →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
         )}
 

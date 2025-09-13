@@ -13,6 +13,9 @@ import { Link } from '../../models/Link';
 import { Skill } from '../../models/Skill';
 import Image from 'next/image';
 import { User, Pencil, Trash2, Plus, X } from 'lucide-react';
+import SocialLinks from '../../components/features/SocialLinks';
+import ProjectIcon from '../../components/ui/ProjectIcon';
+import { useRouter as useNextRouter } from 'next/navigation';
 
 interface EditModalProps {
   isOpen: boolean;
@@ -43,9 +46,33 @@ function EditModal({ isOpen, onClose, onSave, title, children }: EditModalProps)
   );
 }
 
+interface Project {
+    id: string;
+    title: string;
+    description: string | null;
+    status: string | null;
+    created_at: string;
+    icon: string | null;
+    image_url: string | null;
+}
+
+interface Contribution {
+    id: string;
+    role: string;
+    start_date: string | null;
+    end_date: string | null;
+    project: {
+        id: string;
+        title: string;
+        description: string | null;
+        status: string | null;
+    };
+}
+
 export default function Profile() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const nextRouter = useNextRouter();
     const [profile, setProfile] = useState<{
         name: string;
         bio: string;
@@ -58,6 +85,8 @@ export default function Profile() {
     const [experiences, setExperiences] = useState<Experience[]>([]);
     const [links, setLinks] = useState<Link[]>([]);
     const [skills, setSkills] = useState<Skill[]>([]);
+    const [createdProjects, setCreatedProjects] = useState<Project[]>([]);
+    const [contributions, setContributions] = useState<Contribution[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -157,6 +186,44 @@ export default function Profile() {
                 console.error('Error fetching links:', linkError);
             } else {
                 setLinks(linkData || []);
+            }
+
+            // Fetch projects created by the user
+            const { data: projectsData, error: projectsError } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('created_by', user.id)
+                .order('created_at', { ascending: false });
+
+            if (projectsError) {
+                console.error('Error fetching created projects:', projectsError);
+            } else {
+                setCreatedProjects(projectsData || []);
+                console.log('Created projects:', projectsData);
+            }
+
+            // Fetch contributions
+            const { data: contributionsData, error: contributionsError } = await supabase
+                .from('contributions')
+                .select(`
+                    id,
+                    role,
+                    start_date,
+                    end_date,
+                    project:projects (
+                        id,
+                        title,
+                        description,
+                        status
+                    )
+                `)
+                .eq('person_id', user.id)
+                .order('start_date', { ascending: false });
+
+            if (contributionsError) {
+                console.error('Error fetching contributions:', contributionsError);
+            } else {
+                setContributions(contributionsData || []);
             }
         };
 
@@ -507,6 +574,120 @@ export default function Profile() {
                                 {skills.map(s => s.skill).join(', ')}
                             </p>
                         )}
+                    </section>
+                )}
+
+                {/* Social Links Section */}
+                <section className="mb-12">
+                    <h2 className="text-xl font-semibold text-foreground mb-4">Social Links</h2>
+                    {user && (
+                        <SocialLinks 
+                            profileId={user.id} 
+                            isEditing={isEditing}
+                            onUpdate={() => {
+                                // Optionally refresh profile data
+                            }}
+                        />
+                    )}
+                </section>
+
+                {/* My Projects Section */}
+                {createdProjects.length > 0 && (
+                    <section className="mb-12">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-semibold text-foreground">My Projects</h2>
+                            <button
+                                onClick={() => nextRouter.push('/projects/new')}
+                                className="text-sm text-onsurface-secondary hover:text-foreground transition-colors flex items-center gap-1"
+                            >
+                                <Plus size={16} /> New Project
+                            </button>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {createdProjects.map((project) => (
+                                <div
+                                    key={project.id}
+                                    onClick={() => nextRouter.push(`/projects/${project.id}`)}
+                                    className="border border-border rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <ProjectIcon icon={project.icon} size={24} />
+                                            <div>
+                                                <h3 className="text-lg font-medium text-foreground">
+                                                    {project.title}
+                                                </h3>
+                                                <span className="text-sm text-onsurface-secondary capitalize">
+                                                    {project.status || 'Active'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {project.description && (
+                                        <p className="text-sm text-onsurface-secondary line-clamp-2 mb-3">
+                                            {project.description}
+                                        </p>
+                                    )}
+                                    
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-onsurface-secondary">
+                                            Created {new Date(project.created_at).toLocaleDateString()}
+                                        </span>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                nextRouter.push(`/projects/${project.id}`);
+                                            }}
+                                            className="text-sm text-primary hover:text-primary-hover transition-colors"
+                                        >
+                                            View Project →
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Contributions Section */}
+                {contributions.length > 0 && (
+                    <section className="mb-12">
+                        <h2 className="text-xl font-semibold text-foreground mb-4">Contributions</h2>
+                        <div className="space-y-4">
+                            {contributions.map((contribution) => (
+                                <div key={contribution.id} className="border-b border-border pb-4 last:border-0">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <h3 className="font-medium text-foreground">
+                                                {contribution.project?.title || 'Unknown Project'}
+                                            </h3>
+                                            <p className="text-sm text-onsurface-secondary">
+                                                {contribution.role}
+                                            </p>
+                                            {contribution.project?.description && (
+                                                <p className="text-sm text-onsurface-primary mt-2">
+                                                    {contribution.project.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {contribution.start_date && (
+                                            <span className="text-sm text-onsurface-secondary whitespace-nowrap ml-4">
+                                                {formatDateRange(contribution.start_date, contribution.end_date)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="mt-3">
+                                        <button 
+                                            onClick={() => nextRouter.push(`/projects/${contribution.project?.id}`)}
+                                            className="text-sm text-primary hover:text-primary-hover transition-colors"
+                                        >
+                                            View Project →
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </section>
                 )}
 
