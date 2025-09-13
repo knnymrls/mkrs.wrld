@@ -25,7 +25,7 @@ export default function Navbar() {
         try {
             await signOut();
             setShowDropdown(false);
-            router.push('/');
+            // signOut already handles redirect to /auth/signin
         } catch (err) {
             console.error('Error signing out:', err);
         }

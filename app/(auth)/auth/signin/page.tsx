@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import Link from 'next/link';
 
-export default function SignIn() {
+function SignInForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -125,5 +125,19 @@ export default function SignIn() {
                 </p>
             </div>
         </div>
+    );
+}
+
+export default function SignIn() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-pulse">
+                    <div className="w-12 h-12 bg-surface-container rounded-lg"></div>
+                </div>
+            </div>
+        }>
+            <SignInForm />
+        </Suspense>
     );
 } 

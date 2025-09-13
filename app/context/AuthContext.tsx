@@ -138,15 +138,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setSession(null);
             setHasProfile(null);
             
-            // Redirect to home page
-            router.push('/');
+            // Redirect to signin page to avoid redirect loop
+            router.push('/auth/signin');
+            router.refresh();
         } catch (err) {
             console.error('Sign out error:', err);
             // Clear local state even on error
             setUser(null);
             setSession(null);
             setHasProfile(null);
-            router.push('/');
+            router.push('/auth/signin');
+            router.refresh();
         }
     };
 
