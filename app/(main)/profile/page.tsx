@@ -210,7 +210,7 @@ export default function Profile() {
                     role,
                     start_date,
                     end_date,
-                    project:projects!inner (
+                    project:projects!contributions_project_id_fkey (
                         id,
                         title,
                         description,
@@ -223,7 +223,12 @@ export default function Profile() {
             if (contributionsError) {
                 console.error('Error fetching contributions:', contributionsError);
             } else {
-                setContributions(contributionsData || []);
+                // Fix for Supabase returning array for single relation
+                const fixedContributions = (contributionsData || []).map((c: any) => ({
+                    ...c,
+                    project: Array.isArray(c.project) ? c.project[0] : c.project
+                }));
+                setContributions(fixedContributions as Contribution[]);
             }
         };
 
