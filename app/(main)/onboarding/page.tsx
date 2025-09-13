@@ -917,9 +917,18 @@ export default function Onboarding() {
                             
                             {importMethod === 'url' ? (
                                 <>
-                                    <p className="text-sm text-onsurface-secondary mb-4">
+                                    <p className="text-sm text-onsurface-secondary mb-2">
                                         Enter your LinkedIn profile URL to import your information
                                     </p>
+                                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4">
+                                        <p className="text-sm text-amber-700 dark:text-amber-400">
+                                            <strong>Important:</strong> Use the full HTTPS URL from your browser's address bar
+                                        </p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                                            ✓ Correct: https://www.linkedin.com/in/johndoe<br/>
+                                            ✗ Wrong: linkedin.com/in/johndoe or just "johndoe"
+                                        </p>
+                                    </div>
                                     <input
                                         type="url"
                                         value={linkedinUrl}
