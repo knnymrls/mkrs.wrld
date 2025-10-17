@@ -54,17 +54,17 @@ export default function GraphPage() {
     const [showPosts, setShowPosts] = useState(true);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
 
-    // Theme-aware colors for canvas rendering - Obsidian style
+    // Theme-aware colors for canvas rendering
     const canvasColors = useMemo(() => {
         const isDark = resolvedTheme === 'dark';
         return {
-            nodeDefault: isDark ? '#9CA3AF' : '#6B7280',
-            nodeProfile: isDark ? '#8B5CF6' : '#7C3AED', // Purple for profiles
-            nodeProject: isDark ? '#F59E0B' : '#D97706', // Amber for projects
-            nodePost: isDark ? '#10B981' : '#059669', // Green for posts
-            placeholder: isDark ? '#6B7280' : '#9CA3AF',
-            label: isDark ? '#D1D5DB' : '#4B5563', // Lighter labels for better visibility
-            link: isDark ? '#4B5563' : '#9CA3AF', // Subtle gray links
+            nodeDefault: isDark ? '#ffffff' : '#171717',
+            nodeProfile: '#ffffff', // Always white center for profiles
+            nodeProject: isDark ? '#F59E0B' : '#D97706', // Amber
+            nodePost: isDark ? '#10B981' : '#059669', // Green
+            placeholder: isDark ? '#6B7280' : '#9CA3AF', // Gray
+            label: isDark ? '#9CA3AF' : '#6B7280', // Gray labels
+            link: isDark ? '#6B7280' : '#9CA3AF', // Gray links
             background: 'transparent',
             statusActive: '#10B981',
             statusPaused: '#F59E0B',
@@ -80,20 +80,11 @@ export default function GraphPage() {
                 height: window.innerHeight
             });
         };
-
+        
         updateDimensions();
         window.addEventListener('resize', updateDimensions);
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
-
-    // Initialize graph forces for expanded layout
-    useEffect(() => {
-        if (graphRef.current && filteredData.nodes.length > 0) {
-            graphRef.current.d3Force('charge').strength(-200);
-            graphRef.current.d3Force('link').distance(60);
-            graphRef.current.d3Force('center').strength(0.05);
-        }
-    }, [filteredData]);
 
 
     // Compute related nodes for highlighting
@@ -360,12 +351,6 @@ export default function GraphPage() {
     const handleNodeClick = useCallback((node: any) => {
         // Set the clicked node to show the popup
         setClickedNode(node.id);
-
-        // Zoom in on the clicked node
-        if (graphRef.current && node.x !== undefined && node.y !== undefined) {
-            graphRef.current.centerAt(node.x, node.y, 1000);
-            graphRef.current.zoom(2.5, 1000);
-        }
     }, []);
 
     const handleZoomIn = () => {
@@ -431,25 +416,25 @@ export default function GraphPage() {
 
     return (
         <div className="relative w-full h-screen bg-background overflow-hidden">
-            {/* Unified Control Panel - Top Left */}
-            <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
+            {/* Controls */}
+            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                 <GraphModeSelector currentMode={currentMode} onModeChange={setCurrentMode} />
-
+                
                 {currentMode === 'network' && (
                     <>
                         {/* Search */}
-                        <div className="bg-surface-container/95 backdrop-blur-xl rounded-xl p-2 border border-border/30 shadow-sm">
+                        <div className="bg-surface-container/90 backdrop-blur rounded-lg p-2 border border-border/50">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-onsurface-secondary w-4 h-4" />
+                                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-onsurface-secondary w-4 h-4" />
                                 <input
                                     type="text"
-                                    placeholder="Search..."
+                                    placeholder="Search nodes..."
                                     value={searchQuery}
                                     onChange={(e) => {
                                         setSearchQuery(e.target.value);
                                         handleSearch(e.target.value);
                                     }}
-                                    className="w-56 pl-9 pr-3 py-2 bg-transparent text-foreground text-sm rounded-lg focus:outline-none placeholder:text-onsurface-secondary/60"
+                                    className="w-full pl-8 pr-3 py-1.5 bg-surface-container-muted text-foreground text-sm rounded border border-border focus:border-primary focus:outline-none"
                                 />
                             </div>
                         </div>
@@ -457,23 +442,22 @@ export default function GraphPage() {
                         {/* Filter Button */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`bg-surface-container/95 backdrop-blur-xl text-foreground px-3 py-2 rounded-xl hover:bg-surface-container transition-all flex items-center gap-2 border border-border/30 shadow-sm ${showFilters ? 'bg-surface-container' : ''}`}
+                            className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors flex items-center gap-2 border border-border/50"
                         >
                             <Filter className="w-4 h-4" />
-                            <span className="text-sm font-medium">Filters</span>
+                            <span className="text-sm">Filters</span>
                         </button>
                     </>
                 )}
             </div>
-
-            {/* Unified Controls - Top Right */}
-            <div className="absolute top-6 right-6 z-10 flex gap-2">
+            {/* Theme and Zoom Controls */}
+            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
                 {/* Theme Toggle */}
-                <div className="bg-surface-container/95 backdrop-blur-xl rounded-xl p-1.5 border border-border/30 shadow-sm flex gap-1">
+                <div className="bg-surface-container/90 backdrop-blur rounded-lg p-1 border border-border/50 flex flex-col gap-1">
                     <button
                         onClick={() => setTheme('light')}
-                        className={`p-2 rounded-lg transition-all ${
-                            theme === 'light' ? 'bg-primary text-white dark:text-background shadow-sm' : 'hover:bg-surface-container-muted text-onsurface-secondary'
+                        className={`p-1.5 rounded transition-colors ${
+                            theme === 'light' ? 'bg-primary text-white dark:text-background' : 'hover:bg-surface-container-muted text-foreground'
                         }`}
                         title="Light Mode"
                     >
@@ -481,8 +465,8 @@ export default function GraphPage() {
                     </button>
                     <button
                         onClick={() => setTheme('dark')}
-                        className={`p-2 rounded-lg transition-all ${
-                            theme === 'dark' ? 'bg-primary text-white dark:text-background shadow-sm' : 'hover:bg-surface-container-muted text-onsurface-secondary'
+                        className={`p-1.5 rounded transition-colors ${
+                            theme === 'dark' ? 'bg-primary text-white dark:text-background' : 'hover:bg-surface-container-muted text-foreground'
                         }`}
                         title="Dark Mode"
                     >
@@ -490,51 +474,49 @@ export default function GraphPage() {
                     </button>
                     <button
                         onClick={() => setTheme('system')}
-                        className={`p-2 rounded-lg transition-all ${
-                            theme === 'system' ? 'bg-primary text-white dark:text-background shadow-sm' : 'hover:bg-surface-container-muted text-onsurface-secondary'
+                        className={`p-1.5 rounded transition-colors ${
+                            theme === 'system' ? 'bg-primary text-white dark:text-background' : 'hover:bg-surface-container-muted text-foreground'
                         }`}
                         title="System Theme"
                     >
                         <Monitor className="w-4 h-4" />
                     </button>
                 </div>
-
+                
                 {/* Zoom Controls */}
-                <div className="bg-surface-container/95 backdrop-blur-xl rounded-xl p-1.5 border border-border/30 shadow-sm flex gap-1">
-                    <button
-                        onClick={handleZoomIn}
-                        className="p-2 text-onsurface-secondary rounded-lg hover:bg-surface-container-muted hover:text-foreground transition-all"
-                        title="Zoom In"
-                    >
-                        <ZoomIn className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={handleZoomOut}
-                        className="p-2 text-onsurface-secondary rounded-lg hover:bg-surface-container-muted hover:text-foreground transition-all"
-                        title="Zoom Out"
-                    >
-                        <ZoomOut className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={handleZoomReset}
-                        className="p-2 text-onsurface-secondary rounded-lg hover:bg-surface-container-muted hover:text-foreground transition-all"
-                        title="Fit to Screen"
-                    >
-                        <Maximize2 className="w-4 h-4" />
-                    </button>
-                </div>
+                <button
+                    onClick={handleZoomIn}
+                    className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors border border-border/50"
+                    title="Zoom In"
+                >
+                    <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={handleZoomOut}
+                    className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors border border-border/50"
+                    title="Zoom Out"
+                >
+                    <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={handleZoomReset}
+                    className="bg-surface-container/90 backdrop-blur text-foreground p-2 rounded-lg hover:bg-surface-container-muted transition-colors border border-border/50"
+                    title="Reset Zoom"
+                >
+                    <Maximize2 className="w-4 h-4" />
+                </button>
             </div>
 
             {/* Legacy Search Bar - Hidden but kept for compatibility */}
             <div className="hidden" ref={searchInputRef}></div>
 
             {/* Main Content */}
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full pt-[73px]">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full">
                         <div className="text-center">
-                            <div className="text-5xl mb-3">🔗</div>
-                            <p className="text-sm text-onsurface-secondary font-medium">Loading knowledge graph...</p>
+                            <div className="text-4xl mb-2">🔗</div>
+                            <p className="text-sm text-onsurface-secondary">Loading knowledge graph...</p>
                         </div>
                     </div>
                 ) : (
@@ -553,74 +535,106 @@ export default function GraphPage() {
                             />
                         )}
 
+                        {/* Zoom Controls - minimal style */}
+                        <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1">
+                            <button
+                                onClick={handleZoomIn}
+                                className="p-2 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50 active:scale-95"
+                                title="Zoom In (Scroll or Pinch to zoom)"
+                            >
+                                <ZoomIn className="w-5 h-5 text-onsurface-secondary" />
+                            </button>
+                            <button
+                                onClick={handleZoomOut}
+                                className="p-2 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50 active:scale-95"
+                                title="Zoom Out (Scroll or Pinch to zoom)"
+                            >
+                                <ZoomOut className="w-5 h-5 text-onsurface-secondary" />
+                            </button>
+                            <button
+                                onClick={handleZoomReset}
+                                className="p-2 bg-surface-bright/80 backdrop-blur-sm rounded-md hover:bg-surface-container transition-colors border border-border/50 active:scale-95"
+                                title="Fit to screen"
+                            >
+                                <Maximize2 className="w-5 h-5 text-onsurface-secondary" />
+                            </button>
+                        </div>
+
                         {/* Node Details Panel - Show on hover or click */}
                         {(hoveredNode || clickedNode) && (() => {
                             const nodeId = clickedNode || hoveredNode;
                             const nodeData = filteredData.nodes.find(n => n.id === nodeId);
                             if (!nodeData) return null;
-
+                            
                             return (
-                                <div className={`absolute top-24 right-6 z-20 bg-surface-container/95 backdrop-blur-xl rounded-2xl border border-border/30 shadow-lg p-5 w-72 ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-                                    {/* Close button for clicked nodes */}
-                                    {clickedNode && (
-                                        <button
-                                            onClick={() => setClickedNode(null)}
-                                            className="absolute top-3 right-3 p-1 text-onsurface-secondary hover:text-onsurface-primary transition-colors rounded-lg hover:bg-surface-container-muted"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    )}
-
-                                    <div className="flex items-start gap-3 mb-4">
-                                        {nodeData.type === 'profile' && (nodeData as ProfileNode).avatar_url ? (
-                                            <Image
-                                                src={(nodeData as ProfileNode).avatar_url!}
-                                                alt={nodeData.label}
-                                                width={48}
-                                                height={48}
-                                                className="rounded-full ring-2 ring-border/30"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-full bg-surface-container-muted flex items-center justify-center text-2xl">
-                                                {nodeData.type === 'profile' ? '👤' :
-                                                 nodeData.type === 'project' ? '🚀' :
-                                                 '💬'}
+                                <div className={`absolute top-20 right-4 z-20 bg-surface-bright/80 backdrop-blur-md rounded-lg border border-border p-4 w-64 ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            {nodeData.type === 'profile' && (nodeData as ProfileNode).avatar_url ? (
+                                                <Image
+                                                    src={(nodeData as ProfileNode).avatar_url!}
+                                                    alt={nodeData.label}
+                                                    width={40}
+                                                    height={40}
+                                                    className="rounded-full"
+                                                />
+                                            ) : (
+                                                <div className={`text-2xl`}>
+                                                    {nodeData.type === 'profile' ? '👤' :
+                                                     nodeData.type === 'project' ? '🚀' : 
+                                                     '💬'}
+                                                </div>
+                                            )}
+                                            <div className="flex-1">
+                                                <h3 className="font-medium text-onsurface-primary text-sm">
+                                                    {nodeData.label.length > 30 ? nodeData.label.slice(0, 30) + '...' : nodeData.label}
+                                                </h3>
+                                                <p className="text-xs text-onsurface-secondary capitalize">
+                                                    {nodeData.type}
+                                                </p>
                                             </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-foreground text-base mb-0.5 truncate">
-                                                {nodeData.label.length > 24 ? nodeData.label.slice(0, 24) + '...' : nodeData.label}
-                                            </h3>
-                                            <p className="text-xs text-onsurface-secondary capitalize">
-                                                {nodeData.type}
-                                            </p>
                                         </div>
+                                        {clickedNode && (nodeData.type === 'profile' || nodeData.type === 'project') && (
+                                            <button
+                                                onClick={() => {
+                                                    if (nodeData.type === 'profile') {
+                                                        router.push(`/profile/${nodeData.id}`);
+                                                    } else if (nodeData.type === 'project') {
+                                                        const projectId = nodeData.id.replace('project-', '');
+                                                        router.push(`/projects/${projectId}`);
+                                                    }
+                                                }}
+                                                className="p-1.5 text-onsurface-secondary hover:text-onsurface-primary transition-colors rounded-md hover:bg-surface-container-muted"
+                                                title="View full page"
+                                            >
+                                                <ChevronRight size={16} />
+                                            </button>
+                                        )}
                                     </div>
 
-                                    <div className="space-y-3 text-sm">
+                                    <div className="space-y-2 text-sm">
                                         {nodeData.type === 'profile' && (
                                             <>
                                                 {(nodeData as ProfileNode).title && (
-                                                    <div className="text-onsurface-primary text-sm">
+                                                    <div className="text-onsurface-secondary">
                                                         {(nodeData as ProfileNode).title}
                                                     </div>
                                                 )}
                                                 {(nodeData as ProfileNode).location && (
-                                                    <div className="flex items-center gap-1.5 text-onsurface-secondary text-sm">
-                                                        <span>📍</span>
-                                                        <span>{(nodeData as ProfileNode).location}</span>
+                                                    <div className="text-onsurface-secondary">
+                                                        📍 {(nodeData as ProfileNode).location}
                                                     </div>
                                                 )}
                                                 {(nodeData as ProfileNode).skills && (nodeData as ProfileNode).skills!.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {(nodeData as ProfileNode).skills!.slice(0, 5).map((skill, i) => (
-                                                            <span key={i} className="px-2.5 py-1 bg-surface-container-muted text-onsurface-primary text-xs rounded-lg font-medium">
+                                                    <div className="flex flex-wrap gap-1 mt-2">
+                                                        {(nodeData as ProfileNode).skills!.slice(0, 4).map((skill, i) => (
+                                                            <span key={i} className="px-2 py-0.5 bg-surface-container-muted text-onsurface-secondary text-xs rounded">
                                                                 {skill}
                                                             </span>
                                                         ))}
-                                                        {(nodeData as ProfileNode).skills!.length > 5 && (
-                                                            <span className="px-2.5 py-1 text-xs text-onsurface-secondary">
-                                                                +{(nodeData as ProfileNode).skills!.length - 5} more
+                                                        {(nodeData as ProfileNode).skills!.length > 4 && (
+                                                            <span className="text-xs text-onsurface-secondary">
+                                                                +{(nodeData as ProfileNode).skills!.length - 4}
                                                             </span>
                                                         )}
                                                     </div>
@@ -637,13 +651,13 @@ export default function GraphPage() {
                                                                            (nodeData as ProjectNode).status === 'paused' ? canvasColors.statusPaused :
                                                                            canvasColors.statusInactive
                                                         }} />
-                                                        <span className="text-onsurface-primary capitalize text-sm font-medium">
+                                                        <span className="text-onsurface-secondary capitalize">
                                                             {(nodeData as ProjectNode).status}
                                                         </span>
                                                     </div>
                                                 )}
                                                 {(nodeData as ProjectNode).description && (
-                                                    <p className="text-onsurface-secondary text-sm line-clamp-3 leading-relaxed">
+                                                    <p className="text-onsurface-secondary text-xs line-clamp-2">
                                                         {(nodeData as ProjectNode).description}
                                                     </p>
                                                 )}
@@ -652,7 +666,7 @@ export default function GraphPage() {
 
                                         {nodeData.type === 'post' && (
                                             <>
-                                                <div className="text-onsurface-primary text-sm">
+                                                <div className="text-onsurface-secondary">
                                                     by {(nodeData as PostNode).authorName}
                                                 </div>
                                                 {(nodeData as PostNode).created_at && (
@@ -660,35 +674,18 @@ export default function GraphPage() {
                                                         {new Date((nodeData as PostNode).created_at!).toLocaleDateString()}
                                                     </div>
                                                 )}
-                                                <p className="text-onsurface-secondary text-sm line-clamp-3 leading-relaxed">
+                                                <p className="text-onsurface-secondary text-xs line-clamp-3">
                                                     {nodeData.label}
                                                 </p>
                                             </>
                                         )}
 
-                                        <div className="pt-3 mt-3 border-t border-border/30 flex items-center justify-between">
-                                            <span className="text-sm text-onsurface-secondary">Connections</span>
-                                            <span className="text-sm font-semibold text-foreground">
+                                        <div className="pt-2 mt-2 border-t border-border/50 flex items-center justify-between">
+                                            <span className="text-xs text-onsurface-secondary">Connections</span>
+                                            <span className="text-xs font-medium text-onsurface-primary">
                                                 {nodeConnectionCounts[nodeData.id] || 0}
                                             </span>
                                         </div>
-
-                                        {clickedNode && (nodeData.type === 'profile' || nodeData.type === 'project') && (
-                                            <button
-                                                onClick={() => {
-                                                    if (nodeData.type === 'profile') {
-                                                        router.push(`/profile/${nodeData.id}`);
-                                                    } else if (nodeData.type === 'project') {
-                                                        const projectId = nodeData.id.replace('project-', '');
-                                                        router.push(`/projects/${projectId}`);
-                                                    }
-                                                }}
-                                                className="w-full mt-2 px-4 py-2.5 bg-primary text-white dark:text-background hover:bg-primary-hover transition-all rounded-xl font-medium text-sm flex items-center justify-center gap-2"
-                                            >
-                                                View Full Page
-                                                <ChevronRight size={16} />
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
                             );
@@ -709,7 +706,7 @@ export default function GraphPage() {
                                 ref={graphRef}
                                 graphData={filteredData}
                                 width={dimensions.width}
-                                height={dimensions.height}
+                                height={dimensions.height - 73}
                                 backgroundColor="transparent"
                                 nodeLabel={() => ''}
                                 nodeRelSize={0}
@@ -731,11 +728,12 @@ export default function GraphPage() {
                                 dagMode={undefined}
                                 dagLevelDistance={undefined}
                                 onEngineStop={() => {
-                                    // Obsidian-style: More breathing room
+                                    // Removed auto zoom - let users control their own view
+                                    // Configure forces after engine starts
                                     if (graphRef.current) {
-                                        graphRef.current.d3Force('charge').strength(-200); // More repulsion for cleaner layout
-                                        graphRef.current.d3Force('link').distance(60); // More space between nodes
-                                        graphRef.current.d3Force('center').strength(0.05);
+                                        graphRef.current.d3Force('charge').strength(-100);
+                                        graphRef.current.d3Force('link').distance(20);
+                                        graphRef.current.d3Force('center').strength(0.1);
                                     }
                                 }}
                                 nodeCanvasObjectMode={() => 'replace'}
@@ -748,125 +746,115 @@ export default function GraphPage() {
                                         // These will be drawn with lower opacity
                                     }
                                     
-                                    // Node styling based on type - cleaner, larger nodes
-                                    let color = canvasColors.nodeDefault;
-                                    let baseSize = 5; // Increased base size
-
-                                    if (node.type === 'profile') {
-                                        color = canvasColors.nodeProfile;
-                                        baseSize = 7; // Larger profiles
-                                    } else if (node.type === 'project') {
-                                        color = canvasColors.nodeProject;
-                                        baseSize = 6;
-                                    } else if (node.type === 'post') {
-                                        color = canvasColors.nodePost;
-                                        baseSize = 4;
-                                    }
-
-                                    // Size based on connections - smoother scaling
-                                    const connections = nodeConnectionCounts[node.id as string] || 0;
-                                    const size = baseSize + Math.sqrt(connections) * 1;
+                                    // Node styling based on type - colored nodes
+                                    let color = canvasColors.nodeDefault; // Default
+                                    let baseSize = 4;
                                     
-                                    // Obsidian-style opacity: More subtle fade
+                                    if (node.type === 'profile') {
+                                        color = canvasColors.nodeProfile; // White center for profiles
+                                        baseSize = 5;
+                                    } else if (node.type === 'project') {
+                                        color = canvasColors.nodeProject; // yellow/amber
+                                        baseSize = 5;
+                                    } else if (node.type === 'post') {
+                                        color = canvasColors.nodePost; // green for posts
+                                        baseSize = 3;
+                                    }
+                                    
+                                    // Size based on connections - smaller scaling
+                                    const connections = nodeConnectionCounts[node.id as string] || 0;
+                                    const size = baseSize + Math.sqrt(connections) * 0.8;
+                                    
+                                    // Opacity: 100% normal for nodes, 10% for non-related when hovering
                                     if (!hoveredNode) {
-                                        ctx.globalAlpha = 0.9; // Slightly transparent in normal state
+                                        ctx.globalAlpha = 1; // Normal state - 100% opacity for nodes
                                     } else {
-                                        ctx.globalAlpha = isRelated ? 1 : 0.15; // Gentle fade for non-related
+                                        ctx.globalAlpha = isRelated ? 1 : 0.1; // Hover state - 100% or 10%
                                     }
                                     
                                     // Skip rendering if node position is not initialized
                                     if (!isFinite(node.x!) || !isFinite(node.y!)) return;
                                     
-                                    // Obsidian-style: Outlined nodes
+                                    // Draw profile nodes with images
                                     if (node.type === 'profile' && (node as ProfileNode).avatar_url) {
-                                        // Profile with avatar - show image with outline
+                                        // Create a circular clipping mask
                                         ctx.save();
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
                                         ctx.clip();
-
+                                        
+                                        // Draw image if already loaded
                                         const avatarUrl = (node as ProfileNode).avatar_url!;
                                         let img = (node as any).__img;
-
+                                        
                                         if (!img) {
+                                            // Create and cache the image
                                             img = new (window as any).Image();
                                             img.crossOrigin = 'anonymous';
                                             img.src = avatarUrl;
                                             (node as any).__img = img;
-
-                                            // Placeholder - outlined circle
+                                            
+                                            // Draw placeholder while loading - gray circle
                                             ctx.fillStyle = canvasColors.placeholder;
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else if (img.complete && img.naturalWidth > 0) {
+                                            // Draw the loaded image
                                             ctx.drawImage(img, node.x! - size, node.y! - size, size * 2, size * 2);
                                         } else {
+                                            // Still loading, draw placeholder
                                             ctx.fillStyle = canvasColors.placeholder;
                                             ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
                                         }
-
+                                        
                                         ctx.restore();
-
-                                        // Draw outline around avatar
-                                        ctx.beginPath();
-                                        ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = isHovered ? canvasColors.nodeProfile : canvasColors.nodeProfile;
-                                        ctx.lineWidth = isHovered ? 2.5 : 2;
-                                        ctx.stroke();
                                     } else if (node.type === 'profile') {
-                                        // Profile without image - outlined circle
+                                        // Profile without image - draw simple circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = canvasColors.nodeProfile;
-                                        ctx.lineWidth = isHovered ? 2.5 : 2;
-                                        ctx.stroke();
-
-                                        // Small filled center dot
-                                        ctx.beginPath();
-                                        ctx.arc(node.x!, node.y!, size * 0.3, 0, 2 * Math.PI);
                                         ctx.fillStyle = canvasColors.nodeProfile;
                                         ctx.fill();
+                                        
+                                        // Draw profile icon
+                                        ctx.fillStyle = canvasColors.placeholder;
+                                        ctx.font = `${size * 1.2}px Arial`;
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'middle';
+                                        ctx.fillText('👤', node.x!, node.y!);
                                     } else if (node.type === 'project') {
-                                        // Project nodes - outlined circle
+                                        // Project nodes - plain orange circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = canvasColors.nodeProject;
-                                        ctx.lineWidth = isHovered ? 2.5 : 2;
-                                        ctx.stroke();
-
-                                        // Small filled center dot
-                                        ctx.beginPath();
-                                        ctx.arc(node.x!, node.y!, size * 0.3, 0, 2 * Math.PI);
                                         ctx.fillStyle = canvasColors.nodeProject;
                                         ctx.fill();
                                     } else {
-                                        // Post nodes - simple filled circles
+                                        // Other nodes (posts)
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.fillStyle = canvasColors.nodePost;
+                                        ctx.fillStyle = color;
                                         ctx.fill();
                                     }
                                     
-                                    // Draw labels when zoomed in - fixed visibility
-                                    if ((node.type === 'profile' || node.type === 'project') &&
-                                        isFinite(node.x!) && isFinite(node.y!) && globalScale > 1.2) {
-                                        // Show labels when zoomed IN (globalScale > threshold)
-                                        const labelOpacity = Math.min((globalScale - 1.2) * 1.5, 1);
+                                    // Draw labels only when zoomed in - Obsidian style
+                                    if ((node.type === 'profile' || node.type === 'project') && 
+                                        isFinite(node.x!) && isFinite(node.y!) && globalScale < 0.7) {
+                                        // Only show labels when zoomed in enough - 10% opacity for non-related
+                                        const labelOpacity = Math.min((0.7 - globalScale) * 2, 1);
                                         if (!hoveredNode) {
-                                            ctx.globalAlpha = labelOpacity;
+                                            ctx.globalAlpha = labelOpacity; // Normal state - 100% of label opacity
                                         } else {
-                                            ctx.globalAlpha = isRelated ? labelOpacity : labelOpacity * 0.15;
+                                            ctx.globalAlpha = isRelated ? labelOpacity : labelOpacity * 0.1; // Hover state
                                         }
-                                        const label = node.label && node.label.length > 20 ? node.label.slice(0, 20) + '...' : node.label;
-
-                                        // Obsidian-style typography - smaller text
-                                        const fontSize = 9;
-                                        ctx.font = `500 ${fontSize}px DM Sans, sans-serif`;
-
-                                        // Text with better contrast
+                                        const label = node.label && node.label.length > 30 ? node.label.slice(0, 30) + '...' : node.label;
+                                        
+                                        // Simple text, no badge
+                                        const fontSize = 12;
+                                        ctx.font = `400 ${fontSize}px Inter, sans-serif`;
+                                        
+                                        // Text color
                                         ctx.fillStyle = canvasColors.label;
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'top';
-                                        ctx.fillText(label as string, node.x!, node.y! + size + 6);
+                                        ctx.fillText(label as string, node.x!, node.y! + size + 5);
                                     }
                                     
                                     ctx.globalAlpha = 1;
@@ -880,14 +868,14 @@ export default function GraphPage() {
                                         !isFinite(target.x) || !isFinite(target.y)) return;
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
-
-                                    // Obsidian-style: Very subtle links
+                                    
+                                    // Lines - 50% normal, 100% for related, 10% for others when hovering
                                     ctx.strokeStyle = canvasColors.link;
-                                    ctx.lineWidth = isRelated && hoveredNode ? 1.5 : 1;
+                                    ctx.lineWidth = 0.75; // Thinner lines
                                     if (!hoveredNode) {
-                                        ctx.globalAlpha = 0.2; // Very subtle in normal state
+                                        ctx.globalAlpha = 0.5; // Normal state - 50% opacity for lines
                                     } else {
-                                        ctx.globalAlpha = isRelated ? 0.6 : 0.05; // Highlight connections on hover
+                                        ctx.globalAlpha = isRelated ? 1 : 0.1; // Hover state - 100% or 10%
                                     }
                                     
                                     // Calculate arrow direction
@@ -897,17 +885,10 @@ export default function GraphPage() {
                                     const unitX = dx / distance;
                                     const unitY = dy / distance;
                                     
-                                    // Adjust for node radius - match updated sizes
-                                    const getNodeSize = (nodeId: string, nodeType: string) => {
-                                        let baseSize = 5;
-                                        if (nodeType === 'profile') baseSize = 7;
-                                        else if (nodeType === 'project') baseSize = 6;
-                                        else if (nodeType === 'post') baseSize = 4;
-                                        const connections = nodeConnectionCounts[nodeId] || 0;
-                                        return baseSize + Math.sqrt(connections) * 1;
-                                    };
-                                    const sourceRadius = getNodeSize(source.id, source.type);
-                                    const targetRadius = getNodeSize(target.id, target.type);
+                                    // Adjust for node radius - smaller sizes
+                                    const baseSize = 3;
+                                    const sourceRadius = nodeConnectionCounts[source.id] ? baseSize + Math.sqrt(nodeConnectionCounts[source.id]) * 0.8 : baseSize;
+                                    const targetRadius = nodeConnectionCounts[target.id] ? baseSize + Math.sqrt(nodeConnectionCounts[target.id]) * 0.8 : baseSize;
                                     
                                     const startX = source.x + unitX * sourceRadius;
                                     const startY = source.y + unitY * sourceRadius;
@@ -925,24 +906,24 @@ export default function GraphPage() {
                                 nodePointerAreaPaint={(node, color, ctx) => {
                                     // Skip if coordinates not ready
                                     if (!isFinite(node.x!) || !isFinite(node.y!)) return;
-
-                                    // Match updated node sizes for better clickability
+                                    
+                                    // Make the entire node clickable
                                     let baseSize = 5;
-
+                                    
                                     if (node.type === 'profile') {
-                                        baseSize = 7;
+                                        baseSize = 8;
                                     } else if (node.type === 'project') {
-                                        baseSize = 6;
+                                        baseSize = 10;
                                     } else if (node.type === 'post') {
                                         baseSize = 4;
                                     }
-
+                                    
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
-                                    const size = baseSize + Math.sqrt(connections) * 1;
-
+                                    const size = baseSize + Math.sqrt(connections) * 2;
+                                    
                                     ctx.fillStyle = color;
                                     ctx.beginPath();
-                                    ctx.arc(node.x!, node.y!, size + 3, 0, 2 * Math.PI); // Generous padding for easier clicking
+                                    ctx.arc(node.x!, node.y!, size + 2, 0, 2 * Math.PI); // Add 2px padding for easier clicking
                                     ctx.fill();
                                 }}
                                 warmupTicks={100}
