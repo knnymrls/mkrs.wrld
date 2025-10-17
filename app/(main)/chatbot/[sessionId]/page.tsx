@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import ChatInput from '../../../components/features/ChatInput';
+import MentionInput from '../../../components/ui/MentionInput';
 import { TrackedMention } from '../../../types/mention';
 import SourceCard from '../../../components/ui/SourceCard';
 import styles from '../../chatbot/loading.module.css';
@@ -379,7 +379,7 @@ export default function ChatSessionPage() {
             {/* Fixed input at bottom - accounts for mobile bottom nav */}
             <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm pb-16 md:pb-0">
                 <div className="max-w-4xl mx-auto px-4 pb-4 md:pb-6">
-                    <ChatInput
+                    <MentionInput
                         value={input}
                         onChange={setInput}
                         onMentionsChange={setTrackedMentions}
@@ -387,8 +387,7 @@ export default function ChatSessionPage() {
                         placeholder="Ask anything..."
                         userId={user?.id}
                         disabled={loading}
-                        loading={loading}
-                        allowProjectCreation={false}
+                        rows={2}
                     />
                 </div>
             </div>

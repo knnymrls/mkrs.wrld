@@ -34,6 +34,7 @@ export default function MentionInput({
   const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
   const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
   const [mentionValues, setMentionValues] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   // Update parent when tracked mentions change
   useEffect(() => {
@@ -49,9 +50,20 @@ export default function MentionInput({
         const query = value.substring(lastAtIndex + 1);
         // Only search if there's no space after @ (still typing the mention)
         if (!query.includes(' ')) {
+          setIsLoadingSuggestions(true);
           const suggestions = await searchMentions(query);
+          // Always set suggestions, even if empty, to ensure dropdown shows
           setMentionSuggestions(suggestions);
+          setIsLoadingSuggestions(false);
+        } else {
+          // Clear suggestions if there's a space after @
+          setMentionSuggestions([]);
+          setIsLoadingSuggestions(false);
         }
+      } else {
+        // Clear suggestions if no @ found
+        setMentionSuggestions([]);
+        setIsLoadingSuggestions(false);
       }
     };
 
@@ -157,7 +169,12 @@ export default function MentionInput({
       </Mention.MentionInput>
 
       <Mention.MentionContent side="bottom" align="start" sideOffset={4}>
-        {mentionSuggestions.length > 0 ? (
+        {isLoadingSuggestions ? (
+          <div className="px-2 py-1.5 text-sm text-onsurface-secondary flex items-center gap-2">
+            <div className="w-4 h-4 animate-spin rounded-full border-2 border-onsurface-secondary border-t-transparent"></div>
+            Loading...
+          </div>
+        ) : mentionSuggestions.length > 0 ? (
           mentionSuggestions.map((suggestion) => (
             <Mention.MentionItem
               key={suggestion.id}

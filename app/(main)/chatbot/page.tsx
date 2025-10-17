@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import ChatInput from '../../components/features/ChatInput';
+import MentionInput from '../../components/ui/MentionInput';
 import ChatHistory from '../../components/features/ChatHistory';
 import { TrackedMention } from '../../types/mention';
 
@@ -86,14 +86,13 @@ export default function ChatbotPage() {
                     </h1>
 
                     <div className="mb-8">
-                        <ChatInput
+                        <MentionInput
                             value={input}
                             onChange={setInput}
                             onMentionsChange={setTrackedMentions}
                             onSubmit={handleSubmit}
                             placeholder="Ask about someone's expertise, find project contributors, or discover who's working on something..."
                             userId={user?.id}
-                            allowProjectCreation={false}
                             rows={3}
                         />
                     </div>
