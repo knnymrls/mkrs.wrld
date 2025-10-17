@@ -8,6 +8,7 @@ import ProjectRequestCardGrid from './ProjectRequestCardGrid';
 import PostCardSkeleton from '../ui/PostCardSkeleton';
 import { TrackedMention } from '@/app/types/mention';
 import { useInfiniteScroll } from '../../(main)/hooks/useInfiniteScroll';
+import * as Masonry from '@/app/components/ui/masonry';
 
 type ActivityItemType = 'post' | 'profile' | 'project' | 'project_request';
 
@@ -130,19 +131,11 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   if (loading) {
     return (
-      <div
-        className="w-full"
-        style={{
-          columnCount: 'auto',
-          columnWidth: '280px',
-          columnGap: '16px',
-          position: 'relative'
-        }}
-      >
+      <Masonry.Root columnWidth={280} gap={12}>
         <PostCardSkeleton count={4} variant="short" />
         <PostCardSkeleton count={4} variant="medium" />
         <PostCardSkeleton count={4} variant="long" />
-      </div>
+      </Masonry.Root>
     );
   }
 
@@ -157,59 +150,56 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   return (
     <>
-      <div
-        className="w-full"
-        style={{
-          columnCount: 'auto',
-          columnWidth: '280px',
-          columnGap: '12px',
-          position: 'relative'
-        }}
-      >
+      <Masonry.Root columnWidth={280} gap={12}>
         {items.map((item) => {
           switch (item.type) {
             case 'post':
               return (
-                <PostCard
-                  key={item.id}
-                  post={item}
-                  onPostClick={onPostClick ? () => onPostClick(item) : asyncNoop}
-                  onLikeToggle={onLikeToggle || asyncNoop}
-                  onCommentSubmit={onCommentSubmit || asyncNoop}
-                  quickComments={quickComments}
-                  setQuickComments={setQuickComments}
-                  submittingQuickComment={submittingQuickComment}
-                  quickCommentMentions={quickCommentMentions}
-                  setQuickCommentMentions={setQuickCommentMentions}
-                />
+                <Masonry.Item key={item.id}>
+                  <PostCard
+                    post={item}
+                    onPostClick={onPostClick ? () => onPostClick(item) : asyncNoop}
+                    onLikeToggle={onLikeToggle || asyncNoop}
+                    onCommentSubmit={onCommentSubmit || asyncNoop}
+                    quickComments={quickComments}
+                    setQuickComments={setQuickComments}
+                    submittingQuickComment={submittingQuickComment}
+                    quickCommentMentions={quickCommentMentions}
+                    setQuickCommentMentions={setQuickCommentMentions}
+                  />
+                </Masonry.Item>
               );
             case 'profile':
-              return <ProfileCard key={item.id} profile={item} />;
+              return (
+                <Masonry.Item key={item.id}>
+                  <ProfileCard profile={item} />
+                </Masonry.Item>
+              );
             case 'project':
-              return <ProjectCard key={item.id} project={item} />;
+              return (
+                <Masonry.Item key={item.id}>
+                  <ProjectCard project={item} />
+                </Masonry.Item>
+              );
             case 'project_request':
-              return <ProjectRequestCardGrid key={item.id} request={item} />;
+              return (
+                <Masonry.Item key={item.id}>
+                  <ProjectRequestCardGrid request={item} />
+                </Masonry.Item>
+              );
             default:
               return null;
           }
         })}
-      </div>
+      </Masonry.Root>
 
       {/* Infinite scroll trigger */}
       {hasMore && (
         <div ref={triggerRef} className="w-full py-8">
           {loadingMore && (
-            <div
-              className="w-full"
-              style={{
-                columnCount: 'auto',
-                columnWidth: '280px',
-                columnGap: '16px',
-                position: 'relative'
-              }}
-            >
+            <Masonry.Root columnWidth={280} gap={12}>
               <PostCardSkeleton count={3} variant="medium" />
-            </div>
+            </Masonry.Root>
           )}
         </div>
       )}

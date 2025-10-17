@@ -1,4 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Variable.ttf') format('truetype');
+  font-weight: 300 900;
+  font-display: swap;
+  font-style: normal;
+}
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -29,13 +36,13 @@
 
 /* Dark mode with class-based approach */
 .dark {
-  --background: #1D1D1D;
+  --background: #0A0A0A;
   --foreground: #ededed;
 
   /* Custom colors for dark mode */
   --primary: #eee;
   --primary-hover: #ffffff;
-  --surface-container: #292929;
+  --surface-container: #1A1A1A;
   --surface-container-muted: #191919;
   --border: #404040;
   --onsurface-primary: #f3f4f6;
@@ -50,26 +57,26 @@
   --warning: #f59e0b;
   --onwarning: #ffffff;
   --avatar-bg: #404040;
-  --surface: #1D1D1D;
+  --surface: #0A0A0A;
 }
 
 /* Also support system preference when no manual theme is set */
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
-    --background: #1D1D1D;
+    --background: #0A0A0A;
     --foreground: #ededed;
 
     /* Custom colors for dark mode */
     --primary: #eee;
     --primary-hover: #fff;
-    --surface-container: #292929;
+    --surface-container: #121212;
     --surface-container-muted: #191919;
-    --border: #404040;
+    --border: #292929;
     --onsurface-primary: #f3f4f6;
     --onsurface-secondary: #b7b7b7;
 
     /* Additional colors for dark mode */
-    --onprimary: #1D1D1D;
+    --onprimary: #0A0A0A;
     --success: #22c55e;
     --onsuccess: #ffffff;
     --error: #ef4444;
@@ -77,7 +84,7 @@
     --warning: #f59e0b;
     --onwarning: #ffffff;
     --avatar-bg: #404040;
-    --surface: #1D1D1D;
+    --surface: #0A0A0A;
   }
 }
 
@@ -107,7 +114,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
 }
 
 @keyframes ping-once {
