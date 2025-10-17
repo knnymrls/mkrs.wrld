@@ -58,7 +58,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
     setIsSubmitting(true);
     try {
       console.log('Post content being saved:', postContent);
-      console.log('Tracked mentions:', trackedMentions);
+      console.log('Tracked mentions:', JSON.stringify(trackedMentions, null, 2));
       const embedding = await getEmbedding(postContent);
 
       // Filter out any loading images (just in case)
