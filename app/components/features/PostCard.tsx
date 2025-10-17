@@ -10,7 +10,6 @@ import ImageModal from '../ui/ImageModal';
 import LazyImage from '../ui/LazyImage';
 import { TrackedMention } from '@/app/types/mention';
 import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
-import { Mention } from '../ui/mention';
 
 interface PostImage {
   id: string;
@@ -148,9 +147,9 @@ const PostCard = React.memo(function PostCard({
                 className="text-xs sm:text-sm font-sans text-onsurface-secondary"
               />
 
-              <Mention className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap break-words">
+              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap break-words">
                 {renderedContent}
-              </Mention>
+              </div>
             </div>
           </div>
 

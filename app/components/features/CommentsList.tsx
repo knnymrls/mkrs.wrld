@@ -9,7 +9,6 @@ import CommentSkeleton from '../ui/CommentSkeleton';
 import CommentMentionInput from '../ui/CommentMentionInput';
 import { TrackedMention } from '@/app/types/mention';
 import { renderContentWithMentions } from '@/lib/mentions/renderMentions';
-import { Mention } from '../ui/mention';
 
 interface CommentsListProps {
   comments: Comment[];
@@ -312,9 +311,9 @@ export default function CommentsList({
                       </div>
                     </div>
                   ) : (
-                    <Mention className="text-onsurface-primary mt-0.5">
+                    <p className="text-onsurface-primary mt-0.5">
                       {renderContentWithMentions(comment.content, comment.mentions || [])}
-                    </Mention>
+                    </p>
                   )}
                 </div>
               </div>
