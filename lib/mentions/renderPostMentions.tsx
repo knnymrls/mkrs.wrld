@@ -22,13 +22,11 @@ export function renderPostContentWithMentions(
   }
 
   // Create a map of all possible mention patterns to look for
-  // This includes the name as-is and with potential @ prefixes
+  // Only look for the @ prefix version to avoid duplicates
   const mentionMap = new Map<string, PostMention>();
-  
+
   mentions.forEach(mention => {
-    // Add the mention name as stored in the database
-    mentionMap.set(mention.name, mention);
-    // Also add with @ prefix in case it's still in the content
+    // Only search for @name pattern since that's what the library inserts
     mentionMap.set(`@${mention.name}`, mention);
   });
 
