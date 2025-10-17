@@ -1,16 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import MentionDropdown from '../ui/MentionDropdown';
-import { MentionSuggestion, TrackedMention, DropdownPosition } from '@/app/types/mention';
+import React, { useState, useEffect, useCallback } from 'react';
+import * as Mention from './mention';
+import { MentionSuggestion, TrackedMention } from '@/app/types/mention';
 import { searchMentions } from '@/lib/mentions/searchMentions';
 import { createProjectFromMention } from '@/lib/mentions/createProject';
-import {
-  updateMentionPositions,
-  isInsideExistingMention,
-  getMentionAtCursor,
-  calculateDropdownPosition
-} from '@/lib/mentions/trackMentions';
 
 interface MentionInputProps {
   value: string;
@@ -37,382 +31,188 @@ export default function MentionInput({
   className = "",
   autoFocus = false
 }: MentionInputProps) {
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionSearch, setMentionSearch] = useState('');
   const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
   const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
-  const [mentionIndex, setMentionIndex] = useState(0);
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
-  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ top: -1000, left: -1000 });
-  const [invalidatedAtPositions, setInvalidatedAtPositions] = useState<Set<number>>(new Set());
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [mentionValues, setMentionValues] = useState<string[]>([]);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea || rows !== 1) return;
-
-    const adjustHeight = () => {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    };
-
-    adjustHeight();
-  }, [value, rows]);
-
-  // Handle click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showMentions &&
-        textareaRef.current &&
-        dropdownRef.current &&
-        !textareaRef.current.contains(event.target as Node) &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowMentions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMentions]);
-
-  // Notify parent of mention changes
+  // Update parent when tracked mentions change
   useEffect(() => {
     onMentionsChange(trackedMentions);
-  }, [trackedMentions]); // onMentionsChange is excluded to prevent infinite loops
+  }, [trackedMentions, onMentionsChange]);
 
-  const handleTextChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    const cursorPos = e.target.selectionStart;
-    const previousContent = value;
-    onChange(newValue);
-    setCursorPosition(cursorPos);
-
-    // Update tracked mentions
-    const updatedMentions = updateMentionPositions(
-      trackedMentions,
-      previousContent,
-      newValue,
-      cursorPos
-    );
-    setTrackedMentions(updatedMentions);
-
-    // Clean up invalidated positions if the @ was deleted
-    const newInvalidatedPositions = new Set(invalidatedAtPositions);
-    for (const pos of invalidatedAtPositions) {
-      if (pos >= newValue.length || newValue[pos] !== '@') {
-        newInvalidatedPositions.delete(pos);
-      }
-    }
-    if (newInvalidatedPositions.size !== invalidatedAtPositions.size) {
-      setInvalidatedAtPositions(newInvalidatedPositions);
-    }
-
-    // Check for @ mentions
-    const textBeforeCursor = newValue.substring(0, cursorPos);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-
-    if (lastAtIndex !== -1) {
-      // Check if this @ position was previously invalidated by a space
-      if (invalidatedAtPositions.has(lastAtIndex)) {
-        setShowMentions(false);
-        return;
-      }
-
-      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-
-      // Check if user typed @ followed by a space (or navigated back to it)
-      // Also check if there's a space immediately after the @ in the full text
-      const hasSpaceAfterAt = lastAtIndex + 1 < newValue.length && newValue[lastAtIndex + 1] === ' ';
-      if (textAfterAt.startsWith(' ') || hasSpaceAfterAt) {
-        // Mark this @ position as invalidated
-        setInvalidatedAtPositions(new Set([...invalidatedAtPositions, lastAtIndex]));
-        setShowMentions(false);
-        return;
-      }
-
-      // Check if we're inside an existing mention
-      if (!isInsideExistingMention(lastAtIndex, updatedMentions)) {
-        // Calculate dropdown position BEFORE showing the dropdown
-        if (textareaRef.current) {
-          const position = calculateDropdownPosition(
-            textareaRef.current,
-            lastAtIndex,
-            newValue
-          );
-          
-          // On mobile, adjust for viewport and soft keyboard
-          if (window.innerWidth < 640) {
-            const viewportHeight = window.visualViewport?.height || window.innerHeight;
-            const maxTop = viewportHeight - 200; // Leave room for dropdown
-            
-            if (position.top > maxTop) {
-              position.top = maxTop;
-            }
-          }
-          
-          setDropdownPosition(position);
+  // Fetch suggestions when input value changes and contains @
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      // Extract the current mention being typed (after @)
+      const lastAtIndex = value.lastIndexOf('@');
+      if (lastAtIndex !== -1) {
+        const query = value.substring(lastAtIndex + 1);
+        // Only search if there's no space after @ (still typing the mention)
+        if (!query.includes(' ')) {
+          const suggestions = await searchMentions(query);
+          setMentionSuggestions(suggestions);
         }
-
-        // Update search state
-        setMentionSearch(textAfterAt);
-        setMentionIndex(lastAtIndex);
-        setSelectedSuggestionIndex(0);
-
-        // Fetch suggestions
-        const suggestions = await searchMentions(textAfterAt);
-        setMentionSuggestions(suggestions);
-
-        // Show dropdown AFTER position is set
-        setShowMentions(true);
-
-        // Force immediate position update
-        requestAnimationFrame(() => {
-          if (textareaRef.current) {
-            const position = calculateDropdownPosition(
-              textareaRef.current,
-              lastAtIndex,
-              newValue
-            );
-            
-            // On mobile, adjust for viewport and soft keyboard
-            if (window.innerWidth < 640) {
-              const viewportHeight = window.visualViewport?.height || window.innerHeight;
-              const maxTop = viewportHeight - 200; // Leave room for dropdown
-              
-              if (position.top > maxTop) {
-                position.top = maxTop;
-              }
-            }
-            
-            setDropdownPosition(position);
-          }
-        });
       }
-    } else if (showMentions) {
-      // Close dropdown if @ was deleted
-      setShowMentions(false);
-    }
-  };
-
-  const selectMention = async (mention: MentionSuggestion) => {
-    let mentionToAdd = mention;
-
-    // Handle creating new project
-    if (mention.id === 'create-new' && userId) {
-      const newProject = await createProjectFromMention(mention.name, userId);
-      if (!newProject) return;
-
-      mentionToAdd = {
-        id: newProject.id,
-        name: newProject.title,
-        type: 'project'
-      };
-    }
-
-    // Update the text content (remove the @ symbol)
-    const beforeMention = value.substring(0, mentionIndex);
-    const afterCursor = value.substring(cursorPosition);
-    const mentionText = mentionToAdd.name; // No @ symbol
-    const newContent = `${beforeMention}${mentionText} ${afterCursor}`;
-
-    // Track the mention position
-    const newMention: TrackedMention = {
-      id: mentionToAdd.id,
-      name: mentionToAdd.name,
-      type: mentionToAdd.type,
-      start: mentionIndex,
-      end: mentionIndex + mentionText.length,
-      imageUrl: mentionToAdd.imageUrl
     };
 
-    setTrackedMentions([...trackedMentions, newMention]);
-    onChange(newContent);
-    setShowMentions(false);
+    fetchSuggestions();
+  }, [value]);
 
-    // Focus back on textarea
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      const newCursorPos = mentionIndex + mentionText.length + 1;
-      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
-    }
-  };
+  // Handle when mention value changes (when user selects a mention)
+  const handleValueChange = useCallback(async (values: string[]) => {
+    // Find newly added mentions
+    const newMentions = values.filter(v => !mentionValues.includes(v));
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle backspace for mention deletion
-    if (e.key === 'Backspace' && !showMentions) {
-      const cursorPos = textareaRef.current?.selectionStart || 0;
-      const mentionAtCursor = getMentionAtCursor(cursorPos, trackedMentions);
+    for (const mentionName of newMentions) {
+      // Find the suggestion that matches this name
+      let suggestion = mentionSuggestions.find(s => s.name === mentionName);
 
-      if (mentionAtCursor) {
-        e.preventDefault();
-
-        // Remove the entire mention
-        const newContent = value.substring(0, mentionAtCursor.start) +
-          value.substring(mentionAtCursor.end);
-
-        // Update tracked mentions
-        const updatedMentions = trackedMentions.filter(m => m !== mentionAtCursor);
-        updatedMentions.forEach(m => {
-          if (m.start > mentionAtCursor.start) {
-            const lengthDiff = mentionAtCursor.end - mentionAtCursor.start;
-            m.start -= lengthDiff;
-            m.end -= lengthDiff;
-          }
-        });
-
-        onChange(newContent);
-        setTrackedMentions(updatedMentions);
-
-        // Set cursor position
-        if (textareaRef.current) {
-          textareaRef.current.value = newContent;
-          const newPos = mentionAtCursor.start;
-          textareaRef.current.setSelectionRange(newPos, newPos);
+      // Handle creating new project if needed
+      if (suggestion?.id === 'create-new' && userId) {
+        const newProject = await createProjectFromMention(suggestion.name, userId);
+        if (newProject) {
+          suggestion = {
+            id: newProject.id,
+            name: newProject.title,
+            type: 'project'
+          };
+        } else {
+          continue;
         }
-        return;
+      }
+
+      if (suggestion) {
+        // Add to tracked mentions
+        // Note: position tracking is now handled by @diceui/mention internally
+        setTrackedMentions(prev => [...prev, {
+          id: suggestion.id,
+          name: suggestion.name,
+          type: suggestion.type,
+          start: 0, // Position is handled internally by the library
+          end: 0,
+          imageUrl: suggestion.imageUrl
+        }]);
       }
     }
 
-    if (showMentions && mentionSuggestions.length > 0) {
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedSuggestionIndex(prev =>
-            prev < mentionSuggestions.length - 1 ? prev + 1 : 0
-          );
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedSuggestionIndex(prev =>
-            prev > 0 ? prev - 1 : mentionSuggestions.length - 1
-          );
-          break;
-        case 'Enter':
-          e.preventDefault();
-          selectMention(mentionSuggestions[selectedSuggestionIndex]);
-          break;
-        case 'Escape':
-          e.preventDefault();
-          setShowMentions(false);
-          break;
-      }
-    } else if (e.key === 'Escape' && showMentions) {
-      e.preventDefault();
-      setShowMentions(false);
-    } else if (e.key === 'Enter' && !e.shiftKey && onSubmit) {
-      // Handle Enter key for submitting (unless Shift is held for new line)
-      e.preventDefault();
-      onSubmit();
+    // Handle removed mentions
+    const removedMentions = mentionValues.filter(v => !values.includes(v));
+    if (removedMentions.length > 0) {
+      setTrackedMentions(prev =>
+        prev.filter(m => !removedMentions.includes(m.name))
+      );
     }
-  };
+
+    setMentionValues(values);
+  }, [mentionValues, mentionSuggestions, userId]);
+
+  // Handle input value changes
+  const handleInputChange = useCallback((newValue: string) => {
+    onChange(newValue);
+  }, [onChange]);
+
+  // Handle Enter key for submission (only for single-line input)
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && onSubmit && rows === 1) {
+      // Check if the mention popup is open by checking if we're in the middle of typing a mention
+      const lastAtIndex = value.lastIndexOf('@');
+      const textAfterAt = lastAtIndex !== -1 ? value.substring(lastAtIndex + 1) : '';
+      const isMentionOpen = lastAtIndex !== -1 && !textAfterAt.includes(' ') && textAfterAt.length > 0;
+
+      // Only submit if mention popup is not open
+      if (!isMentionOpen) {
+        e.preventDefault();
+        onSubmit();
+      }
+    }
+  }, [onSubmit, rows, value]);
+
+  const InputComponent = rows === 1 ? 'input' : 'textarea';
 
   return (
-    <div className="relative w-full">
-      <div className="relative w-full flex">
-        {/* Mention overlay for visual styling */}
-        <div
-          className={`absolute inset-0 pointer-events-none overflow-hidden ${rows === 1 ? 'px-3 py-2' : 'p-3'} text-sm`}
-          style={{
-            fontFamily: 'inherit',
-            lineHeight: '1.5',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            maxHeight: rows === 1 ? '120px' : rows === 3 ? '120px' : undefined
-          }}
-        >
-          {(() => {
-            let lastIndex = 0;
-            const parts: React.ReactElement[] = [];
-
-            // Sort mentions by position
-            const sortedMentions = [...trackedMentions].sort((a, b) => a.start - b.start);
-
-            sortedMentions.forEach((mention, idx) => {
-              // Add text before mention
-              if (mention.start > lastIndex) {
-                parts.push(
-                  <span key={`text-${idx}`} className="invisible">
-                    {value.substring(lastIndex, mention.start)}
-                  </span>
-                );
-              }
-
-              // Add mention with underline only
-              parts.push(
-                <span
-                  key={`mention-${idx}`}
-                  className="text-primary underline decoration-primary decoration-1 underline-offset-3"
-                >
-                  {value.substring(mention.start, mention.end)}
-                </span>
-              );
-
-              lastIndex = mention.end;
-            });
-
-            // Add remaining text
-            if (lastIndex < value.length) {
-              parts.push(
-                <span key="text-end" className="invisible">
-                  {value.substring(lastIndex)}
-                </span>
-              );
-            }
-
-            return parts;
-          })()}
-        </div>
-
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className={`w-full ${rows === 1 ? 'px-3 py-2' : 'p-3'} text-sm text-onsurface-primary placeholder-onsurface-secondary bg-surface-container-muted rounded-lg border-none outline-none focus:outline-none focus:ring-1 focus:ring-onsurface-secondary transition-all disabled:opacity-50 resize-none ${className}`}
-          style={{
-            fontFamily: 'inherit',
-            lineHeight: '1.5',
-            caretColor: 'auto',
+    <Mention.Mention
+      value={mentionValues}
+      onValueChange={handleValueChange}
+      inputValue={value}
+      onInputValueChange={handleInputChange}
+      trigger="@"
+      disabled={disabled}
+      className={className}
+    >
+      <Mention.MentionInput
+        placeholder={placeholder}
+        autoFocus={autoFocus}
+        asChild
+      >
+        {React.createElement(InputComponent, {
+          rows: rows === 1 ? undefined : rows,
+          onKeyDown: handleKeyDown,
+          style: {
             minHeight: rows === 1 ? '38px' : undefined,
             maxHeight: rows === 1 ? '120px' : undefined,
-            overflow: rows === 1 ? 'hidden' : 'auto'
-          }}
-          rows={rows}
-          disabled={disabled}
-          autoFocus={autoFocus}
-          onClick={(e) => e.stopPropagation()}
-          onFocus={(e) => e.stopPropagation()}
-        />
+            overflow: rows === 1 ? 'hidden' : 'auto',
+            resize: 'none'
+          }
+        })}
+      </Mention.MentionInput>
 
-        {/* Visual indicator for tracked mentions */}
-        {trackedMentions.length > 0 && rows > 1 && (
-          <div className="absolute bottom-2 right-2 text-sm
-           text-onsurface-secondary">
-            {trackedMentions.length} mention{trackedMentions.length !== 1 ? 's' : ''}
+      <Mention.MentionContent side="bottom" align="start" sideOffset={4}>
+        {mentionSuggestions.length > 0 ? (
+          mentionSuggestions.map((suggestion) => (
+            <Mention.MentionItem
+              key={suggestion.id}
+              value={suggestion.name}
+            >
+              <div className="flex items-center gap-2">
+                {/* Icon/Avatar */}
+                {suggestion.type === 'person' ? (
+                  suggestion.imageUrl ? (
+                    <img
+                      src={suggestion.imageUrl}
+                      alt={suggestion.name}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-xs font-medium text-onsurface-secondary">
+                      {suggestion.name.charAt(0).toUpperCase()}
+                    </div>
+                  )
+                ) : (
+                  suggestion.imageUrl ? (
+                    <img
+                      src={suggestion.imageUrl}
+                      alt={suggestion.name}
+                      className="w-6 h-6 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded bg-surface-container flex items-center justify-center">
+                      <svg className="w-4 h-4 text-onsurface-secondary" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )
+                )}
+
+                {/* Name and optional label */}
+                <div className="flex flex-col">
+                  <span className="text-sm text-onsurface-primary">
+                    {suggestion.name}
+                  </span>
+                  {suggestion.id === 'create-new' && (
+                    <span className="text-xs text-onsurface-secondary">
+                      Create new project
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Mention.MentionItem>
+          ))
+        ) : (
+          <div className="px-2 py-1.5 text-sm text-onsurface-secondary">
+            No matches found
           </div>
         )}
-      </div>
-
-      {/* Mention Dropdown */}
-      {showMentions && (
-        <MentionDropdown
-          ref={dropdownRef}
-          suggestions={mentionSuggestions}
-          selectedIndex={selectedSuggestionIndex}
-          position={dropdownPosition}
-          onSelect={selectMention}
-          onHover={setSelectedSuggestionIndex}
-          usePortal={true}
-        />
-      )}
-    </div>
+      </Mention.MentionContent>
+    </Mention.Mention>
   );
 }

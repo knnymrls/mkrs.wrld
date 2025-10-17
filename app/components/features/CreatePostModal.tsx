@@ -4,8 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
 import { getEmbedding } from '@/lib/embeddings/index';
-import ChatInput from './ChatInput';
-import MentionLink from '../ui/MentionLink';
+import MentionInput from '../ui/MentionInput';
 import { TrackedMention } from '../../types/mention';
 
 interface ImageData {
@@ -28,15 +27,13 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   const [trackedMentions, setTrackedMentions] = useState<TrackedMention[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<ImageData[]>([]);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus input when modal opens
+  // Reset form when modal opens
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      // Small delay to ensure modal is fully rendered
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+    if (isOpen) {
+      setPostContent('');
+      setTrackedMentions([]);
+      setImages([]);
     }
   }, [isOpen]);
 
@@ -47,57 +44,6 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
     onClose();
   };
 
-  const handleImagesChange = (newImages: ImageData[] | ((prev: ImageData[]) => ImageData[])) => {
-    if (typeof newImages === 'function') {
-      setImages(newImages);
-    } else {
-      setImages(newImages);
-    }
-  };
-
-  const renderPostPreview = () => {
-    if (!postContent.trim()) return null;
-
-    const elements: React.ReactElement[] = [];
-    let lastIndex = 0;
-
-    // Sort mentions by their position in the content (without @ symbol)
-    const mentionPositions = trackedMentions.map(mention => {
-      const index = postContent.indexOf(mention.name);
-      return { mention, index };
-    }).filter(m => m.index !== -1).sort((a, b) => a.index - b.index);
-
-    mentionPositions.forEach(({ mention, index }) => {
-      // Add text before mention
-      if (index > lastIndex) {
-        elements.push(
-          <span key={`text-${lastIndex}`} className="align-middle">{postContent.substring(lastIndex, index)}</span>
-        );
-      }
-
-      // Add mention as link
-      elements.push(
-        <MentionLink
-          key={`mention-${mention.id}`}
-          id={mention.id}
-          name={mention.name}
-          type={mention.type}
-          imageUrl={mention.imageUrl}
-        />
-      );
-
-      lastIndex = index + mention.name.length;
-    });
-
-    // Add remaining text
-    if (lastIndex < postContent.length) {
-      elements.push(
-        <span key={`text-${lastIndex}`} className="align-middle">{postContent.substring(lastIndex)}</span>
-      );
-    }
-
-    return elements.length > 0 ? elements : postContent;
-  };
 
   const createPost = async () => {
     if (!postContent.trim() || !user) return;
@@ -206,43 +152,65 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   return (
     <div
       className="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4"
-      style={{ zIndex: 9998 }}
+      style={{ zIndex: 9999 }}
       onClick={handleClose}
     >
       <div
-        className="rounded-2xl w-full max-w-2xl flex flex-col"
+        className="bg-surface-container rounded-2xl w-full max-w-2xl flex flex-col p-6"
+        style={{ zIndex: 10000 }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-onsurface-primary">Create Post</h2>
+          <button
+            onClick={handleClose}
+            className="p-2 hover:bg-surface-container-muted rounded-full transition-colors"
+          >
+            <svg className="w-5 h-5 text-onsurface-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
         {/* Content */}
-        <div className="flex-1 px-6 py-4">
-          <ChatInput
-            ref={inputRef}
+        <div className="flex-1">
+          <MentionInput
             value={postContent}
             onChange={setPostContent}
             onMentionsChange={setTrackedMentions}
-            onSubmit={createPost}
-            placeholder="What's on your mind? Use @ to mention people or projects..."
+            placeholder="What's on your mind? Type @ to mention people or projects..."
             userId={user?.id}
             disabled={isSubmitting}
-            loading={isSubmitting}
-            rows={3}
-            allowProjectCreation={true}
-            variant="post"
-            onImagesChange={handleImagesChange}
-            images={images}
+            rows={6}
+            autoFocus
           />
 
-          {/* Preview Section
-          {postContent.trim() && (
-            <div className="mt-4 p-4 bg-surface-container-muted rounded-lg">
-              <p className="text-sm text-onsurface-secondary mb-1">Preview:</p>
-              <div className="text-onsurface-primary">
-                {renderPostPreview()}
-              </div>
-            </div>
-          )} */}
+          {/* Submit Button */}
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm font-medium text-onsurface-secondary hover:bg-surface-container-muted rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={createPost}
+              disabled={isSubmitting || !postContent.trim()}
+              className="px-4 py-2 text-sm font-medium text-white dark:text-background bg-primary hover:bg-primary-hover disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Posting...
+                </>
+              ) : (
+                'Post'
+              )}
+            </button>
+          </div>
         </div>
-
       </div>
     </div>
   );

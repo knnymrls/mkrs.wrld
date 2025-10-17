@@ -33,6 +33,7 @@ export default function MentionLink({ id, name, type, imageUrl, icon, className 
       href={type === 'person' ? `/profile/${id}` : `/projects/${id}`}
       className={`mention-link text-onsurface-primary hover:bg-surface-container-muted rounded px-1 py-0.5 -my-0.5 transition-colors ${className}`}
       onClick={handleClick}
+      data-tag=""
       data-mention-type={type}
       data-mention-id={id}
       data-mention-name={name}

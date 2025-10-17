@@ -15,6 +15,7 @@ import ImageModal from '../ui/ImageModal';
 import LazyImage from '../ui/LazyImage';
 import { renderPostContentWithMentions } from '@/lib/mentions/renderPostMentions';
 import { Post } from '../../models/Post';
+import { Mention } from '../ui/mention';
 
 interface PostModalProps {
   post: Post;
@@ -696,9 +697,9 @@ export default function PostModal({ post, onClose, onUpdate, onDelete }: PostMod
               />
             </div>
           ) : (
-            <div className="text-onsurface-primary text-sm sm:text-base leading-relaxed whitespace-pre-wrap mb-3 sm:mb-4">
+            <Mention className="text-onsurface-primary text-sm sm:text-base leading-relaxed whitespace-pre-wrap mb-3 sm:mb-4">
               {renderPostContent(post)}
-            </div>
+            </Mention>
           )}
 
           {/* Post Image */}
