@@ -131,7 +131,7 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   if (loading) {
     return (
-      <Masonry.Root columnWidth={280} gap={12}>
+      <Masonry.Root columnWidth={280} gap={12} linear>
         <PostCardSkeleton count={4} variant="short" />
         <PostCardSkeleton count={4} variant="medium" />
         <PostCardSkeleton count={4} variant="long" />
@@ -150,7 +150,7 @@ const ActivityGrid = React.memo(function ActivityGrid({
 
   return (
     <>
-      <Masonry.Root columnWidth={280} gap={12}>
+      <Masonry.Root columnWidth={280} gap={12} linear>
         {items.map((item) => {
           switch (item.type) {
             case 'post':
@@ -197,7 +197,7 @@ const ActivityGrid = React.memo(function ActivityGrid({
       {hasMore && (
         <div ref={triggerRef} className="w-full py-8">
           {loadingMore && (
-            <Masonry.Root columnWidth={280} gap={12}>
+            <Masonry.Root columnWidth={280} gap={12} linear>
               <PostCardSkeleton count={3} variant="medium" />
             </Masonry.Root>
           )}
