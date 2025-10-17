@@ -132,7 +132,6 @@ const MasonryItem = React.forwardRef<HTMLDivElement, MasonryItemProps>(
     const itemStyle: React.CSSProperties = {
       ...style,
       breakInside: "avoid",
-      marginBottom: context.gap,
       width: "100%",
       display: "inline-block",
     };
