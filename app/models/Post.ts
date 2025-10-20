@@ -15,16 +15,17 @@ export interface Post {
     name: string;
     avatar_url: string | null;
   };
-  mentions: Array<{ 
-    id: string; 
-    name: string; 
-    type: 'person' | 'project'; 
+  mentions: Array<{
+    id: string;
+    name: string;
+    type: 'person' | 'project';
     imageUrl?: string | null;
     icon?: string | null;
   }>;
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
+  tag?: string | null;
   // Legacy single image fields (for backward compatibility)
   image_url?: string | null;
   image_width?: number | null;

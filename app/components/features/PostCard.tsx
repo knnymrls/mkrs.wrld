@@ -32,6 +32,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
+  tag?: string | null;
   // Legacy single image fields
   image_url?: string | null;
   image_width?: number | null;
@@ -111,81 +112,69 @@ const PostCard = React.memo(function PostCard({
   return (
     <>
       <div
-        className="bg-surface-container rounded-lg sm:rounded-xl border-[1px] border-border hover:scale-[1.02] sm:hover:scale-105 transition-all duration-200 overflow-hidden group cursor-pointer break-inside-avoid mb-3 sm:mb-4 touch-manipulation"
+        className="bg-surface-container rounded-[15px] border border-border cursor-pointer break-inside-avoid mb-4"
         onClick={() => onPostClick(post)}
       >
-        <div className="p-3 sm:p-4 flex flex-col gap-3">
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex w-full items-center justify-between">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
-                {post.author.avatar_url ? (
-                  <LazyImage
-                    src={post.author.avatar_url}
-                    alt={post.author.name}
-                    className=""
-                    placeholder="blur"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-sm sm:text-base">
-                    {post.author.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <p className="text-xs sm:text-sm text-onsurface-secondary">
-                {new Date(post.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: post.created_at.substring(0, 4) !== new Date().getFullYear().toString() ? 'numeric' : undefined
-                })}
-              </p>
+        <div className="p-4 flex flex-col gap-3">
+          {/* Top row: Avatar and Date/Tag */}
+          <div className="flex items-center justify-between w-full">
+            <div className="w-9 h-9 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+              {post.author.avatar_url ? (
+                <LazyImage
+                  src={post.author.avatar_url}
+                  alt={post.author.name}
+                  className="w-full h-full object-cover"
+                  placeholder="blur"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-onsurface-secondary font-medium text-base">
+                  {post.author.name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
+            {post.tag && (
+              <p className="text-sm text-onsurface-secondary font-medium">
+                #{post.tag}
+              </p>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-1 w-full">
-              <AuthorLink
-                authorId={post.author.id}
-                authorName={post.author.name}
-                className="text-xs sm:text-sm font-sans text-onsurface-secondary"
-              />
+          {/* Content section: Username and post text */}
+          <div className="flex flex-col gap-1 w-full">
+            <AuthorLink
+              authorId={post.author.id}
+              authorName={post.author.name}
+              className="text-sm font-medium text-onsurface-secondary"
+            />
 
-              <div className="text-sm sm:text-base text-onsurface-primary leading-relaxed whitespace-pre-wrap break-words">
-                {renderedContent}
-              </div>
+            <div className="text-base text-onsurface-primary leading-normal whitespace-pre-wrap break-words">
+              {renderedContent}
             </div>
           </div>
 
-          {/* Post Images Grid */}
+          {/* Post Images */}
           {images.length > 0 && (
-            <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' :
-              images.length === 2 ? 'grid-cols-2' :
-                images.length === 3 ? 'grid-cols-2' :
-                  'grid-cols-2'
-              }`}>
-              {images.map((image, index) => {
-                const aspectRatio = image.height / image.width;
-                const isVeryTall = aspectRatio > 1.5;
-
-                return (
-                  <div
-                    key={index}
-                    className={`relative overflow-hidden rounded-lg border border-border cursor-zoom-in hover:opacity-90 transition-opacity ${images.length === 3 && index === 0 ? 'col-span-2' : ''
-                      } ${isVeryTall ? 'max-h-[400px]' : ''}`}
-                    onClick={(e) => handleImageClick(e, image.url)}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`Post image ${index + 1}`}
-                      className={`w-full h-auto ${isVeryTall ? 'object-contain bg-surface-container' : 'object-cover'}`}
-                      loading="lazy"
-                    />
-                  </div>
-                );
-              })}
+            <div className="w-full">
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  className="relative overflow-hidden rounded-md cursor-zoom-in hover:opacity-90 transition-opacity"
+                  onClick={(e) => handleImageClick(e, image.url)}
+                >
+                  <img
+                    src={image.url}
+                    alt={`Post image ${index + 1}`}
+                    className="w-full h-auto object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Quick Comment Input and Like Button */}
+          {/* Bottom row: Comment Input and Like Button */}
           <div
-            className="flex items-end gap-1 sm:gap-2"
+            className="flex items-center gap-3 w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <QuickCommentInput

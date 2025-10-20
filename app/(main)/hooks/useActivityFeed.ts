@@ -7,7 +7,7 @@ import { ActivityItem } from '@/app/components/features/ActivityGrid';
 /**
  * Custom hook for managing activity feed data and operations
  */
-export function useActivityFeed(user: User | null) {
+export function useActivityFeed(user: User | null, selectedTag?: string | null) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -15,7 +15,7 @@ export function useActivityFeed(user: User | null) {
   const [page, setPage] = useState(0);
   const supabase = createClient();
 
-  const fetchPosts = useCallback(async (limit?: number, offset?: number) => {
+  const fetchPosts = useCallback(async (limit?: number, offset?: number, tag?: string | null) => {
     let query = supabase
       .from('posts')
       .select(`
@@ -23,6 +23,7 @@ export function useActivityFeed(user: User | null) {
         content,
         created_at,
         author_id,
+        tag,
         image_url,
         image_width,
         image_height,
@@ -59,7 +60,12 @@ export function useActivityFeed(user: User | null) {
         )
       `)
       .order('created_at', { ascending: false });
-    
+
+    // Filter by tag if specified
+    if (tag) {
+      query = query.eq('tag', tag);
+    }
+
     // Only apply range if limit is specified
     if (limit !== undefined) {
       query = query.range(offset || 0, (offset || 0) + limit - 1);
@@ -90,9 +96,9 @@ export function useActivityFeed(user: User | null) {
       setLoadingActivities(true);
       setPage(0);
       setHasMore(true);
-      
+
       // Fetch initial posts with a limit
-      const postsPromise = fetchPosts(20, 0);
+      const postsPromise = fetchPosts(20, 0, selectedTag);
 
       // Fetch all profiles (only on initial load)
       const profilesPromise = supabase
@@ -196,7 +202,7 @@ export function useActivityFeed(user: User | null) {
     } finally {
       setLoadingActivities(false);
     }
-  }, [fetchPosts]);
+  }, [fetchPosts, selectedTag]);
 
   const loadMoreActivities = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -205,9 +211,9 @@ export function useActivityFeed(user: User | null) {
       setLoadingMore(true);
       const nextPage = page + 1;
       const offset = nextPage * 20;
-      
+
       // Only fetch more posts for infinite scroll
-      const morePosts = await fetchPosts(20, offset);
+      const morePosts = await fetchPosts(20, offset, selectedTag);
       
       if (morePosts.length === 0) {
         setHasMore(false);

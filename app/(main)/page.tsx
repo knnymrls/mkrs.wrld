@@ -3,10 +3,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/layout/Navbar';
 import CreatePostModal from '../components/features/CreatePostModal';
 import PostModal from '../components/features/PostModal';
 import ActivityGrid, { ActivityItem } from '../components/features/ActivityGrid';
-import ActivityFeedHeader from './components/ActivityFeedHeader';
 import ContextTooltip from '../components/features/AIAssistant/ContextTooltip';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useActivityFeed } from './hooks/useActivityFeed';
@@ -26,6 +26,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   user_has_liked: boolean;
+  tag?: string | null;
   image_url?: string | null;
   image_width?: number | null;
   image_height?: number | null;
@@ -44,6 +45,7 @@ export default function Home() {
   const searchParams = useSearchParams();
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   // Use custom hooks
   const {
@@ -56,7 +58,7 @@ export default function Home() {
     updateActivity,
     removeActivity,
     addActivity
-  } = useActivityFeed(user);
+  } = useActivityFeed(user, selectedTag);
 
   const {
     toggleLike,
@@ -83,6 +85,12 @@ export default function Home() {
   useEffect(() => {
     fetchActivities();
   }, [fetchActivities]);
+
+  // Refetch when tag changes
+  useEffect(() => {
+    fetchActivities();
+  }, [selectedTag]);
+
 
   // Real-time subscriptions
   useRealtimeActivity({ 
@@ -171,12 +179,12 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Context-aware tooltips for AI suggestions */}
       {user && <ContextTooltip />}
-      
+
       <div className="px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12 mx-auto w-full">
-        <ActivityFeedHeader
-          userId={user?.id || null}
+        <Navbar
           onCreatePost={() => setIsCreatingPost(true)}
-          onPostClick={handleOpenPostFromNotification}
+          onTagChange={setSelectedTag}
+          selectedTag={selectedTag}
         />
 
         <ActivityGrid

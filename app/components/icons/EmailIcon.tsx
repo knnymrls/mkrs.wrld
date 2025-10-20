@@ -1,0 +1,25 @@
+export default function EmailIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 28 28"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M25.1014 2.84516C23.8015 1.57524 21.2983 1.31226 11.8243 5.11274C5.22138 7.76146 1.40734 9.32997 2.0754 13.3673C2.36876 15.1401 4.23588 17.862 6.33558 20.0508V24.0285C6.33558 25.7076 8.37524 26.589 9.64693 25.4596L11.2526 24.0334C12.3895 24.7224 13.4699 25.205 14.3313 25.3411C18.4637 25.9937 20.0692 22.2675 22.7804 15.8166C26.6703 6.56061 26.4011 4.11507 25.1014 2.84516Z"
+        stroke="currentColor"
+        strokeWidth="2.19"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.80462 19.4805C10.0658 15.216 14.5232 11.2568 19.2358 7.55175"
+        stroke="currentColor"
+        strokeWidth="2.19"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

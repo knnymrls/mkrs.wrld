@@ -16,6 +16,7 @@ export interface RawPostData {
   content: string;
   created_at: string;
   author_id: string;
+  tag?: string | null;
   profiles?: PartialProfile | PartialProfile[] | null;
   post_mentions?: Array<{
     profile_id: string;
@@ -161,6 +162,7 @@ export async function formatPost(postData: RawPostData, user: User | null): Prom
     likes_count: likesCount,
     comments_count: commentsCount,
     user_has_liked: userHasLiked,
+    tag: post.tag,
     image_url: post.image_url,
     image_width: post.image_width,
     image_height: post.image_height,
