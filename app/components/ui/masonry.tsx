@@ -107,7 +107,9 @@ const MasonryRoot = React.forwardRef<HTMLDivElement, MasonryRootProps>(
     }
 
     return (
-      <MasonryContext.Provider value={{ gap, columnWidth, columnCount, linear }}>
+      <MasonryContext.Provider
+        value={{ gap, columnWidth, columnCount, linear }}
+      >
         <div ref={ref} className={className} style={masonryStyle} {...props}>
           {children}
         </div>
@@ -119,7 +121,10 @@ const MasonryRoot = React.forwardRef<HTMLDivElement, MasonryRootProps>(
 MasonryRoot.displayName = "MasonryRoot";
 
 const MasonryItem = React.forwardRef<HTMLDivElement, MasonryItemProps>(
-  ({ asChild = false, fallback, className, style, children, ...props }, ref) => {
+  (
+    { asChild = false, fallback, className, style, children, ...props },
+    ref
+  ) => {
     const context = useMasonryContext();
     const [isVisible, setIsVisible] = React.useState(false);
     const itemRef = React.useRef<HTMLDivElement>(null);

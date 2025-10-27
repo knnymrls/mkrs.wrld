@@ -124,7 +124,7 @@ export default function MessageThread({ conversationId, participants }: MessageT
 
     // Subscribe to other user's read status updates
     const otherUserId = participants[0]?.id;
-    let readChannel;
+    let readChannel: ReturnType<typeof supabase.channel> | undefined;
     if (otherUserId) {
       readChannel = supabase
         .channel(`read-status:${conversationId}`)

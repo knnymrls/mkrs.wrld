@@ -26,6 +26,14 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Geist:wght@100..900&display=swap" rel="stylesheet" />
+        <style>{`
+          @font-face {
+            font-family: 'Satoshi Variable';
+            src: url('/fonts/Satoshi-Variable.ttf') format('truetype');
+            font-weight: 100 900;
+            font-style: normal;
+          }
+        `}</style>
       </head>
       <body>
         <ThemeProvider>

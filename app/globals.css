@@ -2,8 +2,8 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #fbfbfb;
-  --foreground: #171717;
+  --background: #f7f7fa;
+  --foreground: #121212;
 
   /* Custom colors for the app */
   --primary: #121212;
@@ -11,8 +11,8 @@
   --surface-container: #ffffff;
   --surface-container-muted: #f0f0f0;
   --border: #eee;
-  --onsurface-primary: #464646;
-  --onsurface-secondary: #999999;
+  --onsurface-primary: #121212;
+  --onsurface-secondary: #616972;
 
   /* Additional colors */
   --onprimary: #ffffff;
@@ -23,7 +23,7 @@
   --warning: #f59e0b;
   --onwarning: #ffffff;
   --avatar-bg: #e5e5e5;
-  --surface: #fbfbfb;
+  --surface: #f7f7fa;
 }
 
 /* Dark mode with class-based approach */
