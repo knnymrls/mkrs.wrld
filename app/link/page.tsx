@@ -36,18 +36,7 @@ const labelClass =
 export default function EventPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="px-6 pt-8 pb-6 md:px-12 md:pt-10">
-        <div className="flex justify-end">
-          <Link
-            href="https://mkrs.world"
-            className="text-[1.1rem] font-medium leading-tight text-foreground/80 transition-colors hover:text-foreground md:text-[1.3rem]"
-            aria-label="Visit mkrs.world"
-          >
-            mkrs.
-          </Link>
-        </div>
-      </div>
-      <main className="mx-auto flex max-w-5xl flex-col gap-28 px-6 pb-16 md:gap-32 md:px-12 md:pb-24">
+      <main className="mx-auto flex max-w-5xl flex-col gap-28 px-6 pt-8 pb-16 md:gap-32 md:px-12 md:pt-10 md:pb-24">
         <section className="flex min-h-[80vh] items-center py-12 md:py-20">
           <div className="flex w-full flex-col gap-12">
             <div className="space-y-6 text-left">
