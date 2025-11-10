@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Button } from "../components/ui/button"
+import { LinkPreview } from "@/components/ui/link-preview"
 
 const eveningFlow = [
   {
@@ -65,12 +66,12 @@ export default function EventPage() {
               <span className="text-foreground/30">•</span>
               <p>5:30–7:30 PM</p>
               <span className="text-foreground/30">•</span>
-              <Link
-                href="https://www.talonroom.com/"
+              <LinkPreview
+                url="https://www.talonroom.com/"
                 className="underline decoration-foreground/20 underline-offset-4 transition-all duration-200 hover:text-foreground hover:decoration-foreground/60"
               >
                 The Talon Room
-              </Link>
+              </LinkPreview>
             </div>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-5">
               <Button
