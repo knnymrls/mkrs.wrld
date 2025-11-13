@@ -27,19 +27,19 @@ export default function EnhancedGraphControls({
   const [expandedSection, setExpandedSection] = useState<'types' | null>('types');
 
   return (
-    <div className="absolute top-20 left-4 z-20 bg-surface-bright/80 backdrop-blur-md rounded-lg border border-border w-64 max-h-[calc(100vh-120px)] overflow-y-auto">
+    <div className="bg-surface-container border border-border rounded-xl p-4 w-full sm:w-auto sm:min-w-[280px] max-h-[calc(100vh-320px)] overflow-y-auto">
       {/* Types Section */}
-      <div className="border-b border-border/50">
+      <div className="border-b border-border mb-3 pb-3">
         <button
           onClick={() => setExpandedSection(expandedSection === 'types' ? null : 'types')}
-          className="w-full p-3 flex items-center justify-between hover:bg-surface-container-muted transition-colors"
+          className="w-full p-2 flex items-center justify-between hover:bg-surface-container-muted rounded-lg transition-colors"
         >
           <h3 className="text-sm font-medium text-onsurface-primary">Entity Types</h3>
           {expandedSection === 'types' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         
         {expandedSection === 'types' && (
-          <div className="p-3 pt-0 space-y-2">
+          <div className="pt-2 space-y-2">
             <button
               onClick={onTogglePeople}
               className={`w-full flex items-center justify-between p-2 rounded-md transition-all ${
@@ -95,7 +95,7 @@ export default function EnhancedGraphControls({
       </div>
 
       {/* Connection threshold */}
-      <div className="p-3">
+      <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-xs text-onsurface-secondary">
             Min Connections
