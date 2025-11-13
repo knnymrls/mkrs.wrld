@@ -42,7 +42,7 @@ export default function Sidebar() {
     { Icon: SearchIcon, href: "/explore", label: "Explore" },
     { Icon: EmailIcon, href: "/messages", label: "Messages" },
     { Icon: ArchiveIcon, href: "/saved", label: "Saved" },
-    { Icon: ProjectsIcon, href: "/projects", label: "Projects" },
+    { Icon: ProjectsIcon, href: "/graph", label: "Graph" },
     { Icon: CalendarIcon, href: "/events", label: "Events" },
   ];
 
