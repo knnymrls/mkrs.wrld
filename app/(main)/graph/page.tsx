@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Search, Sun, Moon, Monitor } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Filter, Users, Briefcase, MessageCircle, X, ChevronRight, Search } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import Image from 'next/image';
 import GraphModeSelector, { GraphMode } from '@/app/components/features/graph/GraphModeSelector';
@@ -25,7 +25,7 @@ interface Link {
 
 export default function GraphPage() {
     const router = useRouter();
-    const { theme, setTheme, resolvedTheme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: Link[] }>({ nodes: [], links: [] });
     const [filteredData, setFilteredData] = useState<{ nodes: GraphNode[]; links: Link[] }>({ nodes: [], links: [] });
     const [loading, setLoading] = useState(true);
@@ -53,31 +53,33 @@ export default function GraphPage() {
     const [showProjects, setShowProjects] = useState(true);
     const [showPosts, setShowPosts] = useState(true);
     const [connectionThreshold, setConnectionThreshold] = useState(0);
+    const [viewMode, setViewMode] = useState<'graph' | 'people'>('graph');
 
-    // Theme-aware colors for canvas rendering - Obsidian style
+    // Theme-aware colors for canvas rendering - Bright, readable nodes
     const canvasColors = useMemo(() => {
         const isDark = resolvedTheme === 'dark';
         return {
-            nodeDefault: isDark ? '#9CA3AF' : '#6B7280',
-            nodeProfile: isDark ? '#8B5CF6' : '#7C3AED', // Purple for profiles
-            nodeProject: isDark ? '#F59E0B' : '#D97706', // Amber for projects
-            nodePost: isDark ? '#10B981' : '#059669', // Green for posts
-            placeholder: isDark ? '#6B7280' : '#9CA3AF',
-            label: isDark ? '#D1D5DB' : '#4B5563', // Lighter labels for better visibility
-            link: isDark ? '#4B5563' : '#9CA3AF', // Subtle gray links
+            nodeDefault: isDark ? '#D1D5DB' : '#4B5563', // Brighter gray for better contrast
+            nodeProfile: isDark ? '#C4B5FD' : '#9333EA', // Brighter purple - more vibrant
+            nodeProject: isDark ? '#FCD34D' : '#F59E0B', // Brighter amber - more saturated
+            nodePost: isDark ? '#6EE7B7' : '#10B981', // Brighter green - more vibrant
+            placeholder: isDark ? '#9CA3AF' : '#D1D5DB', // Light gray placeholder
+            label: isDark ? '#F3F4F6' : '#374151', // Darker label text for better readability
+            link: isDark ? '#6B7280' : '#D1D5DB', // Very light, soft links (keeping as is)
             background: 'transparent',
             statusActive: '#10B981',
             statusPaused: '#F59E0B',
-            statusInactive: isDark ? '#6B7280' : '#9CA3AF'
+            statusInactive: isDark ? '#9CA3AF' : '#D1D5DB'
         };
     }, [resolvedTheme]);
 
-    // Update dimensions on window resize
+    // Update dimensions on window resize - full canvas
     useEffect(() => {
         const updateDimensions = () => {
+            const topBarHeight = 56; // Approximate top bar height
             setDimensions({
                 width: window.innerWidth,
-                height: window.innerHeight
+                height: window.innerHeight - topBarHeight
             });
         };
 
@@ -86,12 +88,29 @@ export default function GraphPage() {
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
 
-    // Initialize graph forces for expanded layout
+    // Initialize graph forces for fluid layout - expanded from start
     useEffect(() => {
         if (graphRef.current && filteredData.nodes.length > 0) {
-            graphRef.current.d3Force('charge').strength(-200);
-            graphRef.current.d3Force('link').distance(60);
-            graphRef.current.d3Force('center').strength(0.05);
+            // Set forces immediately
+            const charge = graphRef.current.d3Force('charge');
+            const link = graphRef.current.d3Force('link');
+            const center = graphRef.current.d3Force('center');
+            
+            if (charge) charge.strength(-400); // Very strong repulsion
+            if (link) link.distance(120); // Large distance between nodes
+            if (center) center.strength(0.01); // Very weak centering
+            
+            // Force restart simulation to apply immediately
+            setTimeout(() => {
+                if (graphRef.current) {
+                    const charge = graphRef.current.d3Force('charge');
+                    const link = graphRef.current.d3Force('link');
+                    if (charge) charge.strength(-400);
+                    if (link) link.distance(120);
+                    // Reheat simulation to restart with new forces
+                    (graphRef.current as any).d3ReheatSimulation?.();
+                }
+            }, 100);
         }
     }, [filteredData]);
 
@@ -154,7 +173,9 @@ export default function GraphPage() {
         setFilteredData({ nodes: filteredNodes, links: filteredLinks });
     }, [graphData, showPeople, showPosts, showProjects, connectionThreshold, nodeConnectionCounts]);
 
-    // Calculate graph statistics
+    // Calculate graph statistics and node importance
+    const [nodeImportance, setNodeImportance] = useState<{ [id: string]: number }>({});
+    
     useEffect(() => {
         if (!filteredData.nodes.length) return;
 
@@ -174,6 +195,15 @@ export default function GraphPage() {
                 mostConnected = node;
             }
         });
+
+        // Calculate importance scores (0-1) based on connections
+        const maxConn = Math.max(...Object.values(nodeConnectionCounts), 1);
+        const importance: { [id: string]: number } = {};
+        filteredData.nodes.forEach(node => {
+            const connections = nodeConnectionCounts[node.id] || 0;
+            importance[node.id] = maxConn > 0 ? connections / maxConn : 0;
+        });
+        setNodeImportance(importance);
 
         setGraphStats({
             totalNodes: filteredData.nodes.length,
@@ -430,16 +460,45 @@ export default function GraphPage() {
 
 
     return (
-        <div className="relative w-full h-screen bg-background overflow-hidden">
-            {/* Unified Control Panel - Top Left */}
-            <div className="absolute top-6 left-6 z-10 flex flex-col gap-3">
-                <GraphModeSelector currentMode={currentMode} onModeChange={setCurrentMode} />
+        <div className="relative w-full h-screen overflow-hidden bg-background">
+            {/* Top Bar - View Switcher */}
+            <div className="absolute top-0 left-0 right-0 z-30 bg-surface-container/80 backdrop-blur-md border-b border-border w-full">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-3 w-full max-w-full">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* View Switcher */}
+                        <div className="flex items-center gap-2 bg-surface-container-muted rounded-xl p-1">
+                            <button
+                                onClick={() => setViewMode('graph')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    viewMode === 'graph'
+                                        ? 'bg-surface-container text-onsurface-primary shadow-sm'
+                                        : 'text-onsurface-secondary hover:text-onsurface-primary'
+                                }`}
+                            >
+                                Graph
+                            </button>
+                            <button
+                                onClick={() => setViewMode('people')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    viewMode === 'people'
+                                        ? 'bg-surface-container text-onsurface-primary shadow-sm'
+                                        : 'text-onsurface-secondary hover:text-onsurface-primary'
+                                }`}
+                            >
+                                People
+                            </button>
+                        </div>
 
-                {currentMode === 'network' && (
-                    <>
+                        {/* Graph-specific controls - only show in graph mode */}
+                        {viewMode === 'graph' && (
+                            <>
+                                <div className="bg-surface-container-muted border border-border rounded-xl px-3 py-1.5 flex-shrink-0">
+                                    <GraphModeSelector currentMode={currentMode} onModeChange={setCurrentMode} />
+                                </div>
+
                         {/* Search */}
-                        <div className="bg-surface-container/95 backdrop-blur-xl rounded-xl p-2 border border-border/30 shadow-sm">
-                            <div className="relative">
+                                {currentMode === 'network' && (
+                                    <div className="relative w-64 flex-shrink-0">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-onsurface-secondary w-4 h-4" />
                                 <input
                                     type="text"
@@ -449,98 +508,186 @@ export default function GraphPage() {
                                         setSearchQuery(e.target.value);
                                         handleSearch(e.target.value);
                                     }}
-                                    className="w-56 pl-9 pr-3 py-2 bg-transparent text-foreground text-sm rounded-lg focus:outline-none placeholder:text-onsurface-secondary/60"
+                                            className="w-full pl-10 pr-4 py-2 bg-surface-container border border-border text-foreground text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-onsurface-secondary/60 transition-all"
                                 />
                             </div>
-                        </div>
-
-                        {/* Filter Button */}
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className={`bg-surface-container/95 backdrop-blur-xl text-foreground px-3 py-2 rounded-xl hover:bg-surface-container transition-all flex items-center gap-2 border border-border/30 shadow-sm ${showFilters ? 'bg-surface-container' : ''}`}
-                        >
-                            <Filter className="w-4 h-4" />
-                            <span className="text-sm font-medium">Filters</span>
-                        </button>
+                                )}
                     </>
                 )}
+
+                        {/* People view search */}
+                        {viewMode === 'people' && (
+                            <div className="relative flex-1 max-w-md min-w-0">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-onsurface-secondary w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search people, projects, posts..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 bg-surface-container border border-border text-foreground text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-onsurface-secondary/60 transition-all"
+                                />
+                            </div>
+                        )}
             </div>
 
-            {/* Unified Controls - Top Right */}
-            <div className="absolute top-6 right-6 z-10 flex gap-2">
-                {/* Theme Toggle */}
-                <div className="bg-surface-container/95 backdrop-blur-xl rounded-xl p-1.5 border border-border/30 shadow-sm flex gap-1">
+                    {/* Right side controls - only for graph mode */}
+                    {viewMode === 'graph' && currentMode === 'network' && (
+                        <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                        onClick={() => setTheme('light')}
-                        className={`p-2 rounded-lg transition-all ${
-                            theme === 'light' ? 'bg-primary text-white dark:text-background shadow-sm' : 'hover:bg-surface-container-muted text-onsurface-secondary'
-                        }`}
-                        title="Light Mode"
-                    >
-                        <Sun className="w-4 h-4" />
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`px-3 py-2 bg-surface-container border border-border rounded-xl hover:bg-surface-container-muted transition-all flex items-center gap-2 text-sm ${
+                                    showFilters ? 'bg-surface-container-muted text-onsurface-primary' : 'text-onsurface-secondary'
+                                }`}
+                            >
+                                <Filter className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={() => setTheme('dark')}
-                        className={`p-2 rounded-lg transition-all ${
-                            theme === 'dark' ? 'bg-primary text-white dark:text-background shadow-sm' : 'hover:bg-surface-container-muted text-onsurface-secondary'
-                        }`}
-                        title="Dark Mode"
-                    >
-                        <Moon className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => setTheme('system')}
-                        className={`p-2 rounded-lg transition-all ${
-                            theme === 'system' ? 'bg-primary text-white dark:text-background shadow-sm' : 'hover:bg-surface-container-muted text-onsurface-secondary'
-                        }`}
-                        title="System Theme"
-                    >
-                        <Monitor className="w-4 h-4" />
-                    </button>
-                </div>
 
-                {/* Zoom Controls */}
-                <div className="bg-surface-container/95 backdrop-blur-xl rounded-xl p-1.5 border border-border/30 shadow-sm flex gap-1">
+                            <div className="bg-surface-container-muted border border-border rounded-xl p-1 flex gap-1">
                     <button
                         onClick={handleZoomIn}
-                        className="p-2 text-onsurface-secondary rounded-lg hover:bg-surface-container-muted hover:text-foreground transition-all"
+                                    className="p-1.5 text-onsurface-secondary rounded-lg hover:bg-surface-container hover:text-onsurface-primary transition-all"
                         title="Zoom In"
                     >
                         <ZoomIn className="w-4 h-4" />
                     </button>
                     <button
                         onClick={handleZoomOut}
-                        className="p-2 text-onsurface-secondary rounded-lg hover:bg-surface-container-muted hover:text-foreground transition-all"
+                                    className="p-1.5 text-onsurface-secondary rounded-lg hover:bg-surface-container hover:text-onsurface-primary transition-all"
                         title="Zoom Out"
                     >
                         <ZoomOut className="w-4 h-4" />
                     </button>
                     <button
                         onClick={handleZoomReset}
-                        className="p-2 text-onsurface-secondary rounded-lg hover:bg-surface-container-muted hover:text-foreground transition-all"
+                                    className="p-1.5 text-onsurface-secondary rounded-lg hover:bg-surface-container hover:text-onsurface-primary transition-all"
                         title="Fit to Screen"
                     >
                         <Maximize2 className="w-4 h-4" />
                     </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Legacy Search Bar - Hidden but kept for compatibility */}
             <div className="hidden" ref={searchInputRef}></div>
 
-            {/* Main Content */}
-            <div className="relative w-full h-full">
+            {/* Main Canvas Area - Full screen */}
+            <div className="absolute top-14 left-0 right-0 bottom-0">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full">
                         <div className="text-center">
                             <div className="text-5xl mb-3">🔗</div>
-                            <p className="text-sm text-onsurface-secondary font-medium">Loading knowledge graph...</p>
+                            <p className="text-sm text-onsurface-secondary font-medium">Loading...</p>
                         </div>
                     </div>
+                ) : viewMode === 'people' ? (
+                    /* People View - Flex Wrap Grid */
+                    <div className="h-full overflow-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="flex flex-wrap gap-4">
+                            {filteredData.nodes
+                                .filter(node => {
+                                    // Filter by search query
+                                    if (searchQuery.trim()) {
+                                        const query = searchQuery.toLowerCase();
+                                        return node.label.toLowerCase().includes(query) ||
+                                            (node.type === 'profile' && (node as ProfileNode).title?.toLowerCase().includes(query)) ||
+                                            (node.type === 'project' && (node as ProjectNode).description?.toLowerCase().includes(query));
+                                    }
+                                    return true;
+                                })
+                                .map((node) => {
+                                    if (node.type === 'profile') {
+                                        const profile = node as ProfileNode;
+                                        return (
+                                            <div key={node.id} className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+                                                <div
+                                                    className="bg-surface-container rounded-xl border border-border hover:scale-[1.02] transition-all cursor-pointer h-full"
+                                                    onClick={() => router.push(`/profile/${profile.id}`)}
+                                                >
+                                                    <div className="p-4 flex flex-col gap-3">
+                                                        <div className="flex items-center gap-3">
+                                                            {profile.avatar_url ? (
+                                                                <Image
+                                                                    src={profile.avatar_url}
+                                                                    alt={profile.label}
+                                                                    width={44}
+                                                                    height={44}
+                                                                    className="rounded-full"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-11 h-11 bg-avatar-bg rounded-full flex items-center justify-center text-onsurface-secondary font-medium">
+                                                                    {profile.label.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-medium text-onsurface-primary truncate">{profile.label}</h3>
+                                                                {profile.title && (
+                                                                    <p className="text-sm text-onsurface-secondary truncate">{profile.title}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {profile.location && (
+                                                            <p className="text-xs text-onsurface-secondary">📍 {profile.location}</p>
+                                                        )}
+                                                        {profile.skills && profile.skills.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {profile.skills.slice(0, 4).map((skill, i) => (
+                                                                    <span key={i} className="px-2 py-0.5 bg-surface-container-muted text-onsurface-primary text-xs rounded-lg">
+                                                                        {skill}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    } else if (node.type === 'project') {
+                                        const project = node as ProjectNode;
+                                        const projectId = node.id.replace('project-', '');
+                                        return (
+                                            <div key={node.id} className="w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]">
+                                                <div
+                                                    className="bg-surface-container rounded-xl border border-border hover:scale-[1.02] transition-all cursor-pointer h-full"
+                                                    onClick={() => router.push(`/projects/${projectId}`)}
+                                                >
+                                                    <div className="p-4 flex flex-col gap-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-11 h-11 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium">
+                                                                {project.label.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-medium text-onsurface-primary truncate">{project.label}</h3>
+                                                                {project.status && (
+                                                                    <p className="text-xs text-onsurface-secondary capitalize">{project.status}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {project.description && (
+                                                            <p className="text-sm text-onsurface-primary line-clamp-2">{project.description}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })}
+                        </div>
+                        {filteredData.nodes.length === 0 && (
+                            <div className="flex items-center justify-center h-full">
+                                <p className="text-onsurface-secondary">No results found</p>
+                            </div>
+                        )}
+                    </div>
                 ) : (
+                    /* Graph View - Full Canvas */
                     <>
-                        {/* Graph Controls */}
-                        {showFilters && (
+                        {/* Floating Graph Controls */}
+                        {showFilters && currentMode === 'network' && (
+                            <div className="absolute top-4 left-4 z-20">
                             <EnhancedGraphControls
                                 showPeople={showPeople}
                                 showProjects={showProjects}
@@ -551,8 +698,11 @@ export default function GraphPage() {
                                 connectionThreshold={connectionThreshold}
                                 onConnectionThresholdChange={setConnectionThreshold}
                             />
+                            </div>
                         )}
 
+                        {/* Graph Canvas Container - Full Screen */}
+                        <div className="relative w-full h-full overflow-hidden">
                         {/* Node Details Panel - Show on hover or click */}
                         {(hoveredNode || clickedNode) && (() => {
                             const nodeId = clickedNode || hoveredNode;
@@ -560,7 +710,7 @@ export default function GraphPage() {
                             if (!nodeData) return null;
 
                             return (
-                                <div className={`absolute top-24 right-6 z-20 bg-surface-container/95 backdrop-blur-xl rounded-2xl border border-border/30 shadow-lg p-5 w-72 ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                                        <div className={`absolute top-4 right-4 z-20 bg-surface-container border border-border rounded-xl shadow-lg p-5 w-72 ${clickedNode ? 'pointer-events-auto' : 'pointer-events-none'}`}>
                                     {/* Close button for clicked nodes */}
                                     {clickedNode && (
                                         <button
@@ -683,7 +833,7 @@ export default function GraphPage() {
                                                         router.push(`/projects/${projectId}`);
                                                     }
                                                 }}
-                                                className="w-full mt-2 px-4 py-2.5 bg-primary text-white dark:text-background hover:bg-primary-hover transition-all rounded-xl font-medium text-sm flex items-center justify-center gap-2"
+                                                className="w-full mt-2 px-4 py-2.5 bg-primary text-primary-foreground hover:bg-primary-hover transition-all rounded-xl font-medium text-sm flex items-center justify-center gap-2"
                                             >
                                                 View Full Page
                                                 <ChevronRight size={16} />
@@ -695,7 +845,6 @@ export default function GraphPage() {
                         })()}
 
                         {/* Graph Canvas - Mode-specific rendering */}
-                        <div className="w-full h-full">
                             {currentMode === 'skill-radar' ? (
                                 <SkillRadarVisualization
                                     graphData={graphData}
@@ -704,7 +853,6 @@ export default function GraphPage() {
                                     onNodeHover={(node: any) => setHoveredNode(node?.id || null)}
                                 />
                             ) : (
-                                <div className="w-full h-full">
                                     <ForceGraph2D
                                 ref={graphRef}
                                 graphData={filteredData}
@@ -721,21 +869,35 @@ export default function GraphPage() {
                                     setHoveredNode(null);
                                     setClickedNode(null);
                                 }}
-                                cooldownTicks={100}
+                                cooldownTicks={300}
                                 minZoom={0.1}
                                 maxZoom={4}
                                 enableZoomInteraction={true}
                                 enableNodeDrag={true}
-                                d3AlphaDecay={0.02}
-                                d3VelocityDecay={0.4}
+                                d3AlphaDecay={0.008}
+                                d3VelocityDecay={0.25}
                                 dagMode={undefined}
                                 dagLevelDistance={undefined}
-                                onEngineStop={() => {
-                                    // Obsidian-style: More breathing room
+                                onEngineStart={() => {
+                                    // Set expanded forces immediately when engine starts
                                     if (graphRef.current) {
-                                        graphRef.current.d3Force('charge').strength(-200); // More repulsion for cleaner layout
-                                        graphRef.current.d3Force('link').distance(60); // More space between nodes
-                                        graphRef.current.d3Force('center').strength(0.05);
+                                        const charge = graphRef.current.d3Force('charge');
+                                        const link = graphRef.current.d3Force('link');
+                                        const center = graphRef.current.d3Force('center');
+                                        if (charge) charge.strength(-400);
+                                        if (link) link.distance(120);
+                                        if (center) center.strength(0.01);
+                                    }
+                                }}
+                                onEngineStop={() => {
+                                    // Keep expanded layout - maintain spacing
+                                    if (graphRef.current) {
+                                        const charge = graphRef.current.d3Force('charge');
+                                        const link = graphRef.current.d3Force('link');
+                                        const center = graphRef.current.d3Force('center');
+                                        if (charge) charge.strength(-350); // Keep very strong repulsion
+                                        if (link) link.distance(110); // Maintain large distance
+                                        if (center) center.strength(0.01); // Very weak centering
                                     }
                                 }}
                                 nodeCanvasObjectMode={() => 'replace'}
@@ -748,9 +910,9 @@ export default function GraphPage() {
                                         // These will be drawn with lower opacity
                                     }
                                     
-                                    // Node styling based on type - cleaner, larger nodes
+                                    // Node styling based on type - clean and minimal
                                     let color = canvasColors.nodeDefault;
-                                    let baseSize = 5; // Increased base size
+                                    let baseSize = 5; // Base size
 
                                     if (node.type === 'profile') {
                                         color = canvasColors.nodeProfile;
@@ -763,21 +925,29 @@ export default function GraphPage() {
                                         baseSize = 4;
                                     }
 
-                                    // Size based on connections - smoother scaling
+                                    // Calculate importance and size - subtle, fluid scaling
                                     const connections = nodeConnectionCounts[node.id as string] || 0;
-                                    const size = baseSize + Math.sqrt(connections) * 1;
+                                    const importance = nodeImportance[node.id] || 0;
+                                    // Subtle size scaling: important nodes get slightly larger
+                                    const sizeMultiplier = 1 + (importance * 0.8); // 1x to 1.8x base size - more subtle
+                                    const size = baseSize * sizeMultiplier;
                                     
-                                    // Obsidian-style opacity: More subtle fade
+                                    // Use base color - keep it clean and minimal
+                                    const nodeColor = color;
+                                    
+                                    // Bright, readable opacity
                                     if (!hoveredNode) {
-                                        ctx.globalAlpha = 0.9; // Slightly transparent in normal state
+                                        ctx.globalAlpha = 0.9 + (importance * 0.1); // More opaque for better visibility
                                     } else {
-                                        ctx.globalAlpha = isRelated ? 1 : 0.15; // Gentle fade for non-related
+                                        ctx.globalAlpha = isRelated ? 1 : 0.15; // More visible fade for non-related
                                     }
                                     
                                     // Skip rendering if node position is not initialized
                                     if (!isFinite(node.x!) || !isFinite(node.y!)) return;
                                     
-                                    // Obsidian-style: Outlined nodes
+                                    // Fluid, minimal outlined nodes - soft lines
+                                    const lineWidth = isHovered ? 1.5 : (0.8 + importance * 0.4); // Thinner, softer lines
+                                    
                                     if (node.type === 'profile' && (node as ProfileNode).avatar_url) {
                                         // Profile with avatar - show image with outline
                                         ctx.save();
@@ -806,67 +976,78 @@ export default function GraphPage() {
 
                                         ctx.restore();
 
-                                        // Draw outline around avatar
+                                        // Draw outline around avatar - brighter for important nodes
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = isHovered ? canvasColors.nodeProfile : canvasColors.nodeProfile;
-                                        ctx.lineWidth = isHovered ? 2.5 : 2;
+                                        ctx.strokeStyle = nodeColor;
+                                        ctx.lineWidth = lineWidth;
                                         ctx.stroke();
                                     } else if (node.type === 'profile') {
                                         // Profile without image - outlined circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = canvasColors.nodeProfile;
-                                        ctx.lineWidth = isHovered ? 2.5 : 2;
+                                        ctx.strokeStyle = nodeColor;
+                                        ctx.lineWidth = lineWidth;
                                         ctx.stroke();
 
-                                        // Small filled center dot
+                                        // Small filled center dot - minimal variation
+                                        const dotSize = size * 0.3;
                                         ctx.beginPath();
-                                        ctx.arc(node.x!, node.y!, size * 0.3, 0, 2 * Math.PI);
-                                        ctx.fillStyle = canvasColors.nodeProfile;
+                                        ctx.arc(node.x!, node.y!, dotSize, 0, 2 * Math.PI);
+                                        ctx.fillStyle = nodeColor;
                                         ctx.fill();
                                     } else if (node.type === 'project') {
                                         // Project nodes - outlined circle
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.strokeStyle = canvasColors.nodeProject;
-                                        ctx.lineWidth = isHovered ? 2.5 : 2;
+                                        ctx.strokeStyle = nodeColor;
+                                        ctx.lineWidth = lineWidth;
                                         ctx.stroke();
 
                                         // Small filled center dot
+                                        const dotSize = size * 0.3;
                                         ctx.beginPath();
-                                        ctx.arc(node.x!, node.y!, size * 0.3, 0, 2 * Math.PI);
-                                        ctx.fillStyle = canvasColors.nodeProject;
+                                        ctx.arc(node.x!, node.y!, dotSize, 0, 2 * Math.PI);
+                                        ctx.fillStyle = nodeColor;
                                         ctx.fill();
                                     } else {
-                                        // Post nodes - simple filled circles
+                                        // Post nodes - simple filled circles with size variation
                                         ctx.beginPath();
                                         ctx.arc(node.x!, node.y!, size, 0, 2 * Math.PI);
-                                        ctx.fillStyle = canvasColors.nodePost;
+                                        ctx.fillStyle = nodeColor;
                                         ctx.fill();
                                     }
                                     
-                                    // Draw labels when zoomed in - fixed visibility
-                                    if ((node.type === 'profile' || node.type === 'project') &&
-                                        isFinite(node.x!) && isFinite(node.y!) && globalScale > 1.2) {
-                                        // Show labels when zoomed IN (globalScale > threshold)
-                                        const labelOpacity = Math.min((globalScale - 1.2) * 1.5, 1);
-                                        if (!hoveredNode) {
-                                            ctx.globalAlpha = labelOpacity;
-                                        } else {
-                                            ctx.globalAlpha = isRelated ? labelOpacity : labelOpacity * 0.15;
+                                    // Draw labels - fluid, appear smoothly on zoom or hover
+                                    const shouldShowLabel = (node.type === 'profile' || node.type === 'project') &&
+                                        isFinite(node.x!) && isFinite(node.y!) && 
+                                        (globalScale > 1.05 || isHovered || importance > 0.6);
+                                    
+                                    if (shouldShowLabel) {
+                                        const label = node.label && node.label.length > 30 ? node.label.slice(0, 30) + '...' : node.label;
+                                        
+                                        // Fluid label opacity - smooth fade in/out
+                                        let labelOpacity = 1;
+                                        if (importance <= 0.6 && !isHovered) {
+                                            // Smooth interpolation for zoom-based visibility
+                                            labelOpacity = Math.max(0, Math.min((globalScale - 1.05) * 3, 1));
                                         }
-                                        const label = node.label && node.label.length > 20 ? node.label.slice(0, 20) + '...' : node.label;
-
-                                        // Obsidian-style typography - smaller text
-                                        const fontSize = 9;
-                                        ctx.font = `500 ${fontSize}px DM Sans, sans-serif`;
-
-                                        // Text with better contrast
-                                        ctx.fillStyle = canvasColors.label;
+                                        
+                                        if (!hoveredNode && importance <= 0.6) {
+                                            ctx.globalAlpha = labelOpacity * 0.85; // Slightly more transparent
+                                        } else {
+                                            ctx.globalAlpha = isRelated ? labelOpacity : labelOpacity * 0.08; // Softer fade
+                                        }
+                                        
+                                        // Light, fluid typography
+                                        const fontSize = 8.5;
+                                        ctx.font = `400 ${fontSize}px DM Sans, sans-serif`; // Lighter weight
+                                        
+                                        // Soft, minimal text
                                         ctx.textAlign = 'center';
                                         ctx.textBaseline = 'top';
-                                        ctx.fillText(label as string, node.x!, node.y! + size + 6);
+                                        ctx.fillStyle = canvasColors.label;
+                                        ctx.fillText(label as string, node.x!, node.y! + size + 4);
                                     }
                                     
                                     ctx.globalAlpha = 1;
@@ -881,13 +1062,19 @@ export default function GraphPage() {
                                     
                                     const isRelated = !hoveredNode || (relatedNodes.has(source.id) && relatedNodes.has(target.id));
 
-                                    // Obsidian-style: Very subtle links
+                                    // Clean, minimal links - subtle variation
+                                    const sourceImportance = nodeImportance[source.id] || 0;
+                                    const targetImportance = nodeImportance[target.id] || 0;
+                                    const linkImportance = Math.max(sourceImportance, targetImportance);
+                                    
+                                    // Fluid, soft links - very light and smooth
                                     ctx.strokeStyle = canvasColors.link;
-                                    ctx.lineWidth = isRelated && hoveredNode ? 1.5 : 1;
+                                    ctx.lineWidth = (isRelated && hoveredNode) ? 1.2 : (0.5 + linkImportance * 0.3); // Thinner, softer
+                                    
                                     if (!hoveredNode) {
-                                        ctx.globalAlpha = 0.2; // Very subtle in normal state
+                                        ctx.globalAlpha = 0.08 + (linkImportance * 0.06); // Very subtle, light
                                     } else {
-                                        ctx.globalAlpha = isRelated ? 0.6 : 0.05; // Highlight connections on hover
+                                        ctx.globalAlpha = isRelated ? 0.4 : 0.02; // Softer, more fluid fade
                                     }
                                     
                                     // Calculate arrow direction
@@ -945,16 +1132,13 @@ export default function GraphPage() {
                                     ctx.arc(node.x!, node.y!, size + 3, 0, 2 * Math.PI); // Generous padding for easier clicking
                                     ctx.fill();
                                 }}
-                                warmupTicks={100}
+                                        warmupTicks={200}
                             />
-                                </div>
                             )}
                         </div>
                     </>
                 )}
             </div>
-
-
         </div>
     );
 }

@@ -66,7 +66,7 @@ export default function GraphModeSelector({ currentMode, onModeChange }: GraphMo
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-onsurface-secondary hover:text-onsurface-primary transition-colors"
+        className="flex items-center gap-2 text-sm font-medium text-onsurface-primary hover:text-primary transition-colors"
       >
         <currentModeData.icon className="w-4 h-4" />
         <span>{currentModeData.name}</span>
@@ -79,7 +79,7 @@ export default function GraphModeSelector({ currentMode, onModeChange }: GraphMo
             className="fixed inset-0 z-10" 
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full mt-1 left-0 bg-surface-container rounded-lg shadow-lg border border-border overflow-hidden z-20 min-w-[200px]">
+          <div className="absolute top-full mt-2 left-0 bg-surface-container rounded-xl shadow-lg border border-border overflow-hidden z-20 min-w-[200px]">
             {modes.map((mode) => (
               <button
                 key={mode.id}
@@ -87,8 +87,8 @@ export default function GraphModeSelector({ currentMode, onModeChange }: GraphMo
                   onModeChange(mode.id);
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-surface-container-muted transition-colors ${
-                  currentMode === mode.id ? 'text-primary' : 'text-onsurface-primary'
+                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-surface-container-muted transition-colors ${
+                  currentMode === mode.id ? 'text-primary font-medium bg-surface-container-muted/50' : 'text-onsurface-primary'
                 }`}
               >
                 <mode.icon className="w-4 h-4" />
