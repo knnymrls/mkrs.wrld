@@ -130,7 +130,7 @@ export default function NewConversationModal({
       onClick={onClose}
     >
       <div
-        className="bg-surface rounded-[15px] w-full max-w-md flex flex-col p-6 gap-4"
+        className="bg-surface-container rounded-xl w-full max-w-md flex flex-col p-6 gap-4 shadow-lg border border-border"
         style={{ zIndex: 10000 }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -138,7 +138,7 @@ export default function NewConversationModal({
           <h2 className="text-lg font-medium text-onsurface-primary">New Message</h2>
           <button
             onClick={onClose}
-            className="w-4 h-4 flex items-center justify-center text-onsurface-secondary hover:text-onsurface-primary transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-onsurface-secondary hover:text-onsurface-primary hover:bg-surface-container-muted rounded-lg transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -151,7 +151,7 @@ export default function NewConversationModal({
           placeholder="Search for a user..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 bg-surface-container border border-border rounded-lg text-sm text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-onsurface-primary"
+          className="w-full px-4 py-2.5 bg-surface-container-muted border border-border rounded-xl text-sm text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           autoFocus
         />
 
@@ -168,9 +168,9 @@ export default function NewConversationModal({
                 <button
                   key={usr.id}
                   onClick={() => handleSelectUser(usr)}
-                  className="w-full p-3 flex items-center gap-3 hover:bg-border rounded-lg transition-colors"
+                  className="w-full p-3 flex items-center gap-3 hover:bg-surface-container-muted rounded-xl transition-all"
                 >
-                  <div className="w-10 h-10 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+                  <div className="w-10 h-10 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border/30">
                     {usr.avatar_url ? (
                       <LazyImage
                         src={usr.avatar_url}

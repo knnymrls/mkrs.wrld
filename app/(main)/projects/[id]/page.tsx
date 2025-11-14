@@ -282,28 +282,34 @@ export default function ProjectPage() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active':
-                return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                return 'bg-success/10 text-success border border-success/20';
             case 'paused':
-                return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                return 'bg-warning/10 text-warning border border-warning/20';
             case 'complete':
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                return 'bg-surface-container-muted text-onsurface-secondary border border-border';
             default:
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+                return 'bg-surface-container-muted text-onsurface-secondary border border-border';
         }
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-onsurface-secondary">Loading project...</p>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="text-5xl mb-3">🚀</div>
+                    <p className="text-sm text-onsurface-secondary font-medium">Loading project...</p>
+                </div>
             </div>
         );
     }
 
     if (!project) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-onsurface-secondary">Project not found</p>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="text-5xl mb-3">❌</div>
+                    <p className="text-sm text-onsurface-secondary font-medium">Project not found</p>
+                </div>
             </div>
         );
     }
@@ -311,30 +317,30 @@ export default function ProjectPage() {
     const isCreator = user?.id === project.created_by;
 
     return (
-        <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-background">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
                 <button
                     onClick={() => router.push('/projects')}
-                    className="mb-6 text-sm text-onsurface-secondary hover:text-onsurface-primary"
+                    className="mb-6 text-sm text-onsurface-secondary hover:text-onsurface-primary transition-colors flex items-center gap-2"
                 >
                     ← Back to Projects
                 </button>
 
                 {/* Project Header */}
-                <div className="bg-surface-container rounded-lg shadow-md p-6 mb-6">
+                <div className="bg-surface-container rounded-xl border border-border p-6 mb-6">
                     {isEditing ? (
                         <div className="space-y-4">
                             <input
                                 type="text"
                                 value={editedProject.title || ''}
                                 onChange={(e) => setEditedProject({ ...editedProject, title: e.target.value })}
-                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted"
+                                className="w-full px-4 py-2.5 border border-border rounded-xl bg-surface-container-muted text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                 placeholder="Project title"
                             />
                             <textarea
                                 value={editedProject.description || ''}
                                 onChange={(e) => setEditedProject({ ...editedProject, description: e.target.value })}
-                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted"
+                                className="w-full px-4 py-2.5 border border-border rounded-xl bg-surface-container-muted text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                 rows={4}
                                 placeholder="Project description"
                             />
@@ -342,7 +348,7 @@ export default function ProjectPage() {
                                 <select
                                     value={editedProject.status || 'active'}
                                     onChange={(e) => setEditedProject({ ...editedProject, status: e.target.value as Project['status'] })}
-                                    className="px-3 py-2 border border-border rounded-md bg-surface-container-muted"
+                                    className="px-4 py-2.5 border border-border rounded-xl bg-surface-container-muted text-onsurface-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                 >
                                     <option value="active">Active</option>
                                     <option value="paused">Paused</option>
@@ -356,10 +362,10 @@ export default function ProjectPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="flex space-x-2">
+                            <div className="flex gap-2">
                                 <button
                                     onClick={handleUpdateProject}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover"
+                                    className="px-4 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-all shadow-sm"
                                 >
                                     Save Changes
                                 </button>
@@ -368,7 +374,7 @@ export default function ProjectPage() {
                                         setIsEditing(false);
                                         setEditedProject(project);
                                     }}
-                                    className="px-4 py-2 text-sm font-medium text-onsurface-primary bg-surface-container-muted rounded-md hover:bg-surface-container"
+                                    className="px-4 py-2.5 text-sm font-medium text-onsurface-primary bg-surface-container-muted rounded-xl hover:bg-surface-container border border-border transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -388,21 +394,21 @@ export default function ProjectPage() {
                                     })()}
                                     <h1 className="text-2xl font-bold text-onsurface-primary">{project.title}</h1>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    <span className={`px-3 py-1 text-sm font-medium rounded ${getStatusColor(project.status)}`}>
+                                <div className="flex items-center gap-2">
+                                    <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(project.status)}`}>
                                         {project.status}
                                     </span>
                                     {isCreator && (
                                         <>
                                             <button
                                                 onClick={() => setIsEditing(true)}
-                                                className="px-3 py-1 text-sm font-medium text-onsurface-primary bg-surface-container-muted rounded-md hover:bg-surface-container"
+                                                className="px-3 py-1.5 text-sm font-medium text-onsurface-primary bg-surface-container-muted rounded-xl hover:bg-surface-container border border-border transition-all"
                                             >
                                                 Edit
                                             </button>
                                             <button
                                                 onClick={handleDeleteProject}
-                                                className="px-3 py-1 text-sm font-medium text-error bg-error/10 rounded-md hover:bg-error/20"
+                                                className="px-3 py-1.5 text-sm font-medium text-error bg-error/10 rounded-xl hover:bg-error/20 border border-error/20 transition-all"
                                             >
                                                 Delete
                                             </button>
@@ -423,13 +429,13 @@ export default function ProjectPage() {
                 </div>
 
                 {/* Contributors Section */}
-                <div className="bg-surface-container rounded-lg shadow-md p-6 mb-6">
+                <div className="bg-surface-container rounded-xl border border-border p-6 mb-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold text-onsurface-primary">Contributors</h2>
                         {isCreator && (
                             <button
                                 onClick={() => setShowAddContributor(!showAddContributor)}
-                                className="px-3 py-1 text-sm font-medium text-onprimary bg-primary rounded-md hover:bg-primary-hover"
+                                className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-all shadow-sm"
                             >
                                 Add Contributor
                             </button>
@@ -437,7 +443,7 @@ export default function ProjectPage() {
                     </div>
 
                     {showAddContributor && (
-                        <div className="mb-4 p-4 border border-border rounded-md">
+                        <div className="mb-4 p-4 border border-border rounded-xl bg-surface-container-muted">
                             <input
                                 type="text"
                                 value={searchTerm}
@@ -445,7 +451,7 @@ export default function ProjectPage() {
                                     setSearchTerm(e.target.value);
                                     searchProfiles(e.target.value);
                                 }}
-                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted mb-2"
+                                className="w-full px-4 py-2.5 border border-border rounded-xl bg-surface-container text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all mb-2"
                                 placeholder="Search for contributors by name or email..."
                             />
 
@@ -453,14 +459,14 @@ export default function ProjectPage() {
                                 type="text"
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
-                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted mb-2"
+                                className="w-full px-4 py-2.5 border border-border rounded-xl bg-surface-container text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all mb-2"
                                 placeholder="Role (e.g., Developer, Designer, PM)"
                             />
 
                             <textarea
                                 value={selectedDescription}
                                 onChange={(e) => setSelectedDescription(e.target.value)}
-                                className="w-full px-3 py-2 border border-border rounded-md bg-surface-container-muted mb-2"
+                                className="w-full px-4 py-2.5 border border-border rounded-xl bg-surface-container text-onsurface-primary placeholder:text-onsurface-secondary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all mb-2"
                                 rows={2}
                                 placeholder="Description (optional)"
                             />
@@ -470,15 +476,15 @@ export default function ProjectPage() {
                                     {searchResults.map((profile) => (
                                         <div
                                             key={profile.id}
-                                            className="flex justify-between items-center p-2 border border-border rounded hover:bg-surface-container-muted"
+                                            className="flex justify-between items-center p-3 border border-border rounded-xl hover:bg-surface-container transition-all"
                                         >
                                             <div>
-                                                <p className="font-medium">{profile.name}</p>
+                                                <p className="font-medium text-onsurface-primary">{profile.name}</p>
                                                 <p className="text-sm text-onsurface-secondary">{profile.email}</p>
                                             </div>
                                             <button
                                                 onClick={() => handleAddContributor(profile.id)}
-                                                className="px-3 py-1 text-sm font-medium text-onsuccess bg-success rounded-md hover:bg-success/90"
+                                                className="px-4 py-2 text-sm font-medium bg-success text-onsuccess rounded-xl hover:bg-success/90 transition-all"
                                             >
                                                 Add
                                             </button>
@@ -493,7 +499,7 @@ export default function ProjectPage() {
                         {project.contributors.map((contrib) => (
                             <div
                                 key={contrib.contribution.id}
-                                className="flex justify-between items-center p-3 border border-border rounded-md"
+                                className="flex justify-between items-center p-4 border border-border rounded-xl hover:bg-surface-container-muted transition-all"
                             >
                                 <div>
                                     <p className="font-medium text-onsurface-primary">
@@ -511,7 +517,7 @@ export default function ProjectPage() {
                                 {isCreator && contrib.profile.id !== project.created_by && (
                                     <button
                                         onClick={() => handleRemoveContributor(contrib.contribution.id)}
-                                        className="px-3 py-1 text-sm font-medium text-error hover:bg-error/10 rounded-md"
+                                        className="px-3 py-1.5 text-sm font-medium text-error hover:bg-error/10 rounded-xl border border-error/20 transition-all"
                                     >
                                         Remove
                                     </button>
@@ -523,12 +529,12 @@ export default function ProjectPage() {
 
                 {/* Related Posts Section */}
                 {project.posts.length > 0 && (
-                    <div className="bg-surface-container rounded-lg shadow-md p-6">
+                    <div className="bg-surface-container rounded-xl border border-border p-6">
                         <h2 className="text-xl font-semibold text-onsurface-primary mb-4">Related Posts</h2>
                         <div className="space-y-4">
                             {project.posts.map((post) => (
-                                <div key={post.id} className="border-b border-border pb-4 last:border-0">
-                                    <p className="text-onsurface-primary mb-2">{post.content}</p>
+                                <div key={post.id} className="border-b border-border/50 pb-4 last:border-0">
+                                    <p className="text-onsurface-primary mb-2 leading-relaxed">{post.content}</p>
                                     <p className="text-sm text-onsurface-secondary">
                                         By {post.author?.name || 'Unknown'} on {new Date(post.created_at).toLocaleDateString()}
                                     </p>
