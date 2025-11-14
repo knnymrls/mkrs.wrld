@@ -28,39 +28,45 @@ export default function ProjectsList({ initialProjects }: ProjectsListProps) {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'active':
-                return 'bg-green-500/10 text-green-600 dark:text-green-400';
+                return 'bg-success/10 text-success border border-success/20';
             case 'paused':
-                return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+                return 'bg-warning/10 text-warning border border-warning/20';
             case 'complete':
-                return 'bg-surface-container-muted text-onsurface-secondary';
+                return 'bg-surface-container-muted text-onsurface-secondary border border-border';
             default:
-                return 'bg-surface-container-muted text-onsurface-secondary';
+                return 'bg-surface-container-muted text-onsurface-secondary border border-border';
         }
     };
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12 mx-auto w-full">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-foreground">Projects</h1>
-                    <button
-                        onClick={() => router.push('/projects/new')}
-                        className="px-4 py-2 text-sm font-medium text-white dark:text-background bg-primary hover:bg-primary-hover rounded-lg transition-colors"
-                    >
-                        Create New Project
-                    </button>
+            {/* Header */}
+            <div className="sticky top-0 z-20 bg-surface-container/80 backdrop-blur-md border-b border-border">
+                <div className="px-4 sm:px-6 lg:px-9 py-4 sm:py-6 mx-auto w-full">
+                    <div className="flex justify-between items-center">
+                        <h1 className="text-2xl sm:text-3xl font-semibold text-onsurface-primary">Projects</h1>
+                        <button
+                            onClick={() => router.push('/projects/new')}
+                            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover rounded-xl transition-all shadow-sm"
+                        >
+                            Create New Project
+                        </button>
+                    </div>
                 </div>
+            </div>
 
+            <div className="px-4 sm:px-6 lg:px-9 py-6 sm:py-8 lg:py-12 mx-auto w-full">
+                {/* Filter Buttons */}
                 <div className="mb-6">
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2 flex-wrap">
                         {(['all', 'active', 'paused', 'complete'] as const).map((status) => (
                             <button
                                 key={status}
                                 onClick={() => setFilter(status)}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                className={`px-4 py-2 text-sm font-medium rounded-xl transition-all ${
                                     filter === status
-                                        ? 'bg-primary text-white dark:text-background'
-                                        : 'bg-surface-container text-onsurface-primary hover:bg-surface-container-muted'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-surface-container text-onsurface-primary hover:bg-surface-container-muted border border-border'
                                 }`}
                             >
                                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -69,40 +75,41 @@ export default function ProjectsList({ initialProjects }: ProjectsListProps) {
                     </div>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {/* Projects Grid */}
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filteredProjects.map((project) => (
                         <div
                             key={project.id}
-                            className="bg-surface-container rounded-2xl border border-border p-6 hover:border-primary/20 transition-all cursor-pointer"
+                            className="bg-surface-container rounded-xl border border-border p-5 sm:p-6 hover:bg-surface-container-muted hover:border-primary/30 transition-all cursor-pointer group"
                             onClick={() => router.push(`/projects/${project.id}`)}
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
                                     <div className="flex-shrink-0">
                                         <ProjectIcon icon={project.icon} variant="graph" size={20} />
                                     </div>
-                                    <h3 className="text-lg font-semibold text-foreground">
+                                    <h3 className="text-base sm:text-lg font-semibold text-onsurface-primary truncate group-hover:text-primary transition-colors">
                                         {project.title}
                                     </h3>
                                 </div>
-                                <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusColor(project.status)}`}>
+                                <span className={`px-2.5 py-1 text-xs font-medium rounded-lg flex-shrink-0 ml-2 ${getStatusColor(project.status)}`}>
                                     {project.status}
                                 </span>
                             </div>
                             
                             {project.description && (
-                                <p className="text-sm text-onsurface-secondary mb-4 line-clamp-3">
+                                <p className="text-sm text-onsurface-secondary mb-4 line-clamp-3 leading-relaxed">
                                     {project.description}
                                 </p>
                             )}
 
-                            <div className="border-t border-border pt-4">
+                            <div className="border-t border-border/50 pt-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex -space-x-2">
                                         {project.contributors.slice(0, 3).map((contrib, index) => (
                                             <div
                                                 key={contrib.contribution.id}
-                                                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white dark:text-background text-xs font-medium ring-2 ring-background"
+                                                className="w-8 h-8 rounded-full bg-avatar-bg flex items-center justify-center text-onsurface-primary text-xs font-medium ring-2 ring-background"
                                                 title={contrib.profile.name || ''}
                                             >
                                                 {contrib.profile.name?.charAt(0) || '?'}
@@ -123,11 +130,15 @@ export default function ProjectsList({ initialProjects }: ProjectsListProps) {
                     ))}
                 </div>
 
+                {/* Empty State */}
                 {filteredProjects.length === 0 && (
-                    <div className="text-center py-12">
-                        <p className="text-onsurface-secondary">
-                            No {filter !== 'all' ? filter : ''} projects found.
-                        </p>
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="text-5xl mb-3">🚀</div>
+                            <p className="text-sm text-onsurface-secondary font-medium">
+                                No {filter !== 'all' ? filter : ''} projects found.
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>

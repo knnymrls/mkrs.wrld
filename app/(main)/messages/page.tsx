@@ -173,15 +173,15 @@ export default function MessagesPage() {
   return (
     <div className="flex h-full bg-background">
       {/* Conversations List */}
-      <div className="w-80 border-r border-border bg-surface flex-shrink-0">
-        <div className="p-6 border-b border-border flex items-center justify-between">
+      <div className="w-80 border-r border-border bg-surface-container flex-shrink-0">
+        <div className="p-4 sm:p-6 border-b border-border bg-surface-container/80 backdrop-blur-md flex items-center justify-between">
           <h1 className="text-xl font-medium text-onsurface-primary">Messages</h1>
           <button
             onClick={() => setIsNewConversationModalOpen(true)}
-            className="p-2 hover:bg-border rounded-lg transition-colors"
+            className="p-2 hover:bg-surface-container-muted rounded-xl transition-all text-onsurface-secondary hover:text-onsurface-primary"
             title="New message"
           >
-            <svg className="w-5 h-5 text-onsurface-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </button>
@@ -195,7 +195,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Message Thread */}
-      <div className="flex-1">
+      <div className="flex-1 bg-background">
         {selectedConversation ? (
           <MessageThread
             conversationId={selectedConversation.id}
@@ -203,7 +203,10 @@ export default function MessagesPage() {
           />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-onsurface-secondary">Select a conversation to start messaging</p>
+            <div className="text-center">
+              <div className="text-5xl mb-3">💬</div>
+              <p className="text-sm text-onsurface-secondary font-medium">Select a conversation to start messaging</p>
+            </div>
           </div>
         )}
       </div>

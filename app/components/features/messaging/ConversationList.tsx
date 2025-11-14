@@ -34,16 +34,16 @@ export default function ConversationList({
 }: ConversationListProps) {
   if (loading) {
     return (
-      <div className="p-4">
-        <p className="text-onsurface-secondary text-sm">Loading conversations...</p>
+      <div className="p-6">
+        <p className="text-onsurface-secondary text-sm text-center">Loading conversations...</p>
       </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="p-4">
-        <p className="text-onsurface-secondary text-sm">No conversations yet</p>
+      <div className="p-6">
+        <p className="text-onsurface-secondary text-sm text-center">No conversations yet</p>
       </div>
     );
   }
@@ -58,12 +58,12 @@ export default function ConversationList({
           <button
             key={conversation.id}
             onClick={() => onSelect(conversation.id)}
-            className={`w-full p-4 flex items-start gap-3 hover:bg-border transition-colors border-b border-border ${
-              isSelected ? 'bg-border' : ''
+            className={`w-full p-4 flex items-start gap-3 hover:bg-surface-container-muted transition-all border-b border-border/50 ${
+              isSelected ? 'bg-surface-container-muted' : ''
             }`}
           >
             {/* Avatar */}
-            <div className="w-12 h-12 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+            <div className="w-12 h-12 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border/30">
               {otherUser?.avatar_url ? (
                 <LazyImage
                   src={otherUser.avatar_url}
@@ -98,8 +98,8 @@ export default function ConversationList({
                 </p>
               )}
               {conversation.unread_count > 0 && (
-                <div className="mt-1">
-                  <span className="inline-block bg-onsurface-primary text-surface-container text-xs px-2 py-0.5 rounded-full">
+                <div className="mt-1.5">
+                  <span className="inline-block bg-primary text-primary-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
                     {conversation.unread_count}
                   </span>
                 </div>

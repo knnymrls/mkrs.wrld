@@ -265,11 +265,11 @@ export default function MessageThread({ conversationId, participants }: MessageT
   const otherUser = participants[0];
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="p-6 border-b border-border bg-surface">
+      <div className="p-4 sm:p-6 border-b border-border bg-surface-container/80 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+          <div className="w-10 h-10 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border/30">
             {otherUser?.avatar_url ? (
               <LazyImage
                 src={otherUser.avatar_url}
@@ -288,11 +288,18 @@ export default function MessageThread({ conversationId, participants }: MessageT
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
         {loading ? (
-          <p className="text-onsurface-secondary text-sm">Loading messages...</p>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-onsurface-secondary text-sm">Loading messages...</p>
+          </div>
         ) : messages.length === 0 ? (
-          <p className="text-onsurface-secondary text-sm">No messages yet. Start the conversation!</p>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="text-5xl mb-3">💬</div>
+              <p className="text-sm text-onsurface-secondary font-medium">No messages yet. Start the conversation!</p>
+            </div>
+          </div>
         ) : (
           messages.map((message) => {
             const isOwn = message.sender_id === user?.id;
@@ -300,7 +307,7 @@ export default function MessageThread({ conversationId, participants }: MessageT
 
             return (
               <div key={message.id} className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : ''}`}>
-                <div className="w-8 h-8 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0">
+                <div className="w-8 h-8 bg-avatar-bg rounded-full overflow-hidden flex-shrink-0 ring-1 ring-border/30">
                   {message.sender.avatar_url ? (
                     <LazyImage
                       src={message.sender.avatar_url}
@@ -316,15 +323,15 @@ export default function MessageThread({ conversationId, participants }: MessageT
                 </div>
                 <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-md`}>
                   <div
-                    className={`px-4 py-2 rounded-2xl ${
+                    className={`px-4 py-2.5 rounded-xl shadow-sm ${
                       isOwn
-                        ? 'bg-onsurface-primary text-surface-container'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-surface-container text-onsurface-primary border border-border'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
                   </div>
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex items-center gap-1 mt-1.5">
                     <p className="text-xs text-onsurface-secondary">
                       {format(new Date(message.created_at), 'h:mm a')}
                     </p>
@@ -343,7 +350,7 @@ export default function MessageThread({ conversationId, participants }: MessageT
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-border bg-surface">
+      <div className="p-4 border-t border-border bg-surface-container/80 backdrop-blur-md">
         <MessageInput onSend={handleSendMessage} />
       </div>
     </div>
