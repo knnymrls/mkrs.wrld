@@ -65,3 +65,4 @@ CREATE POLICY "Users can leave events" ON event_participants
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+
